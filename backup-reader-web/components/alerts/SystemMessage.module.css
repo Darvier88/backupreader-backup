@@ -1,0 +1,21 @@
+.SystemMessageContainer{
+    background-color: #FFF5C3;
+    width: 100%;
+    display: flex;
+    flex: 1;
+    padding: 10px;
+}
+
+.contentContainer{
+    display: flex;
+    align-self: center;   
+}
+
+.SystemMessageContainer p{
+    padding: 0;
+    margin: 0;
+    font-size: 16px;
+    padding-left: 10px;
+    color: #555555;
+}
+

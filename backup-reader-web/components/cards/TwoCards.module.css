@@ -1,0 +1,51 @@
+/* TwoCards.module.css */
+.twoCardsContainer {
+    display: flex;
+    align-items: center; /* Vertically align content */
+}
+
+.leftContainer {
+    justify-content: space-between; /* This will create space between the two cards */
+    flex-direction: row-reverse; /* Reverse the order of items for left orientation */
+}
+
+.rightContainer {
+    justify-content: space-between; /* This will create space between the two cards */
+    flex-direction: row; /* Default direction for right orientation */
+}
+
+.imageContainer,
+.contentContainer {
+    flex: 1; /* Make both containers share available space */
+    padding: 20px; /* Add some spacing inside each container */
+}
+
+.twoCardsContainer h1{
+    font-family: 'PT Serif';
+}
+
+.leftContainer h3, .rightContainer h3{
+    font-size: 28px;
+    text-align: left;
+    font-family: 'PT Serif';
+}
+
+.leftContainer p, .rightContainer p{
+    font-size: 16px;
+    line-height: 22px;
+    text-align: left;
+}
+
+
+/* Apply styles for screens with a max width of 768px (most phones) */
+@media (max-width: 768px) {
+    .twoCardsContainer {
+        flex-direction: column; /* Stack cards vertically on small screens */
+    }
+
+    .leftContainer,
+    .rightContainer {
+        justify-content: center; /* Center content on small screens */
+        align-items: center; /* Center content horizontally */
+    }
+}

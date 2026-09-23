@@ -1,0 +1,250 @@
+/* ============================================================================
+   Backup Reader — Sistema de diseño "Expediente"
+   Tokens + clases reutilizables para el rediseño (navy tinta + papel + verdigris).
+   Importado globalmente en _app.tsx. Las fuentes IBM Plex se cargan en _document.tsx.
+   ============================================================================ */
+
+:root {
+  /* --- Ink (navy) --- */
+  --ink-950:#0F1826; --ink-900:#16233B; --ink-800:#21344F; --ink-700:#2E4A6B;
+  --ink-500:#4A6A8E; --ink-300:#8CA0B8; --ink-100:#C7D2DF;
+
+  /* --- Paper (warm) --- */
+  --paper-50:#FBF8F1; --paper-100:#F5F0E6; --paper-200:#EAE2D2; --paper-300:#DBD0BB;
+
+  /* --- Slate (neutral text/borders) --- */
+  --slate-900:#1F2933; --slate-700:#3B4652; --slate-500:#5A6673;
+  --slate-400:#8A94A0; --slate-200:#D3D8DE; --slate-100:#E7EAEE;
+
+  /* --- Accent (Verdigris teal; nombres --brass-* por compatibilidad) --- */
+  --brass-700:#245F52; --brass-600:#2A7062; --brass-500:#2F7E6C;
+  --brass-400:#5AA192; --brass-300:#8FD3C2; --brass-100:#DCEEE9;
+
+  /* --- Semantic hues --- */
+  --pine-600:#3E6B54; --pine-100:#E1EBE3;
+  --ochre-600:#B8842B; --ochre-100:#F6EBCF;
+  --clay-600:#9A5B3F; --clay-100:#F0DED4;
+
+  /* --- Surfaces --- */
+  --surface-page:var(--paper-50); --surface-raised:#FFFFFF;
+  --surface-sunken:var(--paper-100); --surface-inverse:var(--ink-900);
+
+  /* --- Text --- */
+  --text-strong:var(--ink-900); --text-body:var(--slate-900);
+  --text-muted:var(--slate-500); --text-faint:var(--slate-400);
+  --text-on-ink:var(--paper-50); --text-on-ink-muted:var(--ink-100);
+  --text-accent:var(--brass-600);
+
+  /* --- Accent roles --- */
+  --accent:var(--brass-500); --accent-hover:var(--brass-600);
+  --accent-press:var(--brass-700); --accent-pale:var(--brass-100);
+  --accent-on:var(--paper-50);
+
+  /* --- Borders --- */
+  --border:var(--slate-200); --border-strong:var(--slate-400);
+  --border-ink:rgba(22,35,59,0.14); --border-on-ink:rgba(255,255,255,0.14);
+  --focus-ring:0 0 0 3px rgba(47,126,108,0.35);
+
+  /* --- Fonts --- */
+  --font-serif:'IBM Plex Serif', Georgia, 'Times New Roman', serif;
+  --font-sans:'IBM Plex Sans', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-mono:'IBM Plex Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+
+  /* --- Radii --- */
+  --radius-xs:3px; --radius-sm:6px; --radius-md:8px; --radius-lg:12px;
+  --radius-xl:16px; --radius-pill:100px;
+
+  /* --- Shadows --- */
+  --shadow-xs:0 1px 2px rgba(22,35,59,0.06);
+  --shadow-sm:0 2px 6px rgba(22,35,59,0.07);
+  --shadow-md:0 8px 24px -8px rgba(22,35,59,0.14);
+  --shadow-lg:0 24px 60px -24px rgba(22,35,59,0.28);
+  --shadow-card:0 1px 2px rgba(22,35,59,0.05), 0 8px 24px rgba(22,35,59,0.06);
+
+  /* --- Layout / motion --- */
+  --page-max:1120px; --page-gutter:24px;
+  --ease-standard:cubic-bezier(0.2,0.6,0.2,1);
+  --dur-fast:140ms; --dur-base:220ms; --dur-slow:360ms;
+}
+
+/* ============================ Primitivos ================================= */
+
+.br-root {
+  background: var(--paper-50);
+  font-family: var(--font-sans);
+  color: var(--text-body);
+  min-height: 100vh;
+}
+
+.br-serif { font-family: var(--font-serif); font-weight: 500; letter-spacing: -0.015em; }
+.br-mono-label {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--brass-600);
+}
+
+/* Header sticky de papel translúcido */
+.br-header {
+  position: sticky; top: 0; z-index: 30;
+  background: rgba(251,248,241,0.86);
+  backdrop-filter: blur(10px);
+  border-bottom: 1px solid var(--border);
+}
+.br-header-inner {
+  max-width: var(--page-max); margin: 0 auto;
+  padding: 12px clamp(16px, 4vw, 24px);
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 16px; flex-wrap: wrap;
+}
+.br-brand {
+  font-family: var(--font-serif); font-weight: 500; font-size: 20px;
+  letter-spacing: -0.01em; color: var(--ink-900); text-decoration: none;
+  display: inline-flex; align-items: center; gap: 8px;
+}
+.br-navlink {
+  font-size: 14.5px; color: var(--slate-700); text-decoration: none;
+  transition: color var(--dur-fast) var(--ease-standard);
+}
+.br-navlink:hover { color: var(--ink-900); }
+
+/* Botones */
+.br-btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  font-family: var(--font-sans); font-weight: 600; line-height: 1;
+  border-radius: var(--radius-md); border: 1.5px solid transparent;
+  cursor: pointer; text-decoration: none; white-space: nowrap;
+  transition: background var(--dur-base) var(--ease-standard),
+              color var(--dur-base) var(--ease-standard),
+              border-color var(--dur-base) var(--ease-standard);
+}
+.br-btn:focus-visible { outline: none; box-shadow: var(--focus-ring); }
+.br-btn-sm { padding: 9px 16px; font-size: 13.5px; }
+.br-btn-md { padding: 12px 20px; font-size: 14.5px; }
+.br-btn-lg { padding: 14px 26px; font-size: 15.5px; }
+.br-btn-block { width: 100%; }
+
+.br-btn-primary { background: var(--accent); color: var(--accent-on); }
+.br-btn-primary:hover { background: var(--accent-hover); color: var(--accent-on); }
+.br-btn-primary:active { background: var(--accent-press); }
+
+.br-btn-ghost { background: transparent; color: var(--ink-900); border-color: var(--border); }
+.br-btn-ghost:hover { background: rgba(22,35,59,0.04); }
+
+.br-btn-inverse { background: transparent; color: var(--paper-50); border-color: var(--border-on-ink); }
+.br-btn-inverse:hover { background: rgba(255,255,255,0.08); }
+
+/* Inputs */
+.br-field { display: flex; flex-direction: column; gap: 7px; }
+.br-label {
+  font-family: var(--font-sans); font-size: 14px; font-weight: 600;
+  color: var(--ink-900);
+}
+.br-input {
+  width: 100%; box-sizing: border-box;
+  padding: 12px 14px; background: var(--surface-raised);
+  border: 1.5px solid var(--border); border-radius: var(--radius-sm);
+  font-family: var(--font-sans); font-size: 15px; color: var(--text-body);
+  outline: none; transition: border-color var(--dur-fast) var(--ease-standard),
+                             box-shadow var(--dur-fast) var(--ease-standard);
+}
+.br-input::placeholder { color: var(--slate-400); }
+.br-input:focus { border-color: var(--brass-500); box-shadow: var(--focus-ring); }
+.br-input-invalid { border-color: var(--clay-600); }
+
+/* Card de papel */
+.br-card {
+  background: var(--surface-raised); border: 1px solid var(--border);
+  border-radius: var(--radius-lg); box-shadow: var(--shadow-card);
+}
+
+/* Layouts */
+.br-shell { display: flex; flex-direction: column; min-height: 100vh; }
+.br-split {
+  flex: 1; display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+  align-items: stretch;
+}
+.br-split-main { padding: clamp(48px, 7vw, 88px) clamp(16px, 4vw, 24px); }
+.br-split-inner { max-width: 460px; margin: 0 auto; }
+.br-aside {
+  background: var(--paper-100); border-left: 1px solid var(--border);
+  padding: clamp(48px, 7vw, 88px) clamp(16px, 4vw, 24px);
+}
+.br-aside-inner {
+  max-width: 400px; margin: 0 auto; display: flex; flex-direction: column;
+  gap: clamp(36px, 5vw, 56px);
+}
+.br-aside-item { display: flex; flex-direction: column; gap: 12px; }
+.br-aside-item img { width: 100%; max-width: 220px; height: 128px; object-fit: contain; object-position: left center; }
+.br-aside-item h2 { margin: 0; font-family: var(--font-serif); font-weight: 500; font-size: 21px; line-height: 1.25; letter-spacing: -0.01em; color: var(--ink-900); }
+.br-aside-item p { margin: 0; font-size: 15px; line-height: 1.6; color: var(--slate-700); }
+
+/* Títulos de página */
+.br-page-title { margin: 0 0 6px; font-family: var(--font-serif); font-weight: 500;
+  font-size: clamp(30px, 4vw, 40px); line-height: 1.12; letter-spacing: -0.02em; color: var(--ink-900); }
+.br-page-sub { margin: 0 0 32px; font-size: 15.5px; color: var(--slate-700); }
+.br-fineprint { font-size: 13.5px; line-height: 1.6; color: var(--text-muted); }
+.br-link { color: var(--brass-600); text-decoration: none; }
+.br-link:hover { color: var(--brass-700); text-decoration: underline; }
+
+/* Footer */
+.br-footer { background: var(--paper-50); border-top: 1px solid var(--border); }
+.br-footer-inner {
+  max-width: var(--page-max); margin: 0 auto;
+  padding: 28px clamp(16px, 4vw, 24px);
+  display: flex; flex-wrap: wrap; gap: 18px; align-items: center; justify-content: space-between;
+}
+.br-footer-mark {
+  font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.12em;
+  text-transform: uppercase; color: var(--slate-400);
+}
+
+/* Secciones del landing */
+.br-section { max-width: var(--page-max); margin: 0 auto; padding: clamp(56px, 8vw, 96px) clamp(16px, 4vw, 24px); }
+.br-section-ink { background: var(--ink-900); }
+.br-section-label { display: inline-block; font-family: var(--font-mono); font-size: 11px;
+  letter-spacing: 0.14em; text-transform: uppercase; }
+.br-section-label-accent { color: var(--brass-600); }
+.br-section-label-paper { color: var(--ink-100); }
+
+/* ===================== Páginas de contenido / prosa ===================== */
+.br-prose {
+  max-width: 760px;
+  margin: 0 auto;
+  padding: clamp(40px, 6vw, 72px) clamp(16px, 4vw, 24px) 80px;
+  font-family: var(--font-sans);
+  color: var(--slate-700);
+}
+.br-prose h1 {
+  font-family: var(--font-serif); font-weight: 500;
+  font-size: clamp(28px, 4vw, 40px); line-height: 1.14; letter-spacing: -0.02em;
+  color: var(--ink-900); margin: 0 0 8px;
+}
+.br-prose h2 {
+  font-family: var(--font-serif); font-weight: 500;
+  font-size: clamp(20px, 2.6vw, 26px); line-height: 1.25; letter-spacing: -0.015em;
+  color: var(--ink-900); margin: 40px 0 12px;
+}
+.br-prose h3 {
+  font-family: var(--font-serif); font-weight: 500; font-size: 19px;
+  color: var(--ink-900); margin: 28px 0 10px;
+}
+.br-prose p, .br-prose li { font-size: 16px; line-height: 1.7; color: var(--slate-700); }
+.br-prose ul, .br-prose ol { padding-left: 22px; margin: 12px 0; display: flex; flex-direction: column; gap: 8px; }
+.br-prose a { color: var(--brass-600); text-decoration: none; }
+.br-prose a:hover { color: var(--brass-700); text-decoration: underline; }
+.br-prose strong { color: var(--ink-900); font-weight: 600; }
+.br-prose hr, .br-prose .MuiDivider-root { border: none; border-top: 1px solid var(--border); margin: 32px 0; }
+/* La "fecha de última actualización": primer <p> tras el h1 en tono mono */
+.br-prose h1 + p {
+  font-family: var(--font-mono); font-size: 12px; letter-spacing: 0.06em;
+  color: var(--slate-500); margin: 0 0 24px;
+}
+
+/* Cabecera de página simple (título serif sobre papel) */
+.br-page-head {
+  max-width: var(--page-max); margin: 0 auto;
+  padding: clamp(40px, 6vw, 64px) clamp(16px, 4vw, 24px) 8px;
+}

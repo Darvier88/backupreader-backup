@@ -1,0 +1,26 @@
+.simpleCardContainer{
+    text-align: center;
+    width: 80%;
+    margin: 40px auto;
+}
+
+.simpleCardContainerBackground{
+    background-color: #EAF0FB;
+    text-align: center;
+    margin: 40px auto;
+    padding: 40px;
+    width: 100%;
+}
+
+.simpleCardContainerBackground h3, .simpleCardContainer h3{
+    font-family: "PT Serif";
+    font-size: 28px;
+}
+
+.simpleCardContainerBackground p, .simpleCardContainer p{
+    padding-bottom: 15px;
+}
+
+.simpleCardContainerBackground Button, .simpleCardContainer Button{
+    margin: 0 auto;
+}
