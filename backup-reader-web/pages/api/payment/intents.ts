@@ -1,14 +1,6 @@
 import { NextApiRequest, NextApiResponse } from "next";
 import Stripe from "stripe";
 
-//const stripe = new Stripe(
-//  "sk_test_51MWu4cF3VaqMsYUWLe01D1uRVmY4whLXDqjKyaFUK2BroUlNnSqmd75p0Jybx0F3uWr367ISXk6NOQSEKCdFnv3200AWN6nCmM",
-// {
-//TEST MODE KEY
-//   apiVersion: "2022-11-15",
-//  }
-//);
-
 const stripe = new Stripe(`${process.env.NEXT_PUBLIC_STRIPE_KEYS}`, {
   apiVersion: "2022-11-15",
 });
