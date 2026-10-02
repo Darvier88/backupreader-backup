@@ -1,0 +1,121 @@
+rules_version = '2';
+
+// ============================================================================
+//  Backup Reader — Reglas de Firestore (Etapa 3)
+//
+//  Colecciones que usa la app hoy:
+//    users/{uid}          perfil, plan, tamaño ocupado
+//    plans/{planId}       catálogo de planes (mismo para todos)
+//    userStatus/{uid}     lo escribe la CF `unzip`, lo lee el dueño
+//    vaults/{uid}         NUEVO: VaultRecord (salts + envoltorios de la DEK)
+//    vaults/{uid}/backups/{backupId}   NUEVO: metadatos no sensibles
+//
+//  Importante: este archivo REEMPLAZA por completo las reglas que hoy estén en
+//  la consola. Si alguna colección viva no aparece aquí, deja de funcionar.
+//  Antes de desplegar, revisar la consola por si hay algo no listado arriba.
+//
+//  El Admin SDK (las Cloud Functions) se salta todas estas reglas. Por eso
+//  userStatus puede tener escritura denegada y la CF igual escribe.
+// ============================================================================
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function autenticado() {
+      return request.auth != null;
+    }
+
+    function esDueno(uid) {
+      return request.auth != null && request.auth.uid == uid;
+    }
+
+    // ------------------------------------------------------------------
+    // users
+    // ------------------------------------------------------------------
+    // Solo acceso por id. El documento se guarda con el uid como id, así que
+    // no hace falta consultar la colección.
+    //
+    // 'list' queda DENEGADO a propósito: permitirlo dejaría que cualquier
+    // usuario autenticado enumere a todos los demás. Eso obliga a cambiar las
+    // dos `query(collection("users"), where("user.uid","==",uid))` de
+    // FirestoreContext por getDoc directo. Ver README-ETAPA-3.md.
+    match /users/{uid} {
+      allow get: if esDueno(uid);
+      allow create, update: if esDueno(uid);
+      allow delete: if false; // el borrado de cuenta se hace desde backend
+    }
+
+    // ------------------------------------------------------------------
+    // plans
+    // ------------------------------------------------------------------
+    // Catálogo público para usuarios autenticados. Solo lectura: los precios
+    // no se tocan desde el cliente.
+    match /plans/{planId} {
+      allow read: if autenticado();
+      allow write: if false;
+    }
+
+    // ------------------------------------------------------------------
+    // userStatus
+    // ------------------------------------------------------------------
+    // Lo escribe la CF `unzip` con el Admin SDK (se salta estas reglas).
+    // El cliente solo lo observa. Desaparece cuando se retire la CF.
+    match /userStatus/{uid} {
+      allow get: if esDueno(uid);
+      allow write: if false;
+    }
+
+    // ------------------------------------------------------------------
+    // vaults — lo nuevo de la Fase 2
+    // ------------------------------------------------------------------
+    match /vaults/{uid} {
+      allow get: if esDueno(uid);
+
+      // El record se crea una vez y se actualiza al cambiar contraseña o
+      // regenerar el código de recuperación.
+      allow create, update: if esDueno(uid) && recordValido();
+
+      // Borrar el record es perder el acceso a TODOS los datos de forma
+      // irreversible: la DEK solo existe dentro de esos envoltorios. Denegado
+      // siempre; si algún día hay borrado de cuenta, lo hace el backend junto
+      // con los blobs.
+      allow delete: if false;
+
+      // Validación de forma. No protege criptográficamente nada (el cliente
+      // podría escribir basura igual), pero atrapa bugs que dejarían la cuenta
+      // inaccesible, que es un fallo irreversible.
+      function recordValido() {
+        let d = request.resource.data;
+        return d.keys().hasAll(['version','kdf','pwSalt','recSalt','wrapPassword','wrapRecovery'])
+            && d.version is int
+            && d.pwSalt is string && d.pwSalt.size() > 0
+            && d.recSalt is string && d.recSalt.size() > 0
+            && d.wrapPassword.keys().hasAll(['n','c'])
+            && d.wrapRecovery.keys().hasAll(['n','c'])
+            && d.kdf.alg == 'argon2id';
+      }
+
+      match /backups/{backupId} {
+        allow read: if esDueno(uid);
+        allow create, update: if esDueno(uid) && docValido();
+        allow delete: if esDueno(uid);
+
+        // Estos metadatos alimentan la cuota de plan, así que conviene que al
+        // menos tengan la forma correcta. No impide que el cliente mienta con
+        // el número; si eso importa, se calcula desde el backend.
+        function docValido() {
+          let d = request.resource.data;
+          return d.keys().hasAll(['createdAt','pieceCount','cipherBytes','encVersion'])
+              && d.pieceCount is int && d.pieceCount >= 0
+              && d.cipherBytes is int && d.cipherBytes >= 0
+              && d.encVersion == 2;
+        }
+      }
+    }
+
+    // Cierre por defecto.
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

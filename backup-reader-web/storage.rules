@@ -1,0 +1,76 @@
+rules_version = '2';
+
+// ============================================================================
+//  Backup Reader — Reglas de Storage (Etapa 8)
+//
+//  Principio: cada usuario es dueño exclusivo de su prefijo. Nadie más lee ni
+//  escribe ahí, ni siquiera otro usuario autenticado.
+//
+//  Cambios respecto de la Etapa 3, ahora que no quedan backups en texto plano:
+//
+//   1. Se retiró 'application/zip'. Estaba permitido para que un usuario con el
+//      bundle viejo en caché pudiera seguir subiendo mientras durara la
+//      transición. Ya no hay transición: el zip se descomprime y se cifra en el
+//      navegador y nunca sale de ahí. Con esta línea fuera, subir texto plano
+//      queda prohibido por regla, no por convención.
+//
+//   2. La escritura solo se permite en las DOS rutas que el cliente escribe de
+//      verdad. Antes cualquier ruta bajo backups/{uid}/** valía, así que un bug
+//      del cliente podía sembrar un árbol arbitrario dentro del prefijo. Ahora
+//      una ruta que no sea el manifiesto o una pieza se rechaza.
+// ============================================================================
+
+service firebase.storage {
+  match /b/{bucket}/o {
+
+    function esDueno(uid) {
+      return request.auth != null && request.auth.uid == uid;
+    }
+
+    // Tope por objeto: coincide con MAX_ENCRYPT_BYTES del módulo (1 GiB).
+    // Sirve de freno ante un bug del cliente o un intento de llenar el bucket.
+    function tamanoValido() {
+      return request.resource.size < 1024 * 1024 * 1024;
+    }
+
+    // Único content-type aceptado: el de los blobs cifrados.
+    function tipoValido() {
+      return request.resource.contentType == 'application/octet-stream';
+    }
+
+    function puedeEscribir(uid) {
+      return esDueno(uid) && tamanoValido() && tipoValido();
+    }
+
+    // --- Lectura y borrado: todo el prefijo del dueño ---
+    //
+    // 'read' cubre get y list; Storage no permite separarlos. El borrado va en
+    // esta regla y no en las de escritura porque en un DELETE no existe
+    // request.resource, así que tamanoValido() y tipoValido() fallarían y
+    // bloquearían todos los borrados.
+    //
+    // Sigue cubriendo backups/{uid}/** completo para que el dueño pueda barrer
+    // restos de la época en texto plano si le queda alguno.
+    match /backups/{uid}/{allPaths=**} {
+      allow read: if esDueno(uid);
+      allow delete: if esDueno(uid);
+    }
+
+    // --- Escritura: solo las dos rutas reales ---
+
+    match /backups/{uid}/{backupId}/manifest {
+      allow create, update: if puedeEscribir(uid);
+    }
+
+    match /backups/{uid}/{backupId}/p/{pieceId} {
+      allow create, update: if puedeEscribir(uid);
+    }
+
+    // Todo lo que no esté explícitamente permitido arriba queda denegado.
+    // No hace falta escribirlo, pero dejarlo visible evita que alguien asuma
+    // que existe un permiso por defecto.
+    match /{allOtherPaths=**} {
+      allow read, write: if false;
+    }
+  }
+}

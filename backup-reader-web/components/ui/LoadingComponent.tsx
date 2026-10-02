@@ -9,16 +9,9 @@ import { useTranslation } from "react-i18next";
 import { FirebaseAuth } from "../../config/firebase";
 import { AuthContext } from "../../context/AuthContext";
 import { StorageContext } from "../../context/StorageContext";
-import { FirebaseDB } from "../../config/firebase";
 import { FirestoreContext } from "../../context/FirestoreContext";
 import { useLoading } from "../../context/LoadingContext";
 import { isWithinTrial } from "../../config/trial";
-
-import {
-  doc,
-  onSnapshot,
-  deleteDoc
-} from "firebase/firestore";
 
 import { User } from "firebase/auth";
 
@@ -40,121 +33,61 @@ export const LoadingComponent: FC<LoadingComponentProps> = ({ children }) => {
   const { user, getUser, getPlans } = useContext(FirestoreContext);
   const {
     getFiles,
-    getFile,
     chat,
     progress,
-    fileList,
     uploadStatus,
-    recentFileName,
     downloadFileStatus,
     downloadFilesStatus,
   } = useContext(StorageContext);
   const router = useRouter();
   const { t } = useTranslation();
-  const [converting, setConverting] = useState<boolean>(false);
 
   const { loading, setLoading } = useLoading();
 
   const [daysLeft, setDaysLeft] = useState<number>(0);
 
-  const [cloudFunctionStatus,setCloudFunctionStatus] = useState<string>('non-processed');
-
-
-  function extractChatName(path: string): string {
-    const regex = /\/whatsapp\/([^\/]+)$/;
-    const match = path.match(regex);
-    return match ? match[1] : '';
-  }
+  /**
+   * Estado de la comprobación de sesión.
+   *
+   * `authChecked` pasa a true cuando Firebase ya dijo si hay sesión o no, y
+   * `firebaseUser` guarda esa respuesta. Hacen falta los dos porque `user` (el
+   * documento de Firestore) llega DESPUÉS: entre el primer render y esa
+   * llegada hay una ventana en la que `user` es null aunque sí haya sesión, y
+   * decidir redirecciones dentro de esa ventana era lo que expulsaba del
+   * dashboard al recargar.
+   */
+  const [authChecked, setAuthChecked] = useState<boolean>(false);
+  const [firebaseUser, setFirebaseUser] = useState<User | null>(null);
 
 
   useEffect(() => {
-    if (uploadStatus === "saving") {
-        setLoading(true);
-        console.log('53');
-    }
-    if (uploadStatus === "saved") {
-        setConverting(true);
-
-    }
+    if (uploadStatus === "saving") setLoading(true);
     return;
-}, [uploadStatus]);
+  }, [uploadStatus]);
 
 
-useEffect(()=>{
-
-  if (!user) return;
-  const userRef = doc(FirebaseDB, 'userStatus', user.uid);
-
-        const unsubscribe = onSnapshot(userRef, async (doc) => {
-            if (doc.exists()) {
-                const data = doc.data();
-                if(data.status !== ""){
-                  const chatFullPath = data.status;
-                  if(chatFullPath!==undefined){
-                    const chatRemoteName = extractChatName(chatFullPath);
-
-                    /*
-                      Update all file list in the sidebar
-                    */
-                      getFiles(user.uid);
-
-                    /*
-                      If the user just uploaded an instagram conversation
-                      this doesn't get processed inmediatelly since there
-                      is no particular conversartion to load, the user
-                      has to select one because it loads a batch of conv.
-                    */
-                    if (!chatFullPath.includes("instagram")){
-                      getFile(chatFullPath, chatRemoteName);
-                    }
-
-                    /* 
-                      Delete the record after we listen to it 
-                    */
-                    await deleteDoc(userRef).then(() => {
-                      console.log('Document successfully deleted');
-                    }).catch((error) => {
-                      console.error('Error removing document: ', error);
-                    });
-
-                    
-
-                    if (chatFullPath.includes("instagram")){
-                      setConverting(false);
-                      setLoading(false);
-                    }
-
-                  }
-                }
-            }
-        }, (err) => {
-            console.log(`Encountered error: ${err.message}`);
-        });
-
-        return unsubscribe;
-},[user])
-
+  /* El listener de `userStatus` se retiró en la Etapa 6.
+     Lo escribía la Cloud Function `unzip` para avisar de que había terminado de
+     descomprimir en el servidor. Con E2EE no hay nada que descomprimir ahí: el
+     cliente cifra, sube, y sabe por sí mismo cuándo terminó. Con él se va el
+     estado "Extrayendo chat", que ya no corresponde a ninguna fase real, y el
+     refresco de la barra lateral pasó a hacerlo `saveFile` al terminar. */
 
 
   useEffect(() => {
     if (downloadFileStatus === null) return;
       setLoading(true);
-      console.log('69')
     if (downloadFileStatus === "downloading") {
       setLoading(true);
-      console.log('72')
     }
     if(downloadFileStatus === "downloaded"){
       setLoading(false);
-      console.log('76')
     }
     if (downloadFileStatus === "not-downloaded") {
       setLoading(false);
-      console.log('79')
     }
     return;
   }, [downloadFileStatus]);
-
 
 
   useEffect(() => {
@@ -165,15 +98,12 @@ useEffect(()=>{
   }, [chat]);
 
   useEffect(() => {
-    if (!downloadFilesStatus === null) return;
     if (downloadFilesStatus === "downloading") {
       setLoading(true);
-      console.log('122')
     }
     if (downloadFilesStatus === "not-downloaded") {
       setTimeout(() => {
         setLoading(false);
-        console.log('127')
       }, 2000);
     }
     return;
@@ -181,41 +111,52 @@ useEffect(()=>{
 
 
   useEffect(() => {
-    const handleRedirect = async (userF: User | null) => {
+    const unsub = onAuthStateChanged(FirebaseAuth, (userF: User | null) => {
+      setFirebaseUser(userF);
+      setAuthChecked(true);
 
-      const createdAt = userF?.metadata.creationTime;
-      let creationDate;
-      
-      if( userF ){
-        setLoading(true);
-        setTimeout(()=>{
-          getUser(userF.uid)
-        },2000)
-
-        getPlans();
-        getFiles(userF.uid);
-
-      
-        if(createdAt){
-          creationDate = new Date(createdAt);
-          const currentDate = new Date();
-          const timeDifference = currentDate.getTime() - creationDate.getTime();
-          const differenceInDays = Math.floor(timeDifference / (1000 * 3600 * 24));
-          setDaysLeft(differenceInDays);
-        }
-        
+      if (!userF) {
+        setLoading(false);
+        return;
       }
 
-    };
-  
-    onAuthStateChanged(FirebaseAuth, handleRedirect);
-  
-    return;
+      setLoading(true);
+
+      /* Antes esto iba dentro de un setTimeout de 2 s. No había motivo para
+         esperar, y ese retraso era justo lo que perdía la carrera contra la
+         redirección de abajo: para cuando llegaba el usuario, ya se le había
+         echado del dashboard.
+
+         El segundo argumento es el plan B: si la credencial existe pero falta
+         el documento de Firestore, `getUser` lo crea con estos datos en vez de
+         dejar la cuenta en un limbo del que no se sale. */
+      getUser(userF.uid, {
+        uid: userF.uid,
+        email: userF.email,
+        displayName: userF.displayName,
+        photoURL: userF.photoURL,
+      });
+      getPlans();
+      getFiles(userF.uid);
+
+      const createdAt = userF.metadata.creationTime;
+      if (createdAt) {
+        const diff = Date.now() - new Date(createdAt).getTime();
+        setDaysLeft(Math.floor(diff / (1000 * 3600 * 24)));
+      }
+    });
+
+    /* Antes no se devolvía la función de baja: el listener sobrevivía al
+       desmontaje y se acumulaba uno por cada montaje del componente. */
+    return unsub;
   }, []);
-  
+
 
   useEffect(() => {
 
+    /* Mientras Firebase no haya confirmado si hay sesión, no se decide nada:
+       ni redirecciones ni apagar el spinner. */
+    if (!authChecked) return;
 
     if (user) {
 
@@ -240,23 +181,39 @@ useEffect(()=>{
         }
       }
 
-    }else{
-
-      /* Si no hay usuario y entra al dashboard, lo mandamos al inicio.
-         En cualquier otra ruta (marketing, legales) lo dejamos donde está;
-         un router.replace a la misma ruta provoca "Cancel rendering route". */
-      if(router.pathname=="/dashboard"){
-        router.replace('/');
-      }
+      setLoading(false);
+      return;
     }
 
-    setLoading(false);
+    if (!firebaseUser) {
 
-  }, [user]);
-  
+      /* Ahora sí consta que no hay sesión, así que se puede expulsar del área
+         privada. En cualquier otra ruta (marketing, legales) se le deja donde
+         está; un router.replace a la misma ruta provoca "Cancel rendering
+         route". */
+      if (router.pathname === "/dashboard") {
+        router.replace("/");
+      }
+      setLoading(false);
+      return;
+    }
+
+    /* Hay sesión pero el documento de Firestore todavía no ha llegado.
+       No se expulsa ni se apaga el spinner: se espera a getUser. */
+
+  }, [user, authChecked, firebaseUser, daysLeft]);
 
 
-  
+  /* Red de seguridad: si algo falla y nadie apaga el spinner, se apaga solo a
+     los 15 s. Es preferible una pantalla vacía a dejar al usuario mirando una
+     rueda para siempre, sin poder ni cerrar sesión. */
+  useEffect(() => {
+    if (!loading) return;
+    const t = setTimeout(() => setLoading(false), 15000);
+    return () => clearTimeout(t);
+  }, [loading]);
+
+
   return (
     <>
       {loading ? (
@@ -290,19 +247,6 @@ useEffect(()=>{
                   sx={{ color: "#0F52BA", marginTop: 2 }}
                 />
               </Box>
-            </>
-          ) : converting ? (
-            <>
-              <Typography
-                fontSize={25}
-                fontFamily={"Open Sans"}
-                style={{ color: "#3C3C3C", marginBottom: 5 }}
-              >
-                {t("Extrayendo chat")}
-              </Typography>
-              <Loading
-                loadingCss={{ $$loadingSize: "100px", $$loadingBorder: "10px" }}
-              />
             </>
           ) : (
             <Loading

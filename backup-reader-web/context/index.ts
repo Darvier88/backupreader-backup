@@ -5,3 +5,5 @@ export * from "./FirestoreContext";
 export * from "./FirestoreReducer";
 export * from "./AudioPlayingContext";
 export * from "./AudioPlayingReducer";
+export * from "./VaultContext";
+export * from "./VaultReducer";

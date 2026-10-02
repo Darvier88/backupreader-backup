@@ -30,3 +30,23 @@ yarn-error.log*
 
 # vercel
 .vercel
+
+# firebase
+firebase-debug.log
+firebase-debug.*.log
+firestore-debug.log
+database-debug.log
+ui-debug.log
+pubsub-debug.log
+.firebase/
+
+# configuración de extensiones: `firebase ext:export` escribe
+# las claves de API en claro dentro de estos .env
+extensions/
+
+# secretos: ampliamos lo que ya había (.env*.local no cubre
+# un .env a secas, que es justo donde acaban las claves)
+.env
+.env.*
+!.env.example
+_env.txt

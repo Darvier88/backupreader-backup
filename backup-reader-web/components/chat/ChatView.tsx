@@ -57,7 +57,8 @@ export const ChatView: FC<ChatViewProps> = ({
   const [audioUrl, setAudioUrl] = useState<string | null>(null);
   const [videoUrl, setVideoUrl] = useState<string | null>(null);
   const [mediaError, setMediaError] = useState<boolean>(false);
-  const { fullPath, getAsset } = useContext(StorageContext);
+  const [tooLarge, setTooLarge] = useState<boolean>(false);
+  const { fullPath, getMediaUrl } = useContext(StorageContext);
   const { t } = useTranslation();
 
   const toNormalForm = (string: string) => {
@@ -97,14 +98,6 @@ export const ChatView: FC<ChatViewProps> = ({
     return videoFilePattern.test(url);
   }
 
-  function convertOpusToMp3(filename: string): string {
-    if (filename.endsWith('.opus')) {
-        return filename.slice(0, -5) + '.mp3';
-    }
-    return filename;
-  }
-
-
   const imageRef = useRef(null);
   const isImageInView = useInView(imageRef);
   
@@ -120,40 +113,40 @@ export const ChatView: FC<ChatViewProps> = ({
     </div>
   );
 
+  /* Por encima de 300 MiB no se descifra para mostrar: meter un archivo así en
+     un <video> congela la pantalla en móvil. Ver INLINE_PLAYBACK_MAX_BYTES. */
+  const tooLargeBox = (
+    <div style={{ padding: 10, opacity: 0.7, fontFamily: "Open Sans", fontSize: 12, color: "#3C3C3C" }}>
+      Archivo demasiado grande para mostrarlo aquí
+    </div>
+  );
+
   const renderChatImage = () => {
     if (imageUrl) {
       return <ChatImage message={imageUrl} />;
     }
+    if (tooLarge) return tooLargeBox;
     if (mediaError) return mediaErrorBox;
-    return null; // Or some placeholder/loading indicator
+    return null;
   };
 
   const renderChatVideo = () => {
     if (videoUrl) {
       return <ChatVideoPlayer message={videoUrl} />
     }
+    if (tooLarge) return tooLargeBox;
     if (mediaError) return mediaErrorBox;
-    return null; 
+    return null;
   };
 
   const renderChatAudio = () => {
     if (audioUrl) {
       return <ChatAudioPlayer message={audioUrl} />
     }
+    if (tooLarge) return tooLargeBox;
     if (mediaError) return mediaErrorBox;
-    return null; 
+    return null;
   };
-
-  function extractPathUpToInstagramActivity(fullPath: string): string {
-    const constantSubstring = "/your_instagram_activity/";
-    const index = fullPath.indexOf(constantSubstring);
-
-    if (index !== -1) {
-        return fullPath.substring(0, index);
-    } else {
-        return fullPath;
-    }
-  }
 
   function extractFilename(text: string): string | null {
     if (!text) return null;
@@ -180,80 +173,67 @@ export const ChatView: FC<ChatViewProps> = ({
   }
 
 
+  /**
+   * Resuelve el archivo del mensaje cuando entra en pantalla.
+   *
+   * Antes esto armaba la ruta de Storage a mano y llamaba a `getAsset`. Con
+   * los backups cifrados eso ya no sirve: los nombres son opacos y hay que
+   * preguntarle al manifiesto. `getMediaUrl` encapsula los dos caminos, así
+   * que aquí no hay rastro de v1 ni de v2.
+   *
+   * El cleanup revoca el object URL. En v1 no hacía falta porque la URL era
+   * remota; en v2 cada archivo visto es un blob descifrado en memoria, y sin
+   * revocar, un chat largo con carga perezosa los va acumulando todos.
+   */
   useEffect(() => {
+    const enPantalla = isImageInView || isVideoInView || isAudioInView;
+    if (!enPantalla || !message || !fullPath) return;
 
-      /*
-        First determine if it is an instagram image, to remove the reduntant path
-        to not going through every message it asks if it's a video , image or audio.
-      */
-      let parsedPath: string = fullPath || "";
-     if(fullPath && (isImageInView || isVideoInView || isAudioInView)){
+    const nombre = extractFilename(message);
+    if (!nombre) return;
 
-      if(fullPath.includes('/your_instagram_activity/')){
-        parsedPath = extractPathUpToInstagramActivity(fullPath);
-      }else{
-        parsedPath = fullPath;
-      }
-      
-     }
-        
-    
-    if (isImageInView && message && fullPath) {
+    let cancelado = false;
+    let urlAsignada: string | null = null;
+    let hayQueRevocar = false;
 
-      const imagePath = extractFilename(message);
-      if (!imagePath) return;
-      
-      if(isImageUri(message)){
-        getAsset(parsedPath + '/' + imagePath.replace(/[\W_]+$/, ''))
-        .then((imageURL)=>{
-          setImageUrl(imageURL)
-        })
-        .catch((error)=>{
-          console.log('[MEDIA] Falló imagen: ' + parsedPath + '/' + imagePath, error)
-          setImageUrl('')
-          setMediaError(true)
-        });  
-      }else{
-        console.log('it is not an image...')
-      }
-    }else if(isVideoInView && message && fullPath){
+    const aplicar = (url: string | null) => {
+      if (isImageInView) setImageUrl(url);
+      else if (isVideoInView) setVideoUrl(url);
+      else if (isAudioInView) setAudioUrl(url);
+    };
 
-      const VideoPath = extractFilename(message);
+    getMediaUrl(nombre)
+      .then((r) => {
+        if (cancelado) {
+          /* El componente salió de pantalla mientras se descifraba: hay que
+             soltar el blob igualmente, o se queda huérfano en memoria. */
+          if (r.estado === "ok" && r.revocar) URL.revokeObjectURL(r.url);
+          return;
+        }
+        if (r.estado === "ok") {
+          urlAsignada = r.url;
+          hayQueRevocar = r.revocar;
+          aplicar(r.url);
+          return;
+        }
+        if (r.estado === "demasiado-grande") {
+          setTooLarge(true);
+          return;
+        }
+        console.log("[MEDIA] no se encontró:", nombre);
+        setMediaError(true);
+      })
+      .catch((error) => {
+        if (cancelado) return;
+        console.log("[MEDIA] falló:", nombre, error);
+        setMediaError(true);
+      });
 
-      if(!VideoPath) return;
-
-      getAsset(parsedPath + '/' + VideoPath.replace(/[\W_]+$/, ''))
-        .then((videoURL)=>{
-          setVideoUrl(videoURL)
-        })
-        .catch((error)=>{
-          console.log('[MEDIA] Falló video: ' + parsedPath + '/' + VideoPath, error)
-          setVideoUrl('')
-          setMediaError(true)
-        });  
-
-    }else if(isAudioInView && message && fullPath){
-
-      const audioPath = extractFilename(message);
-
-      if(!audioPath) return;
-      const audioMP3 = convertOpusToMp3(audioPath).replace(/[\W_]+$/, '');
-
-      if(audioMP3.endsWith('.mp3')){
-        getAsset(fullPath + '/' + audioMP3)
-        .then((audioURL)=>{
-          setAudioUrl(audioURL)
-        })
-        .catch((error)=>{
-          console.log('[MEDIA] Falló audio: ' + fullPath + '/' + audioMP3, error)
-          setAudioUrl('')
-          setMediaError(true)
-        });  
-      }
-      
-    }
-
-  }, [message, fullPath, getAsset, isImageInView, isVideoInView, isAudioInView]);
+    return () => {
+      cancelado = true;
+      if (urlAsignada && hayQueRevocar) URL.revokeObjectURL(urlAsignada);
+    };
+  }, [message, fullPath, getMediaUrl, isImageInView, isVideoInView, isAudioInView]);
   
 
 

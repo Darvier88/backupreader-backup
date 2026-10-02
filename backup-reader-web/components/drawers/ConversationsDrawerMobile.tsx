@@ -2,6 +2,7 @@ import { FC, useContext, useState } from "react";
 
 import { Text, Button, Collapse } from "@nextui-org/react";
 import { StorageContext } from "../../context/StorageContext";
+import { BotonCifrar } from "../vault/BotonCifrar";
 import { Box, Container, Drawer, Typography } from "@mui/material";
 import { storage } from "../../config/firebase";
 import {
@@ -161,22 +162,33 @@ export const ConversationsDrawerMobile: FC<ConversationsDrawerMobileProps> = ({
           }
 
 
+          /* El botón de cifrar va FUERA del <Button>, no dentro: un botón
+             anidado en otro es HTML inválido y el clic se vuelve impredecible.
+             Por eso la fila pasa a ser un div con los dos al lado. */
           return  (
-            <Button
+            <div
               key={i}
               style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 8,
                 marginTop: 15,
               }}
-              auto
-              light
-              color="primary"
-              onPress={() => onHandleGetFile(item.fullPath, item.name)}
             >
-              <Typography fontFamily={"Open Sans"} style={styles.drawerSubTitle}>
-                {item.name}
-              </Typography>
-            </Button>
-            
+              <Button
+                auto
+                light
+                color="primary"
+                onPress={() => onHandleGetFile(item.fullPath, item.name)}
+              >
+                <Typography fontFamily={"Open Sans"} style={styles.drawerSubTitle}>
+                  {item.name}
+                </Typography>
+              </Button>
+              {!item.cifrado && (
+                <BotonCifrar fullPath={item.fullPath} name={item.name} />
+              )}
+            </div>
           )
         })}
 

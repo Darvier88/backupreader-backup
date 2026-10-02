@@ -6,11 +6,10 @@ import { FiresoreState, firestoreReducer } from "./FirestoreReducer";
 import {
   collection,
   doc,
+  getDoc,
   getDocs,
-  query,
   setDoc,
   updateDoc,
-  where,
 } from "firebase/firestore";
 import { useRouter } from "next/router";
 
@@ -22,7 +21,7 @@ type FirestoreContextProps = {
   planId: string | null;
   clean: () => void;
   getPlans: () => void;
-  getUser: (uid: string) => void;
+  getUser: (uid: string, crearSiFalta?: User) => void;
   saveUser: (user: User) => void;
   setPlanId: (planId: string) => void;
   saveUserFromProviders: (user: User) => void;
@@ -68,25 +67,35 @@ export const FirestoreProvider = ({ children }: any) => {
       dispatch({
         type: "loading",
       });
-      const q = query(
-        collection(FirebaseDB, "users"),
-        where("user.uid", "==", user.uid)
-      );
-      const querySnapshot = await getDocs(q);
-      if (querySnapshot.empty) {
-        await setDoc(doc(FirebaseDB, "users", user.uid), { user });
+
+      /* Lectura directa por id, no consulta sobre la colección: el documento se
+         guarda con el uid como id (ver saveUser), así que la consulta era
+         redundante. Y permitir 'list' sobre `users` dejaría que cualquier
+         usuario autenticado enumerase a todos los demás, por eso las reglas lo
+         deniegan. */
+      const ref = doc(FirebaseDB, "users", user.uid);
+      const snap = await getDoc(ref);
+
+      if (!snap.exists()) {
+        await setDoc(ref, { user });
+        dispatch({
+          type: "saveUser",
+          payload: { user },
+        });
       } else {
-        const ref = doc(FirebaseDB, "users", user.uid);
         await updateDoc(ref, {
           "user.displayName": user.displayName,
           "user.photoURL": user.photoURL,
         });
-        querySnapshot.forEach((doc) => {
-          const user: User = { ...doc.data().user };
-          dispatch({
-            type: "saveUser",
-            payload: { user },
-          });
+        const actualizado: User = {
+          ...snap.data().user,
+          firestoreId: snap.id,
+          displayName: user.displayName,
+          photoURL: user.photoURL,
+        };
+        dispatch({
+          type: "saveUser",
+          payload: { user: actualizado },
         });
       }
     } catch (error) {
@@ -98,23 +107,51 @@ export const FirestoreProvider = ({ children }: any) => {
     }
   };
 
-  const getUser = async (uid: string) => {
+  /**
+   * Carga el perfil del usuario.
+   *
+   * Lectura directa por id, no consulta: además de ser una lectura en vez de
+   * una query, es lo único que permiten las reglas.
+   *
+   * Si la credencial de Firebase existe pero falta el documento de Firestore
+   * —registro interrumpido, o una cuenta creada fuera de la app— se crea al
+   * vuelo con lo que se sabe de la sesión. Antes se volvía en silencio, y esa
+   * cuenta quedaba inutilizable: sin `user` nadie redirige, el spinner se
+   * apaga solo a los 15 s, y el usuario se queda en el login sin explicación.
+   */
+  const getUser = async (uid: string, crearSiFalta?: User) => {
     try {
-      const q = query(
-        collection(FirebaseDB, "users"),
-        where("user.uid", "==", uid)
-      );
-      const querySnapshot = await getDocs(q);
-      querySnapshot.forEach((doc) => {
-        const user: User = { ...doc.data().user, firestoreId: doc.id };
-        //console.log('obteniendolo nano... ',user)
+      const ref = doc(FirebaseDB, "users", uid);
+      const snap = await getDoc(ref);
+
+      if (snap.exists()) {
+        const user: User = { ...snap.data().user, firestoreId: snap.id };
         dispatch({
           type: "saveUser",
           payload: { user },
         });
+        return;
+      }
+
+      if (crearSiFalta) {
+        console.warn("Falta el perfil en Firestore; se crea desde la sesión.");
+        await setDoc(ref, { user: crearSiFalta });
+        dispatch({
+          type: "saveUser",
+          payload: { user: { ...crearSiFalta, firestoreId: uid } },
+        });
+        return;
+      }
+
+      /* No hay documento y no hay con qué crearlo. Se avisa en vez de callar,
+         para que no vuelva a quedarse en un limbo silencioso. */
+      console.warn("No existe el perfil de", uid, "y no se recibió con qué crearlo.");
+      dispatch({
+        type: "addError",
+        payload: "Error-creating-user",
       });
     } catch (error) {
-      //console.log('Error obteniendo usuario '+error);
+      console.log("Error obteniendo usuario", error);
       dispatch({
         type: "addError",
         payload: "Error-creating-user",
@@ -129,21 +166,20 @@ export const FirestoreProvider = ({ children }: any) => {
     });
   };
 
-  
+
   const updateStorageSizeUser = async (uid: string, storageSize: number) => {
     const ref = doc(FirebaseDB, "users", uid);
     await updateDoc(ref, {
       "user.storageSize": storageSize,
     });
   };
-  
+
 
   const getPlans = async () => {
     try {
       const subscriptions: Plan[] = [];
       const querySnapshot = await getDocs(collection(FirebaseDB, "plans"));
       querySnapshot.forEach((doc) => {
-        //console.log(doc.id, " => ", doc.data());
         subscriptions.push({ details: doc.data().plan, id: doc.id });
       });
       dispatch({

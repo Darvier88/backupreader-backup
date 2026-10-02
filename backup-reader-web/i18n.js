@@ -284,22 +284,35 @@ const resources = {
 };
 
 i18n
-  .use(LanguageDetector) // Use the language detector
-  .use(initReactI18next) // Passes i18n down to react-i18next
+  .use(LanguageDetector)
+  .use(initReactI18next)
   .init({
     resources,
-    fallbackLng: "es", // Fallback language is Spanish
+    // Idioma fijo al inicializar: servidor y cliente pintan lo mismo, así no
+    // hay desajuste de hidratación. La detección real se aplica después de
+    // montar, desde _app.tsx.
+    lng: "es",
+    fallbackLng: "es",
     detection: {
-      order: ['querystring', 'cookie', 'localStorage', 'navigator', 'htmlTag', 'path', 'subdomain'],
-      caches: ['cookie'] // Where to cache the language (optional)
+      order: ["querystring", "cookie", "localStorage", "navigator", "htmlTag"],
+      lookupQuerystring: "lng",
+      caches: ["cookie"],
     },
     interpolation: {
-      escapeValue: false, // React already safes from XSS
+      escapeValue: false,
     },
-    detection: {
-      order: ['querystring', 'cookie', 'localStorage', 'navigator', 'htmlTag', 'path', 'subdomain'],
-      lookupQuerystring: 'lng' // Specify the query parameter name for language
-    },    
+    react: {
+      useSuspense: false,
+    },
   });
+
+/** Detecta el idioma del visitante. Solo tiene sentido en el navegador. */
+export function aplicarIdiomaDetectado() {
+  if (typeof window === "undefined") return;
+  const detectado = i18n.services.languageDetector?.detect();
+  const idioma = Array.isArray(detectado) ? detectado[0] : detectado;
+  const base = (idioma || "es").split("-")[0];
+  if (base !== i18n.language) i18n.changeLanguage(base);
+}
 
 export default i18n;

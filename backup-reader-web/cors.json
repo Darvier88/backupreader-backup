@@ -1,7 +1,35 @@
 [
   {
-    "origin": ["http://localhost:3000", "https://backupreader.com"],
-    "method": ["GET"],
+    "origin": [
+      "https://backupreader.com",
+      "https://www.backupreader.com",
+      "http://localhost:3000",
+      "http://127.0.0.1:3000"
+    ],
+    "method": ["GET", "HEAD", "PUT", "POST", "DELETE"],
+    "responseHeader": [
+      "Content-Type",
+      "Content-Length",
+      "Content-Range",
+      "Content-Disposition",
+      "Content-Encoding",
+      "Accept",
+      "Accept-Ranges",
+      "Authorization",
+      "Range",
+      "Cache-Control",
+      "ETag",
+      "x-goog-resumable",
+      "X-Goog-Upload-Command",
+      "X-Goog-Upload-Header-Content-Length",
+      "X-Goog-Upload-Header-Content-Type",
+      "X-Goog-Upload-Offset",
+      "X-Goog-Upload-Protocol",
+      "X-Goog-Upload-Status",
+      "X-Goog-Upload-URL",
+      "X-Firebase-Storage-Version",
+      "X-Firebase-AppCheck"
+    ],
     "maxAgeSeconds": 3600
   }
 ]
