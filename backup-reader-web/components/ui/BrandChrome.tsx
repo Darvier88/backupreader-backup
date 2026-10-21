@@ -13,19 +13,31 @@ import { AuthContext, FirestoreContext } from "../../context";
 const serif = "var(--font-serif)";
 const mono = "var(--font-mono)";
 
-const Logo: FC<{ onClick?: () => void }> = ({ onClick }) => (
-  <span onClick={onClick} style={{ display: "inline-flex", alignItems: "center", gap: 10, cursor: "pointer" }}>
-    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="var(--brass-500)" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
-      <circle cx="12" cy="12" r="9.5" />
-      <path d="M8 12.3l2.6 2.6L16 9.5" />
-    </svg>
-    <span style={{ fontFamily: serif, fontWeight: 600, fontSize: 20, letterSpacing: "-0.01em", color: "var(--ink-900)" }}>
-      Backup<span style={{ color: "var(--ink-500)", fontWeight: 500 }}>Reader</span>
+/* Exportados para que `NavBar` —la cabecera de las rutas de app en móvil— use
+   exactamente el mismo logo y el mismo selector de idioma que esta, y no dos
+   marcas distintas según el ancho de pantalla. */
+export const Logo: FC<{ onClick?: () => void; compact?: boolean }> = ({
+  onClick,
+  compact,
+}) => {
+  /* `compact` solo encoge; no cambia el dibujo ni los colores. Es para la
+     cabecera de móvil, donde el logo a tamaño completo junto al resto de
+     controles no cabe en una línea y parte la barra en dos filas. */
+  const lado = compact ? 24 : 28;
+  return (
+    <span onClick={onClick} style={{ display: "inline-flex", alignItems: "center", gap: compact ? 8 : 10, cursor: "pointer", flexShrink: 0 }}>
+      <svg width={lado} height={lado} viewBox="0 0 24 24" fill="none" stroke="var(--brass-500)" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
+        <circle cx="12" cy="12" r="9.5" />
+        <path d="M8 12.3l2.6 2.6L16 9.5" />
+      </svg>
+      <span style={{ fontFamily: serif, fontWeight: 600, fontSize: compact ? 17 : 20, letterSpacing: "-0.01em", color: "var(--ink-900)", whiteSpace: "nowrap" }}>
+        Backup<span style={{ color: "var(--ink-500)", fontWeight: 500 }}>Reader</span>
+      </span>
     </span>
-  </span>
-);
+  );
+};
 
-const LangToggle: FC = () => {
+export const LangToggle: FC = () => {
   const { i18n } = useTranslation();
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
