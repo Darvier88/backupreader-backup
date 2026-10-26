@@ -126,6 +126,7 @@ const resources = {
       "Archivos":"Files",
       "Subir desde:":"Upload from:",
       "Subiendo chat":"Uploading chat",
+      "Se está cifrando en tu navegador antes de subirse. No cierres esta pestaña.":"It's being encrypted in your browser before upload. Don't close this tab.",
       "Extrayendo chat":"Extracting chat",
       "Texto, fotos, videos, audios y links":"Messages, photos, videos, audios, and links",
       "Evita los dolores de cabeza que puede llegar a ser el recuperar viejas fotos, videos o información importante.":"Avoid the headaches that can come with recovering old photos, videos, or important information.",
