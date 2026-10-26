@@ -78,6 +78,26 @@ export const LoadingComponent: FC<LoadingComponentProps> = ({ children }) => {
    * ve; cuando termina o falla, se va. Nadie más puede apagarla. */
 
 
+  /* Si la pestaña se cierra o se recarga a mitad de una subida, no se pierde
+     solo el aviso: se pierde la subida entera, porque el cifrado corre aquí,
+     en el navegador, y no hay nada en el servidor que pueda continuarla. Hasta
+     ahora eso ocurría en silencio. Esto hace que el navegador pregunte.
+
+     No cubre que el navegador DESCARTE la pestaña por falta de memoria —eso no
+     lo puede impedir ninguna página—, pero sí el cerrar, recargar o navegar
+     fuera, que es lo que se hace sin querer. */
+  useEffect(() => {
+    if (uploadStatus !== "saving") return;
+    const avisar = (e: BeforeUnloadEvent) => {
+      e.preventDefault();
+      e.returnValue = "";
+      return "";
+    };
+    window.addEventListener("beforeunload", avisar);
+    return () => window.removeEventListener("beforeunload", avisar);
+  }, [uploadStatus]);
+
+
   /* El listener de `userStatus` se retiró en la Etapa 6.
      Lo escribía la Cloud Function `unzip` para avisar de que había terminado de
      descomprimir en el servidor. Con E2EE no hay nada que descomprimir ahí: el
