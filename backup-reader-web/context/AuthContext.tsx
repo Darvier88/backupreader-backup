@@ -37,6 +37,26 @@ export const authInitialState: AuthState = {
 
 export const AuthContext = createContext({} as AuthContextProps);
 
+/** Traduce el código de error de Firebase a algo que el usuario pueda accionar. */
+const motivoDeFalloAlRegistrar = (error: any): string => {
+  switch (error?.code) {
+    case "auth/email-already-in-use":
+      return "Ese correo ya tiene una cuenta. Prueba a iniciar sesión.";
+    case "auth/invalid-email":
+      return "El correo no tiene un formato válido.";
+    case "auth/weak-password":
+      return "La contraseña es demasiado débil. Usa al menos 6 caracteres.";
+    case "auth/operation-not-allowed":
+      return "El registro con correo y contraseña está desactivado. Avísanos para habilitarlo.";
+    case "auth/network-request-failed":
+      return "No se pudo conectar. Revisa tu conexión e inténtalo de nuevo.";
+    case "auth/too-many-requests":
+      return "Demasiados intentos. Espera unos minutos e inténtalo de nuevo.";
+    default:
+      return "No ha sido posible crear la cuenta. Inténtalo de nuevo en un momento.";
+  }
+};
+
 export const AuthProvider = ({ children }: any) => {
   const router = useRouter();
   const { show } = useContext(ModalContext);
@@ -57,12 +77,16 @@ export const AuthProvider = ({ children }: any) => {
         payload: { user },
       });
     } else {
+      /* Antes este modal decía SIEMPRE "el correo ya se encuentra registrado",
+         fallara lo que fallara. Si el registro se caía por otro motivo
+         —contraseña rechazada, sin conexión, o el método de correo y
+         contraseña desactivado en la consola de Firebase— al usuario se le
+         daba una explicación falsa y no había forma de averiguar lo que
+         pasaba de verdad. Ahora se traduce el código real. */
+      console.error("Fallo al crear la cuenta:", (resp as any)?.error);
       show({
         modalContent: (
-          <InformationModal
-            title="Aviso"
-            text="No ha sido posible realizar el registro, el correo ya se encuentra registrado."
-          />
+          <InformationModal title="Aviso" text={motivoDeFalloAlRegistrar((resp as any)?.error)} />
         ),
       });
       dispatch({
