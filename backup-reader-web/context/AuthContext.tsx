@@ -2,6 +2,7 @@ import { createContext, useContext, useReducer } from "react";
 
 import { User } from "../models/User";
 import { useRouter } from "next/router";
+import { useTranslation } from "react-i18next";
 import { ModalContext } from "./ModalContext";
 import { authReducer, AuthState } from "./AuthReducer";
 import { InformationModal } from "../components/modals";
@@ -37,7 +38,11 @@ export const authInitialState: AuthState = {
 
 export const AuthContext = createContext({} as AuthContextProps);
 
-/** Traduce el código de error de Firebase a algo que el usuario pueda accionar. */
+/**
+ * Convierte el código de error de Firebase en algo que el usuario pueda
+ * accionar. Devuelve la cadena en español, que es la CLAVE de i18n: quien
+ * llama la pasa por `t()` para que se traduzca al cambiar de idioma.
+ */
 const motivoDeFalloAlRegistrar = (error: any): string => {
   switch (error?.code) {
     case "auth/email-already-in-use":
@@ -58,6 +63,7 @@ const motivoDeFalloAlRegistrar = (error: any): string => {
 };
 
 export const AuthProvider = ({ children }: any) => {
+  const { t } = useTranslation();
   const router = useRouter();
   const { show } = useContext(ModalContext);
   const { saveUser, saveUserFromProviders } = useContext(FirestoreContext);
@@ -86,7 +92,10 @@ export const AuthProvider = ({ children }: any) => {
       console.error("Fallo al crear la cuenta:", (resp as any)?.error);
       show({
         modalContent: (
-          <InformationModal title="Aviso" text={motivoDeFalloAlRegistrar((resp as any)?.error)} />
+          <InformationModal
+            title={t("Aviso")}
+            text={t(motivoDeFalloAlRegistrar((resp as any)?.error))}
+          />
         ),
       });
       dispatch({
@@ -121,8 +130,8 @@ export const AuthProvider = ({ children }: any) => {
       show({
         modalContent: (
           <InformationModal
-            title="Aviso"
-            text="Los datos ingresados, no son correctos."
+            title={t("Aviso")}
+            text={t("El correo o la contraseña no son correctos.")}
           />
         ),
       });
