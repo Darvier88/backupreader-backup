@@ -200,11 +200,24 @@ export const FirestoreProvider = ({ children }: any) => {
       querySnapshot.forEach((doc) => {
         subscriptions.push({ details: doc.data().plan, id: doc.id });
       });
+      if (subscriptions.length === 0) {
+        /* La colección existe pero está vacía, o las reglas no dejaron leerla.
+           Sin esto, /plans se queda en "Cargando planes…" para siempre y no
+           hay forma de saber por qué. */
+        console.warn(
+          "La colección `plans` no devolvió ningún documento. En local se siembra con: " +
+            "node herramientas/sembrar-emulador.mjs planes"
+        );
+      }
       dispatch({
         type: "plans",
         payload: subscriptions,
       });
-    } catch (error) {}
+    } catch (error) {
+      /* El catch estaba vacío: cualquier fallo aquí —reglas, red, emulador
+         apagado— dejaba la pantalla cargando sin una sola pista. */
+      console.error("No se pudieron leer los planes:", error);
+    }
   };
 
   const setPlanId = (planId: string) => {
