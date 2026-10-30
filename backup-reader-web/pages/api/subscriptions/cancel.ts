@@ -34,6 +34,32 @@ const stripe = new Stripe(`${CLAVE_STRIPE}`, { apiVersion: "2022-11-15" });
 /** Estados en los que todavía hay algo que cancelar. */
 const VIVAS: Stripe.Subscription.Status[] = ["active", "trialing", "past_due", "unpaid"];
 
+/**
+ * Dónde se verifica el token.
+ *
+ * Normalmente, el Identity Toolkit de Google. Pero con los emuladores los
+ * tokens son falsos y sin firmar, así que Google los rechaza y la cancelación
+ * no se puede probar en local. El emulador de Auth expone esta misma API bajo
+ * su propio host, de modo que apuntando ahí se sigue VERIFICANDO de verdad,
+ * solo que contra el emulador.
+ *
+ * Esto no es un atajo que se salte la comprobación: la doble condición es
+ * deliberada. En Vercel `NODE_ENV` vale siempre "production", así que este
+ * camino no se puede activar en el sitio desplegado ni aunque alguien dejara
+ * la variable del emulador puesta por error.
+ */
+function urlDeVerificacion(apiKey: string): string {
+  const enEmulador =
+    process.env.NODE_ENV !== "production" &&
+    process.env.NEXT_PUBLIC_USE_EMULATORS === "1";
+
+  if (enEmulador) {
+    const host = process.env.NEXT_PUBLIC_EMULATOR_HOST || "127.0.0.1";
+    return `http://${host}:9099/identitytoolkit.googleapis.com/v1/accounts:lookup?key=${apiKey}`;
+  }
+  return `https://identitytoolkit.googleapis.com/v1/accounts:lookup?key=${apiKey}`;
+}
+
 /** Verifica el ID token contra Firebase. Devuelve el correo, o null. */
 async function correoDelToken(idToken: string): Promise<string | null> {
   const apiKey = process.env.NEXT_PUBLIC_FIREBASE_API_KEY;
@@ -43,7 +69,7 @@ async function correoDelToken(idToken: string): Promise<string | null> {
   }
   try {
     const r = await fetch(
-      `https://identitytoolkit.googleapis.com/v1/accounts:lookup?key=${apiKey}`,
+      urlDeVerificacion(apiKey),
       {
         method: "POST",
         headers: { "Content-Type": "application/json" },
