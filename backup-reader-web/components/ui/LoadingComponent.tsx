@@ -11,7 +11,7 @@ import { AuthContext } from "../../context/AuthContext";
 import { StorageContext } from "../../context/StorageContext";
 import { FirestoreContext } from "../../context/FirestoreContext";
 import { useLoading } from "../../context/LoadingContext";
-import { isWithinTrial } from "../../config/trial";
+import { tieneAcceso } from "../../config/acceso";
 
 import { User } from "firebase/auth";
 
@@ -199,7 +199,10 @@ export const LoadingComponent: FC<LoadingComponentProps> = ({ children }) => {
 
     if (user) {
 
-      const hasAccess = user.plan || isWithinTrial(daysLeft);
+      /* `tieneAcceso` en vez de `user.plan || isWithinTrial(...)`: ahora un
+         plan puede estar cancelado y seguir valiendo hasta el final del
+         periodo pagado. La regla entera vive en config/acceso.ts. */
+      const hasAccess = tieneAcceso(user, daysLeft);
 
       // Rutas por las que se llega justo tras crear cuenta o iniciar sesión.
       const cameFromAuth =

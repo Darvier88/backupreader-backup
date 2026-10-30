@@ -5,6 +5,7 @@ import { Button } from "@nextui-org/react";
 
 import { AuthContext, FirestoreContext } from "../../context";
 import { VaultPasswordSection } from "../vault";
+import { SubscriptionSection } from "../account/SubscriptionSection";
 
 export const AccountScreen: FC = () => {
   const { t } = useTranslation();
@@ -30,7 +31,12 @@ export const AccountScreen: FC = () => {
 
       <Divider sx={{ margin: "20px 0" }} />
 
-      {/* Contraseña de cifrado y código de recuperación. */}
+      {/* Plan y cancelación. */}
+      <SubscriptionSection />
+
+      <Divider sx={{ margin: "20px 0" }} />
+
+      {/* Contraseña de cifrado, restablecimiento y código de recuperación. */}
       <VaultPasswordSection />
 
       <Divider sx={{ margin: "24px 0 16px" }} />

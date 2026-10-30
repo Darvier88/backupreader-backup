@@ -20,7 +20,8 @@ const MIN_LARGO = 10;
 export const VaultPasswordSection: React.FC = () => {
   const { t } = useTranslation();
   const { show } = useContext(ModalContext);
-  const { status, changeVaultPassword, regenerateRecovery, lock } = useVault();
+  const { status, changeVaultPassword, resetVaultPassword, regenerateRecovery, lock } =
+    useVault();
 
   const [actual, setActual] = useState("");
   const [nueva, setNueva] = useState("");
@@ -28,6 +29,14 @@ export const VaultPasswordSection: React.FC = () => {
   const [aviso, setAviso] = useState("");
   const [exito, setExito] = useState("");
   const [ocupado, setOcupado] = useState(false);
+
+  /* Restablecer con el código de recuperación, para quien olvidó la
+     contraseña. Va plegado porque es el camino excepcional. */
+  const [restableciendo, setRestableciendo] = useState(false);
+  const [codigo, setCodigo] = useState("");
+  const [nuevaR, setNuevaR] = useState("");
+  const [repetidaR, setRepetidaR] = useState("");
+  const [avisoR, setAvisoR] = useState("");
 
   if (status === "checking") return null;
 
@@ -55,7 +64,9 @@ export const VaultPasswordSection: React.FC = () => {
     setAviso("");
     setExito("");
     if (nueva.length < MIN_LARGO) {
-      setAviso(t(`La nueva contraseña debe tener al menos ${MIN_LARGO} caracteres.`));
+      /* Antes la clave se construía con una plantilla, así que i18n recibía un
+         texto distinto del que hay en i18n.js y nunca se traducía. */
+      setAviso(t("La nueva contraseña debe tener al menos 10 caracteres."));
       return;
     }
     if (nueva !== repetida) {
@@ -73,6 +84,34 @@ export const VaultPasswordSection: React.FC = () => {
     setNueva("");
     setRepetida("");
     setExito(t("Contraseña actualizada."));
+  };
+
+  const onRestablecer = async () => {
+    setAvisoR("");
+    setExito("");
+    if (nuevaR.length < MIN_LARGO) {
+      setAvisoR(t("La nueva contraseña debe tener al menos 10 caracteres."));
+      return;
+    }
+    if (nuevaR !== repetidaR) {
+      setAvisoR(t("Las dos contraseñas no coinciden."));
+      return;
+    }
+    setOcupado(true);
+    const nuevoCodigo = await resetVaultPassword(codigo.trim(), nuevaR);
+    setOcupado(false);
+    if (!nuevoCodigo) {
+      setAvisoR(t("El código de recuperación no es correcto."));
+      return;
+    }
+    setCodigo("");
+    setNuevaR("");
+    setRepetidaR("");
+    setRestableciendo(false);
+    setExito(t("Contraseña restablecida. Guarda tu código nuevo."));
+    /* El código usado deja de valer, así que hay que enseñar el nuevo sí o sí:
+       sin él, olvidar otra vez la contraseña significa perder los chats. */
+    show({ modalContent: <RecoveryCodeModal codigo={nuevoCodigo} />, withScroll: true });
   };
 
   const onRegenerar = async () => {
@@ -144,6 +183,80 @@ export const VaultPasswordSection: React.FC = () => {
         <Button auto onPress={onCambiar} disabled={ocupado || !actual || !nueva}>
           {ocupado ? <Loading type="points" color="currentColor" size="sm" /> : t("Cambiar contraseña")}
         </Button>
+      </Box>
+
+      {/* Restablecer con el código: el camino para quien NO recuerda la
+          contraseña actual, así que funciona también con la bóveda bloqueada.
+          Va plegado para no competir con el formulario normal. */}
+      <Box sx={{ marginTop: 2, maxWidth: 380 }}>
+        {!restableciendo ? (
+          <Button
+            auto
+            light
+            size="sm"
+            onPress={() => {
+              setRestableciendo(true);
+              setAvisoR("");
+            }}
+          >
+            {t("He olvidado mi contraseña de cifrado")}
+          </Button>
+        ) : (
+          <Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
+            <Typography fontFamily={"Open Sans"} fontSize={15} style={{ color: "#3C3C3C" }}>
+              {t("Restablecer con el código de recuperación")}
+            </Typography>
+            <Typography fontFamily={"Open Sans"} fontSize={14} style={{ color: "#6B6B6B" }}>
+              {t("Introduce el código que guardaste al activar el cifrado y elige una contraseña nueva. Tus chats no se vuelven a cifrar: siguen intactos.")}
+            </Typography>
+
+            <Input
+              aria-label={t("Código de recuperación")}
+              placeholder="XXXX-XXXX-XXXX-XXXX"
+              value={codigo}
+              onChange={(e) => setCodigo(e.target.value)}
+            />
+            <Input.Password
+              aria-label={t("Nueva contraseña")}
+              placeholder={t("Nueva contraseña")}
+              value={nuevaR}
+              onChange={(e) => setNuevaR(e.target.value)}
+            />
+            <Input.Password
+              aria-label={t("Repite la nueva contraseña")}
+              placeholder={t("Repite la nueva contraseña")}
+              value={repetidaR}
+              onChange={(e) => setRepetidaR(e.target.value)}
+            />
+
+            {avisoR && (
+              <Typography fontFamily={"Open Sans"} fontSize={14} style={{ color: "#B23B3B" }}>
+                {avisoR}
+              </Typography>
+            )}
+
+            <Typography fontFamily={"Open Sans"} fontSize={13} style={{ color: "#6B6B6B" }}>
+              {t("Al restablecerla se te dará un código de recuperación nuevo y el anterior dejará de servir.")}
+            </Typography>
+
+            <Box sx={{ display: "flex", gap: 1, flexWrap: "wrap" }}>
+              <Button
+                auto
+                onPress={onRestablecer}
+                disabled={ocupado || !codigo || !nuevaR}
+              >
+                {ocupado ? (
+                  <Loading type="points" color="currentColor" size="sm" />
+                ) : (
+                  t("Restablecer contraseña")
+                )}
+              </Button>
+              <Button auto light onPress={() => setRestableciendo(false)} disabled={ocupado}>
+                {t("Ahora no")}
+              </Button>
+            </Box>
+          </Box>
+        )}
       </Box>
 
       <Divider sx={{ margin: "20px 0" }} />

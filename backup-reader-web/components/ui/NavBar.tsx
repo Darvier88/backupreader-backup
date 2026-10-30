@@ -7,6 +7,7 @@ import { onAuthStateChanged } from "firebase/auth";
 import { FirebaseAuth } from "../../config/firebase";
 import { ConversationDrawerBtn } from "../buttons";
 import LogoutIcon from "@mui/icons-material/Logout";
+import AccountCircleOutlinedIcon from "@mui/icons-material/AccountCircleOutlined";
 import { Logo, LangToggle } from "./BrandChrome";
 
 import {
@@ -168,6 +169,32 @@ export const NavBar: FC<NavBarProps> = ({ drawerButtonOnPress }) => {
               >
                 {t("Chats")}
               </span>
+            )}
+
+            {/* "Mi cuenta": en escritorio como enlace de texto, igual que
+                BrandHeader. En móvil no cabe junto al resto —la cabecera se
+                partía en dos filas—, así que va como icono, el mismo trato que
+                tiene ya cerrar sesión. */}
+            {user && !phone && router.pathname !== "/account" && (
+              <span
+                className="br-navlink"
+                style={enlace}
+                onClick={() => router.push("/account")}
+              >
+                {t("Mi cuenta")}
+              </span>
+            )}
+
+            {user && phone && router.pathname !== "/account" && (
+              <IconButton
+                aria-label={t("Mi cuenta") as string}
+                title={t("Mi cuenta") as string}
+                size="small"
+                onClick={() => router.push("/account")}
+                style={{ color: "var(--ink-900)" }}
+              >
+                <AccountCircleOutlinedIcon fontSize="small" />
+              </IconButton>
             )}
 
             {user && !phone && (

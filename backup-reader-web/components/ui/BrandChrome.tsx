@@ -78,6 +78,9 @@ export const BrandHeader: FC<{ minimal?: boolean; app?: boolean; wide?: boolean;
           <div className="br-header-inner" style={{ maxWidth: 1360 }}>
             <Logo onClick={() => go("/")} />
             <nav style={{ display: "flex", alignItems: "center", gap: "clamp(14px,2.2vw,24px)" }}>
+              {/* /account existía pero no se enlazaba desde ningún sitio, así
+                  que el plan y la contraseña de cifrado no se podían tocar. */}
+              <span className="br-navlink" style={{ cursor: "pointer" }} onClick={() => go("/account")}>{t("Mi cuenta")}</span>
               <span className="br-navlink" style={{ cursor: "pointer" }} onClick={() => go("/help")}>{t("Ayuda")}</span>
               <span className="br-navlink" style={{ cursor: "pointer" }} onClick={onLogout}>{t("Cerrar sesión")}</span>
               <LangToggle />

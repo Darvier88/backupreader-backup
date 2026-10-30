@@ -36,6 +36,15 @@ type VaultContextProps = {
   unlock: (password: string) => Promise<boolean>;
   unlockWithCode: (recoveryCode: string) => Promise<boolean>;
   changeVaultPassword: (current: string, next: string) => Promise<boolean>;
+  /**
+   * Pone una contraseña nueva usando el código de recuperación, para quien
+   * olvidó la suya. Devuelve el código de recuperación NUEVO, o null si el
+   * código no era válido.
+   */
+  resetVaultPassword: (
+    recoveryCode: string,
+    next: string
+  ) => Promise<string | null>;
   regenerateRecovery: () => Promise<string | null>;
   /** Marca el código como ya mostrado y lo quita del estado. */
   acknowledgeRecoveryCode: () => void;
@@ -197,6 +206,55 @@ export const VaultProvider = ({ children }: any) => {
     }
   };
 
+  /**
+   * Restablece la contraseña con el código de recuperación.
+   *
+   * Es el camino para quien olvidó la contraseña: `changeVaultPassword` exige
+   * la actual, y quien no la recuerda no puede usarla. Aquí la prueba de
+   * identidad es el código.
+   *
+   * Como el código acaba de usarse, se cambia por uno nuevo en la misma
+   * escritura y se devuelve para enseñarlo. Un código es equivalente a la
+   * contraseña: si estaba apuntado donde no debía, dejarlo vivo después de un
+   * restablecimiento mantendría la puerta abierta.
+   *
+   * Tampoco aquí se re-cifra nada: solo se vuelve a envolver la DEK.
+   */
+  const resetVaultPassword = async (
+    recoveryCode: string,
+    next: string
+  ): Promise<string | null> => {
+    if (!state.uid || !state.record) return null;
+    try {
+      const { unlockWithRecovery, changePassword, resetRecoveryCode } = await cripto();
+
+      const dek = await unlockWithRecovery(state.record, recoveryCode);
+      if (!dek) {
+        dispatch({ type: "addError", payload: "wrongRecoveryCode" });
+        return null;
+      }
+
+      /* Primero la contraseña, después el código, los dos sobre el mismo
+         record, y una sola escritura al final: si se guardara en dos pasos y
+         el segundo fallara, quedaría un record a medias. */
+      const conPassword = await changePassword(state.record, dek, next);
+      const { record, recoveryCode: nuevoCodigo } = await resetRecoveryCode(
+        conPassword,
+        dek
+      );
+
+      await saveVaultRecord(state.uid, record);
+      dekRef.current = dek;
+      dispatch({ type: "recordUpdated", payload: { record } });
+      dispatch({ type: "unlocked", payload: { dek } });
+      return nuevoCodigo;
+    } catch (err) {
+      console.error("No se pudo restablecer la contraseña", err);
+      dispatch({ type: "addError", payload: "changePasswordFail" });
+      return null;
+    }
+  };
+
   /** Genera un código de recuperación nuevo. Invalida el anterior. */
   const regenerateRecovery = async (): Promise<string | null> => {
     if (!state.uid || !state.record || !dekRef.current) return null;
@@ -230,6 +288,7 @@ export const VaultProvider = ({ children }: any) => {
         unlock,
         unlockWithCode,
         changeVaultPassword,
+        resetVaultPassword,
         regenerateRecovery,
         acknowledgeRecoveryCode,
         lock,
