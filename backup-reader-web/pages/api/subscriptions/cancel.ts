@@ -18,12 +18,14 @@ import Stripe from "stripe";
  * configuradas en Vercel. Esto solo necesita la API key pública que ya se usa
  * en el navegador.
  *
- * POR QUÉ SE BUSCA POR CORREO
- * ---------------------------
- * Porque no hay otra cosa por la que buscar: al pagar solo se guarda
- * `user.plan` en Firestore, ni el customerId ni el subscriptionId de Stripe.
- * Funciona, pero conviene empezar a guardarlos para no depender de que el
- * correo de Firebase y el de Stripe coincidan.
+ * CÓMO SE ENCUENTRA LA SUSCRIPCIÓN
+ * --------------------------------
+ * Por el uid de Firebase, que se guarda en `metadata.firebaseUid` del cliente
+ * de Stripe al crearlo. El uid sale del token ya verificado, así que no
+ * depende de que el correo de Firebase y el de Stripe coincidan.
+ *
+ * El correo queda solo como respaldo, para los clientes creados antes de que
+ * se guardara esa etiqueta.
  */
 
 const CLAVE_STRIPE =
@@ -60,8 +62,10 @@ function urlDeVerificacion(apiKey: string): string {
   return `https://identitytoolkit.googleapis.com/v1/accounts:lookup?key=${apiKey}`;
 }
 
-/** Verifica el ID token contra Firebase. Devuelve el correo, o null. */
-async function correoDelToken(idToken: string): Promise<string | null> {
+/** Verifica el ID token contra Firebase. Devuelve uid y correo, o null. */
+async function identidadDelToken(
+  idToken: string
+): Promise<{ uid: string; email: string } | null> {
   const apiKey = process.env.NEXT_PUBLIC_FIREBASE_API_KEY;
   if (!apiKey) {
     console.error("Falta NEXT_PUBLIC_FIREBASE_API_KEY: no se puede verificar quién llama.");
@@ -78,18 +82,54 @@ async function correoDelToken(idToken: string): Promise<string | null> {
     );
     if (!r.ok) return null;
     const data = await r.json();
-    return data?.users?.[0]?.email ?? null;
+    const u = data?.users?.[0];
+    if (!u?.localId) return null;
+    return { uid: u.localId, email: u.email ?? "" };
   } catch (err) {
     console.error("No se pudo verificar el token:", err);
     return null;
   }
 }
 
-/** Todas las suscripciones vivas de todos los clientes con ese correo. */
-async function suscripcionesVivas(correo: string): Promise<Stripe.Subscription[]> {
-  const clientes = await stripe.customers.list({ email: correo, limit: 20 });
+/**
+ * Los clientes de Stripe de este usuario.
+ *
+ * Primero por el uid que se guarda en `metadata.firebaseUid` al crear el
+ * cliente. Es lo fiable: el uid viene del token ya verificado, así que no
+ * depende de que el correo de Firebase y el de Stripe coincidan.
+ *
+ * El correo queda como respaldo para quien pagó ANTES de que se empezara a
+ * guardar esa etiqueta. Se puede retirar cuando ya no queden clientes viejos.
+ */
+async function clientesDelUsuario(
+  uid: string,
+  correo: string
+): Promise<Stripe.Customer[]> {
+  try {
+    const porUid = await stripe.customers.search({
+      query: `metadata['firebaseUid']:'${uid}'`,
+      limit: 20,
+    });
+    if (porUid.data.length > 0) return porUid.data;
+  } catch (err) {
+    /* La API de búsqueda puede no estar disponible en cuentas muy antiguas.
+       No es motivo para dejar al usuario sin poder cancelar: se sigue por
+       correo. */
+    console.warn("Búsqueda por metadata no disponible, se usa el correo:", err);
+  }
+
+  const porCorreo = await stripe.customers.list({ email: correo, limit: 20 });
+  return porCorreo.data;
+}
+
+/** Todas las suscripciones vivas de este usuario. */
+async function suscripcionesVivas(
+  uid: string,
+  correo: string
+): Promise<Stripe.Subscription[]> {
+  const clientes = await clientesDelUsuario(uid, correo);
   const salida: Stripe.Subscription[] = [];
-  for (const cliente of clientes.data) {
+  for (const cliente of clientes) {
     const subs = await stripe.subscriptions.list({
       customer: cliente.id,
       status: "all",
@@ -118,13 +158,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
   const cancelar = accion !== "reactivar";
 
-  const correo = await correoDelToken(idToken);
-  if (!correo) {
+  const quien = await identidadDelToken(idToken);
+  if (!quien) {
     return res.status(401).json({ ok: false, error: "token-invalido" });
   }
 
   try {
-    const subs = await suscripcionesVivas(correo);
+    const subs = await suscripcionesVivas(quien.uid, quien.email);
 
     /* Sin suscripción en Stripe no es un error: puede ser un plan puesto a
        mano, o una cuenta de prueba. Se dice tal cual para que la pantalla no
