@@ -34,7 +34,24 @@ const CLAVE_STRIPE =
 const stripe = new Stripe(`${CLAVE_STRIPE}`, { apiVersion: "2022-11-15" });
 
 /** Estados en los que todavía hay algo que cancelar. */
-const VIVAS: Stripe.Subscription.Status[] = ["active", "trialing", "past_due", "unpaid"];
+/**
+ * Estados en los que todavía hay algo que cancelar.
+ *
+ * `incomplete` entra a propósito: es una suscripción creada cuyo primer pago
+ * aún no se ha confirmado. Dejarla fuera significaba responder "no encontramos
+ * ninguna suscripción" a alguien que acaba de contratar, lo cual es falso y
+ * además confunde al probarlo a mano.
+ *
+ * Fuera quedan los estados ya terminados —`canceled`, `incomplete_expired`,
+ * `paused`—, donde no hay nada que hacer.
+ */
+const VIVAS: Stripe.Subscription.Status[] = [
+  "active",
+  "trialing",
+  "past_due",
+  "unpaid",
+  "incomplete",
+];
 
 /**
  * Dónde se verifica el token.

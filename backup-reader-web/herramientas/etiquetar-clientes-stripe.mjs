@@ -170,7 +170,7 @@ async function principal() {
   }
 
   if (!aplicar && emparejados.length > 0) {
-    console.log(`\nPara escribir las ${emparejados.length} etiquetas, repite con --si`);
+    console.log(`\nPara escribir ${emparejados.length} etiqueta(s), repite con --si`);
   }
 }
 
