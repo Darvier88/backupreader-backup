@@ -2,7 +2,7 @@ import { NextApiRequest, NextApiResponse } from 'next';
 import Stripe from "stripe";
 
 
-const stripe = new Stripe(`${process.env.NEXT_PUBLIC_STRIPE_KEYS}`, {
+const stripe = new Stripe(`${process.env.STRIPE_SECRET_KEY || process.env.NEXT_PUBLIC_STRIPE_KEYS}`, {
     apiVersion: "2022-11-15",
 });
 
