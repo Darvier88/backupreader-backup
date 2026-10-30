@@ -37,7 +37,13 @@ import { initializeApp, applicationDefault, getApps } from "firebase-admin/app";
 import { getFirestore } from "firebase-admin/firestore";
 import Stripe from "stripe";
 
-const PROYECTO = process.env.GOOGLE_CLOUD_PROJECT || "backup-reader";
+/* Con FIRESTORE_EMULATOR_HOST puesto, admin habla con el emulador y no pide
+   credenciales. Es lo que permite ensayar esto en local antes de soltarlo
+   sobre los clientes de verdad. */
+const EN_EMULADOR = Boolean(process.env.FIRESTORE_EMULATOR_HOST);
+
+const PROYECTO =
+  process.env.GOOGLE_CLOUD_PROJECT || (EN_EMULADOR ? "demo-backupreader" : "backup-reader");
 const CLAVE = process.env.STRIPE_SECRET_KEY || process.env.NEXT_PUBLIC_STRIPE_KEYS;
 
 if (!CLAVE) {
@@ -53,7 +59,9 @@ const csv = process.argv.includes("--csv");
 const modo = CLAVE.startsWith("sk_live") ? "PRODUCCIÓN (live)" : "prueba (test)";
 
 if (!getApps().length) {
-  initializeApp({ credential: applicationDefault(), projectId: PROYECTO });
+  initializeApp(
+    EN_EMULADOR ? { projectId: PROYECTO } : { credential: applicationDefault(), projectId: PROYECTO }
+  );
 }
 const db = getFirestore();
 const stripe = new Stripe(CLAVE, { apiVersion: "2022-11-15" });
@@ -87,7 +95,7 @@ async function todosLosClientes() {
 }
 
 async function principal() {
-  console.log(`Proyecto: ${PROYECTO}`);
+  console.log(`Proyecto: ${PROYECTO}${EN_EMULADOR ? "  (EMULADOR)" : ""}`);
   console.log(`Stripe:   ${modo}`);
   console.log(aplicar ? "Modo:     APLICAR\n" : "Modo:     informe (no se toca nada)\n");
 
