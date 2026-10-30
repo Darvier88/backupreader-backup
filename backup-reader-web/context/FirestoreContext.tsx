@@ -27,8 +27,6 @@ type FirestoreContextProps = {
   saveUserFromProviders: (user: User) => void;
   updateUser: (firestoreId: string, planId: string, name: string) => void;
   updateStorageSizeUser: (firestoreId: string, storageSize: number) => void;
-  /** Marca (o quita, con null) la fecha en que un plan cancelado deja de valer. */
-  updatePlanCancelAt: (firestoreId: string, cancelAt: number | null) => Promise<void>;
 };
 
 export const firestoreInitialState: FiresoreState = {
@@ -169,22 +167,6 @@ export const FirestoreProvider = ({ children }: any) => {
   };
 
 
-  /**
-   * Guarda hasta cuándo sigue valiendo un plan cancelado.
-   *
-   * No se borra `user.plan`: el usuario pagó el periodo en curso y se le deja
-   * terminarlo. Quien decide a partir de esa fecha es `tieneAcceso`.
-   *
-   * Se vuelve a leer el usuario al terminar para que la pantalla refleje el
-   * cambio sin recargar.
-   */
-  const updatePlanCancelAt = async (uid: string, cancelAt: number | null) => {
-    const ref = doc(FirebaseDB, "users", uid);
-    await updateDoc(ref, { "user.planCancelAt": cancelAt });
-    await getUser(uid);
-  };
-
-
   const updateStorageSizeUser = async (uid: string, storageSize: number) => {
     const ref = doc(FirebaseDB, "users", uid);
     await updateDoc(ref, {
@@ -232,7 +214,6 @@ export const FirestoreProvider = ({ children }: any) => {
         updateUser,
         saveUserFromProviders,
         updateStorageSizeUser,
-        updatePlanCancelAt,
       }}
     >
       {children}

@@ -17,8 +17,7 @@
     "test:upload": "vitest run tests/upload",
     "test:read": "vitest run tests/read",
     "test:audio": "vitest run tests/audio",
-    "test:migracion": "vitest run tests/migration",
-    "test:acceso": "vitest run tests/acceso"
+    "test:migracion": "vitest run tests/migration"
   },
   "dependencies": {
     "@emotion/react": "^11.10.6",

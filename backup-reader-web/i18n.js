@@ -205,24 +205,6 @@ const resources = {
       "Aviso":"Notice",
       "El correo o la contraseña no son correctos.":"That email or password isn't correct.",
 
-      // --- Suscripción (Mi cuenta) ----------------------------------------
-      "Suscripción":"Subscription",
-      "No tienes una suscripción activa.":"You don't have an active subscription.",
-      "Ver planes":"See plans",
-      "Tienes un plan activo.":"You have an active plan.",
-      "Se renueva cada mes. Puedes cancelar cuando quieras.":"It renews monthly. You can cancel whenever you want.",
-      "Cancelar suscripción":"Cancel subscription",
-      "Sí, cancelar":"Yes, cancel",
-      "Reactivar suscripción":"Resume subscription",
-      "Cancelada. Mantienes el acceso hasta el":"Cancelled. You keep access until",
-      "Tu suscripción terminó el":"Your subscription ended on",
-      "Dejaremos de cobrarte, y mantendrás el acceso hasta el final del periodo que ya pagaste. Tus chats no se borran.":"We'll stop charging you, and you'll keep access until the end of the period you've already paid for. Your chats aren't deleted.",
-      "Suscripción cancelada. No se te volverá a cobrar.":"Subscription cancelled. You won't be charged again.",
-      "Suscripción reactivada.":"Subscription resumed.",
-      "No se pudo completar la operación. Inténtalo de nuevo.":"That didn't go through. Please try again.",
-      "No encontramos una suscripción activa en Stripe para tu correo. Escríbenos a info@backupreader.com y lo revisamos.":"We couldn't find an active Stripe subscription for your email. Write to us at info@backupreader.com and we'll look into it.",
-      "Tu sesión ha caducado. Vuelve a iniciar sesión.":"Your session has expired. Please sign in again.",
-
       // --- Restablecer la contraseña de cifrado ---------------------------
       "He olvidado mi contraseña de cifrado":"I forgot my encryption password",
       "Restablecer con el código de recuperación":"Reset it with your recovery code",
