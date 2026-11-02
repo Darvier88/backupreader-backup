@@ -23,6 +23,30 @@ class MyDocument extends Document {
       <Html lang="en">
         <Head>
           {CssBaseline.flush()}
+
+          {/*
+            Iconos. No había NINGUNA etiqueta de icono en el proyecto: el
+            navegador solo cogía /favicon.ico por convención, y Google ni eso,
+            porque para el icono de los resultados de búsqueda exige que se
+            declare con rel="icon" y que la imagen sea un cuadrado múltiplo de
+            48. De ahí el PNG de 48.
+
+            Van aquí, en _document, y no en el <Head> de Layout, porque son los
+            mismos para todas las páginas y esto se renderiza una sola vez.
+
+            El SVG primero: los navegadores que lo entienden lo prefieren y se
+            ve nítido en cualquier densidad de pantalla. El .ico queda de
+            respaldo y lleva 16, 32 y 48 dentro.
+          */}
+          <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+          <link rel="icon" href="/favicon-48.png" type="image/png" sizes="48x48" />
+          <link rel="icon" href="/favicon-32.png" type="image/png" sizes="32x32" />
+          <link rel="icon" href="/favicon-16.png" type="image/png" sizes="16x16" />
+          <link rel="shortcut icon" href="/favicon.ico" />
+          <link rel="apple-touch-icon" href="/apple-touch-icon.png" sizes="180x180" />
+          <link rel="manifest" href="/site.webmanifest" />
+          <meta name="theme-color" content="#FBF8F1" />
+
           <link
             href="https://fonts.googleapis.com/css2?family=PT+Serif&display=swap"
             rel="stylesheet"

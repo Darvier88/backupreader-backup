@@ -1,0 +1,14 @@
+{
+  "name": "Backup Reader",
+  "short_name": "BackupReader",
+  "description": "Respalda y lee tus conversaciones de WhatsApp, cifradas en tu navegador.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#FBF8F1",
+  "theme_color": "#FBF8F1",
+  "icons": [
+    { "src": "/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png" },
+    { "src": "/favicon.svg", "sizes": "any", "type": "image/svg+xml" }
+  ]
+}
