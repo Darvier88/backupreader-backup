@@ -37,15 +37,22 @@ class MyDocument extends Document {
             El SVG primero: los navegadores que lo entienden lo prefieren y se
             ve nítido en cualquier densidad de pantalla. El .ico queda de
             respaldo y lleva 16, 32 y 48 dentro.
+
+            Los archivos vienen del set de diseño, no se generan aquí: los PNG
+            pequeños están ajustados a mano para su tamaño, y rasterizarlos de
+            nuevo desde el SVG los empeoraría.
           */}
           <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+          <link rel="icon" href="/favicon-64.png" type="image/png" sizes="64x64" />
           <link rel="icon" href="/favicon-48.png" type="image/png" sizes="48x48" />
           <link rel="icon" href="/favicon-32.png" type="image/png" sizes="32x32" />
           <link rel="icon" href="/favicon-16.png" type="image/png" sizes="16x16" />
           <link rel="shortcut icon" href="/favicon.ico" />
           <link rel="apple-touch-icon" href="/apple-touch-icon.png" sizes="180x180" />
           <link rel="manifest" href="/site.webmanifest" />
-          <meta name="theme-color" content="#FBF8F1" />
+          {/* El azul tinta de la marca, igual que theme_color del manifiesto:
+              es lo que tiñe la barra del navegador en móvil. */}
+          <meta name="theme-color" content="#16233B" />
 
           <link
             href="https://fonts.googleapis.com/css2?family=PT+Serif&display=swap"

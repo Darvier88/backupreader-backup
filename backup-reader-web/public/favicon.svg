@@ -1,22 +1,6 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64" role="img" aria-label="Backup Reader">
-  <!--
-    Marca de Backup Reader para el favicon: el mismo check-circle de contorno
-    del encabezado (el componente `Logo` en components/ui/BrandChrome.tsx).
-
-    Es el dibujo del encabezado escalado de un lienzo de 24 a uno de 64, así
-    que las proporciones son idénticas: radio 9.5 -> 25.3 y trazo 1.75 -> 4.67.
-
-    Lo único que se añade es el disco de papel detrás del aro. El del
-    encabezado no lo necesita porque la página ya es de ese color, pero un
-    favicon se pinta sobre la barra de pestañas, que puede ser oscura: sin
-    relleno, un aro verde sobre fondo oscuro desaparece.
-
-    Los colores son var(--brass-500) y var(--paper-50) resueltos a mano: una
-    variable CSS no significa nada fuera de la página, y el navegador carga
-    este archivo suelto.
-  -->
-  <circle cx="32" cy="32" r="25.3" fill="#FBF8F1" stroke="#2F7E6C" stroke-width="4.67"/>
-  <path d="M21.3 32.8l6.9 6.9L42.7 25.3"
-        fill="none" stroke="#2F7E6C" stroke-width="4.67"
-        stroke-linecap="round" stroke-linejoin="round"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 96 96" width="96" height="96" role="img" aria-label="BackupReader">
+  <rect width="96" height="96" rx="18" fill="#FBF8F1"></rect>
+  <circle cx="48" cy="48" r="37" fill="none" stroke="#16233B" stroke-width="4"></circle>
+  <circle cx="48" cy="48" r="30" fill="none" stroke="#16233B" stroke-width="1" stroke-dasharray="2 4" opacity="0.5"></circle>
+  <path d="M33 49 L43.5 59 L64 36" fill="none" stroke="#2F7E6C" stroke-width="6.5" stroke-linecap="round" stroke-linejoin="round"></path>
 </svg>
