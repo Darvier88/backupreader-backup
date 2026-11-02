@@ -1,12 +1,7 @@
 import type { NextApiRequest, NextApiResponse } from "next";
 
 import { identidadDelToken } from "../../../lib/servidor/identidad";
-import {
-  stripe,
-  CLAVE_STRIPE,
-  clientesDelUsuario,
-  suscripcionesVivasDe,
-} from "../../../lib/servidor/stripeCliente";
+import { stripe, CLAVE_STRIPE, suscripcionesVivasDe } from "../../../lib/servidor/stripeCliente";
 
 /**
  * Crea la suscripción, salvo que ya haya una.
@@ -50,9 +45,33 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
   try {
     /* El cliente tiene que ser de quien llama. Sin esto, mandando el
-       customerId de otro se le podrían crear suscripciones encima. */
-    const suyos = await clientesDelUsuario(quien.uid, quien.email);
-    if (!suyos.some((c) => c.id === customerId)) {
+       customerId de otro se le podrían crear suscripciones encima.
+
+       Se pide POR ID a propósito, en vez de buscar los clientes del usuario:
+       la Search API de Stripe tarda hasta un minuto en indexar, y aquí el
+       cliente se acaba de crear hace segundos. Buscándolo, la comprobación
+       fallaría en mitad del pago. Un `retrieve` por id es consistente al
+       instante. */
+    const cliente = await stripe.customers.retrieve(customerId);
+
+    /* `retrieve` devuelve Customer | DeletedCustomer, y solo el segundo tiene
+       `deleted`, así que se comprueba con `in` en vez de leerlo a secas. */
+    if ("deleted" in cliente && cliente.deleted) {
+      return res.status(403).json({ success: false, error: "cliente-borrado" });
+    }
+
+    const etiqueta = cliente.metadata?.firebaseUid;
+    /* Sin etiqueta solo puede ser un cliente anterior a que se guardara; se
+       admite si el correo coincide, que es lo único comparable en ese caso. */
+    const esSuyo = etiqueta
+      ? etiqueta === quien.uid
+      : Boolean(
+          quien.email &&
+            cliente.email &&
+            cliente.email.trim().toLowerCase() === quien.email.trim().toLowerCase()
+        );
+
+    if (!esSuyo) {
       console.warn(`${quien.uid} intentó suscribir el cliente ajeno ${customerId}`);
       return res.status(403).json({ success: false, error: "cliente-ajeno" });
     }
