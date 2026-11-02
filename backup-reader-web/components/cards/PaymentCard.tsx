@@ -5,6 +5,7 @@ import { useRouter } from "next/router";
 import { Plan } from "../../models/Plan";
 import { useTranslation } from "react-i18next";
 import { FirestoreContext } from "../../context";
+import { FirebaseAuth } from "../../config/firebase";
 import { Loading } from "@nextui-org/react";
 import {
   CardCvcElement,
@@ -68,17 +69,26 @@ export const PaymentCard: FC = () => {
 
     const createCustomer = async () => {
       try {
+        /* El token identifica a quien paga. El servidor saca el uid de ahí y
+           lo guarda en metadata del cliente de Stripe: es lo que permite
+           encontrarlo al cancelar sin depender del correo. Mandar el uid en el
+           cuerpo no valdría, porque lo pondría el navegador y no prueba nada. */
+        const idToken = await FirebaseAuth.currentUser?.getIdToken();
+        if (!idToken) {
+          console.error("No hay sesión: no se puede crear el cliente de Stripe.");
+          setPayResult("denied");
+          return;
+        }
+
         const response = await fetch('/api/customer/create', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
           },
-          /* El uid viaja para quedar en metadata del cliente de Stripe. Es lo
-             que permite encontrarlo al cancelar sin depender del correo. */
           body: JSON.stringify({
             name: formState.name,
             email: formState.email,
-            uid: user?.uid,
+            idToken,
           }),
         });
 
@@ -116,7 +126,13 @@ export const PaymentCard: FC = () => {
   };
 
   const createSubscription = async (customerId: string, paymentMethodId: string, planId: string) => {
-    console.log('Enviando los siguientes parametros ' + customerId + ' plan id: ' + paymentMethodId + ' user id: ' + planId);
+    const idToken = await FirebaseAuth.currentUser?.getIdToken();
+    if (!idToken) {
+      console.error("No hay sesión: no se puede crear la suscripción.");
+      setPayResult("denied");
+      return;
+    }
+
     const res = await fetch("/api/subscriptions/create", {
       method: "POST",
       headers: {
@@ -126,6 +142,7 @@ export const PaymentCard: FC = () => {
         customerId: customerId,
         paymentMethodId: paymentMethodId,
         planId: planId,
+        idToken,
       }),
     });
 
