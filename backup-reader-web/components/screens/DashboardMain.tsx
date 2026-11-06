@@ -8,13 +8,17 @@ export const DashboardMain: FC = () => {
       {/* Aviso del estado de la bóveda. Va aquí y no dentro de
           DashboardScreen para que se vea también sin chats subidos.
 
-          Las medidas son exactamente las del `Grid.Container` de
-          DashboardScreen: 1360 de ancho, centrado, y SIN padding lateral.
+          Las medidas son las de `br-header-inner`: 1360 de ancho, centrado, y
+          el mismo padding lateral. Así el aviso empieza justo donde empieza el
+          logo y termina donde terminan las opciones de la cabecera.
 
-          Lo de no llevar padding es a propósito y está medido. La cabecera sí
-          lo lleva, así que copiárselo dejaba el aviso 24 px a la derecha del
-          panel de chats. Lo que tiene que cuadrar es con el contenido, que es
-          lo que queda justo debajo.
+          Ojo a una inconsistencia que ya existía y que esto NO arregla: el
+          `Grid.Container` de DashboardScreen va con `gap={0}`, que en NextUI
+          se traduce en padding 0, así que el panel de chats empieza entre 16 y
+          24 px más a la izquierda que el logo. El aviso cuadra con la
+          cabecera, no con el panel. Unificar los tres significa darle ese
+          mismo padding al contenedor del contenido, lo que mueve el panel de
+          chats y la zona de mensajes.
 
           Antes este div no tenía límite de ancho, así que en pantallas anchas
           el aviso se estiraba de borde a borde mientras todo lo demás quedaba
@@ -24,7 +28,7 @@ export const DashboardMain: FC = () => {
           maxWidth: 1360,
           margin: "0 auto",
           width: "100%",
-          padding: "12px 0 0",
+          padding: "12px clamp(16px, 4vw, 24px) 0",
         }}
       >
         <VaultBanner />
