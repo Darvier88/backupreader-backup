@@ -402,12 +402,23 @@ i18n
     lng: "es",
     fallbackLng: "es",
     detection: {
-      /* `htmlTag` salió de la lista: leía el atributo `lang` del <html>, que
-         está escrito a mano en _document, así que siempre devolvía lo mismo
-         pasara lo que pasara. No es una señal sobre el visitante. */
-      order: ["querystring", "cookie", "localStorage", "navigator"],
+      /* El detector SOLO mira lo que dice el navegador.
+       *
+       * Nada de `cookie` ni `localStorage` aquí, y `caches` vacío. Ese era el
+       * fallo: con `lng: "es"` arriba, i18next escribía la cookie `i18next=es`
+       * durante el init, ANTES de detectar nada. Después `detect()` se leía su
+       * propia cookie y devolvía "es" la primera, así que un navegador en
+       * inglés jamás ganaba. La app guardaba "es" como si el visitante lo
+       * hubiera elegido.
+       *
+       * Lo que el visitante elige de verdad se guarda aparte, bajo `br_lang`,
+       * y se consulta antes que esto. Así las dos señales no se pisan.
+       *
+       * `htmlTag` también fuera: leía el atributo `lang` del <html>, escrito a
+       * mano, así que devolvía siempre lo mismo. No dice nada del visitante. */
+      order: ["querystring", "navigator"],
       lookupQuerystring: "lng",
-      caches: ["cookie", "localStorage"],
+      caches: [],
     },
     interpolation: {
       escapeValue: false,
@@ -417,7 +428,12 @@ i18n
     },
   });
 
-const CLAVE_IDIOMA = "i18nextLng";
+/* Nombre propio, a propósito. Los que usa i18next por defecto —`i18next` en
+   cookie, `i18nextLng` en localStorage— pueden traer valores que escribió el
+   propio i18next, no el visitante, y esos no se pueden distinguir de una
+   elección real. Con una clave nuestra, lo que haya ahí lo pusimos nosotros
+   porque alguien pulsó el botón. */
+const CLAVE_IDIOMA = "br_lang";
 const IDIOMAS = ["es", "en"];
 
 /** "en-US" -> "en". Lo que se guarda y se compara es siempre el código base. */
@@ -436,7 +452,7 @@ const soportado = (valor) => (IDIOMAS.includes(base(valor)) ? base(valor) : null
 function idiomaGuardado() {
   if (typeof window === "undefined") return null;
   try {
-    const m = document.cookie.match(/(?:^|;\s*)i18nextLng=([^;]*)/);
+    const m = document.cookie.match(new RegExp("(?:^|;\\s*)" + CLAVE_IDIOMA + "=([^;]*)"));
     if (m) return soportado(decodeURIComponent(m[1]));
   } catch (e) {}
   try {
