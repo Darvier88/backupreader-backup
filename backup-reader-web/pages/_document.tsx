@@ -19,8 +19,12 @@ class MyDocument extends Document {
   }
 
   render() {
+    /* `lang="es"`: el sitio sirve español por defecto, así que el "en" que
+       había decía mentira, y lo leen los buscadores y los lectores de
+       pantalla. Al aplicar la detección, `cambiarIdioma` lo actualiza en
+       caliente desde el navegador. */
     return (
-      <Html lang="en">
+      <Html lang="es">
         <Head>
           {CssBaseline.flush()}
 

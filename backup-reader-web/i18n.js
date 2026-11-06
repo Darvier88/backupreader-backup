@@ -402,9 +402,12 @@ i18n
     lng: "es",
     fallbackLng: "es",
     detection: {
-      order: ["querystring", "cookie", "localStorage", "navigator", "htmlTag"],
+      /* `htmlTag` salió de la lista: leía el atributo `lang` del <html>, que
+         está escrito a mano en _document, así que siempre devolvía lo mismo
+         pasara lo que pasara. No es una señal sobre el visitante. */
+      order: ["querystring", "cookie", "localStorage", "navigator"],
       lookupQuerystring: "lng",
-      caches: ["cookie"],
+      caches: ["cookie", "localStorage"],
     },
     interpolation: {
       escapeValue: false,
@@ -414,13 +417,86 @@ i18n
     },
   });
 
-/** Detecta el idioma del visitante. Solo tiene sentido en el navegador. */
+const CLAVE_IDIOMA = "i18nextLng";
+const IDIOMAS = ["es", "en"];
+
+/** "en-US" -> "en". Lo que se guarda y se compara es siempre el código base. */
+const base = (valor) => String(valor || "").split("-")[0].toLowerCase();
+
+/** Uno de los que existen, o null. Evita acabar en un idioma sin traducciones. */
+const soportado = (valor) => (IDIOMAS.includes(base(valor)) ? base(valor) : null);
+
+/**
+ * Qué idioma eligió el visitante, si es que eligió.
+ *
+ * Se lee a mano en vez de dejárselo al detector porque hay que distinguir dos
+ * cosas que el detector mezcla: "este señor pulsó EN" y "su navegador está en
+ * inglés". La primera manda siempre; la segunda solo sirve la primera vez.
+ */
+function idiomaGuardado() {
+  if (typeof window === "undefined") return null;
+  try {
+    const m = document.cookie.match(/(?:^|;\s*)i18nextLng=([^;]*)/);
+    if (m) return soportado(decodeURIComponent(m[1]));
+  } catch (e) {}
+  try {
+    return soportado(window.localStorage.getItem(CLAVE_IDIOMA));
+  } catch (e) {
+    return null;
+  }
+}
+
+/**
+ * Cambia el idioma y lo deja guardado.
+ *
+ * El guardado se hace aquí, explícitamente, y no se confía a que
+ * `changeLanguage` llame al `cacheUserLanguage` del detector: ese
+ * comportamiento depende de la versión de i18next y, si falla, el síntoma es
+ * justo el que se veía —pulsas EN, recargas, y vuelve a español porque la
+ * detección por navegador pisa tu elección—. Una cookie de un año, escrita a
+ * mano, no depende de nada.
+ */
+export function cambiarIdioma(valor) {
+  const idioma = soportado(valor) || "es";
+  if (typeof window !== "undefined") {
+    try {
+      const unAno = 60 * 60 * 24 * 365;
+      document.cookie = `${CLAVE_IDIOMA}=${idioma};path=/;max-age=${unAno};SameSite=Lax`;
+      window.localStorage.setItem(CLAVE_IDIOMA, idioma);
+    } catch (e) {}
+    /* Que el <html lang> diga la verdad: lo leen los buscadores, los lectores
+       de pantalla y el corrector del navegador. */
+    document.documentElement.lang = idioma;
+  }
+  if (idioma !== i18n.language) i18n.changeLanguage(idioma);
+  return idioma;
+}
+
+/**
+ * Aplica el idioma al cargar. Solo tiene sentido en el navegador.
+ *
+ * Prioridad: lo que el visitante eligió > lo que dice su navegador > español.
+ */
 export function aplicarIdiomaDetectado() {
   if (typeof window === "undefined") return;
+
+  const elegido = idiomaGuardado();
+  if (elegido) {
+    /* Ya eligió: se respeta y no se vuelve a detectar nada. */
+    document.documentElement.lang = elegido;
+    if (elegido !== i18n.language) i18n.changeLanguage(elegido);
+    return;
+  }
+
+  /* Primera visita. `detect()` devuelve una lista en el orden configurado;
+     se coge el primero que tenga traducciones, no el primero a secas, porque
+     un "fr-FR" dejaría la interfaz en un idioma que no existe. */
   const detectado = i18n.services.languageDetector?.detect();
-  const idioma = Array.isArray(detectado) ? detectado[0] : detectado;
-  const base = (idioma || "es").split("-")[0];
-  if (base !== i18n.language) i18n.changeLanguage(base);
+  const lista = Array.isArray(detectado) ? detectado : [detectado];
+  const idioma = lista.map(soportado).find(Boolean) || "es";
+
+  document.documentElement.lang = idioma;
+  if (idioma !== i18n.language) i18n.changeLanguage(idioma);
 }
 
 export default i18n;
