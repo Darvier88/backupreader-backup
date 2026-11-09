@@ -18,7 +18,8 @@
     "test:read": "vitest run tests/read",
     "test:audio": "vitest run tests/audio",
     "test:migracion": "vitest run tests/migration",
-    "test:acceso": "vitest run tests/acceso"
+    "test:acceso": "vitest run tests/acceso",
+    "test:descuentos": "vitest run tests/descuentos"
   },
   "dependencies": {
     "@emotion/react": "^11.10.6",
