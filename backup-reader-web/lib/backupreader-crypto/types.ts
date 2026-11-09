@@ -130,4 +130,12 @@ export interface BackupDoc {
   cipherBytes: number;
   encVersion: 2;
   fmt: number;
+  /**
+   * Versión del índice de búsqueda que tiene este backup, si tiene alguno.
+   *
+   * Ausente significa que nunca se indexó. Un número menor que el actual indica
+   * que su índice es de un formato viejo. En los dos casos el backup entra en
+   * la lista de pendientes y se vuelve a indexar.
+   */
+  idxVersion?: number;
 }

@@ -25,6 +25,27 @@ import {
   borrarRegistroBackup,
 } from "../config/backupRepo";
 import { borrarChat, type ResultadoChat } from "../lib/borrar-chat";
+import { marcarIndexado } from "../config/backupRepo";
+import {
+  buscarEnIndice,
+  VERSION_INDICE,
+  type IndiceChat,
+  type ResultadoEnChat,
+} from "../lib/busqueda/indice";
+import { abrirIndice, indexarYSubir, rutaDelIndice } from "../lib/busqueda/piezaIndice";
+import {
+  indexarPendientes,
+  estadoInicial,
+  type EstadoIndexado,
+} from "../lib/busqueda/indexador";
+
+/** Lo que devuelve una búsqueda en todos los chats. */
+export type BusquedaGlobal = {
+  resultados: ResultadoEnChat[];
+  /** Chats que quedaron fuera por no tener índice todavía. */
+  sinIndexar: number;
+  consulta: string;
+};
 import {
   uploadBackup,
   cipherBytes,
@@ -79,6 +100,10 @@ type StorageContextProps = {
   borrarChatDelUsuario: (handle: string) => Promise<ResultadoChat>;
   /** Handle del chat que se está borrando ahora mismo, o null. */
   borrandoChat: string | null;
+  /** Busca en todos los chats que ya tengan índice. */
+  buscarEnTodos: (consulta: string) => Promise<BusquedaGlobal>;
+  /** Progreso del indexado, para que la pantalla pueda avisar. */
+  estadoIndexado: EstadoIndexado;
   getFiles: (firestoreId: string) => void;
   getAsset: (fullpath: string) => Promise<string>;
   getMediaUrl: (nombreArchivo: string) => Promise<MediaResuelta>;
@@ -135,6 +160,9 @@ export const StorageProvider = ({ children }: any) => {
      a la vez sobre el mismo prefijo hace que cada uno cuente como fallos los
      objetos que borró el otro. */
   const [borrandoChat, setBorrandoChat] = useState<string | null>(null);
+  /* Progreso del indexado de búsqueda. Lo pinta la pantalla para que nadie
+     busque creyendo que ya están todos los chats. */
+  const [estadoIndexado, setEstadoIndexado] = useState<EstadoIndexado>(estadoInicial);
   const { setLoading } = useLoading();
 
 
@@ -1081,6 +1109,156 @@ function parsearJsonInstagram(texto: string): string[][] {
     }
   };
 
+  // -------------------------------------------------------------------------
+  // Índice de búsqueda (Etapa 9)
+  // -------------------------------------------------------------------------
+
+  /**
+   * Índices ya descifrados en esta sesión, por backupId.
+   *
+   * Sin caché, cada tecla del buscador bajaría y descifraría los índices de
+   * todos los chats otra vez. Se tira al bloquear la bóveda igual que la de
+   * manifiestos: contiene las palabras de las conversaciones.
+   */
+  const indicesAbiertos = useRef<Map<string, IndiceChat>>(new Map());
+
+  /** Construye el índice de un backup y lo deja subido y marcado. */
+  const indexarBackup = async (backupId: string): Promise<void> => {
+    if (!user?.uid || !dek) throw new Error("sin bóveda abierta");
+    const uid = user.uid;
+
+    const abierto = await obtenerBackup(backupId);
+    if (!abierto) throw new Error("no se pudo abrir el backup");
+
+    const chat = await leerTextoDelChat(uid, abierto, dek, descargar);
+    if (!chat) throw new Error("el backup no tiene pieza de chat");
+
+    /* Se parsea con el MISMO parser que usa la pantalla. Si el índice se
+       construyera sobre un parseo distinto, los números de mensaje que guarda
+       no corresponderían con los que se pintan, y al abrir un resultado se
+       saltaría al mensaje equivocado. */
+    const esJson =
+      abierto.manifest.source === "instagram" ||
+      chat.nombre.toLowerCase().endsWith(".json");
+    const filas = esJson ? parsearJsonInstagram(chat.texto) : parsearTextoChat(chat.texto);
+
+    const indice = await indexarYSubir({
+      uid,
+      backupId,
+      nombre: abierto.manifest.name,
+      filas,
+      dek,
+      subir,
+    });
+
+    /* La marca va DESPUÉS de subir la pieza. Al revés, un fallo de subida
+       dejaría el backup marcado como indexado sin índice que leer, y nunca
+       volvería a entrar en la lista de pendientes: la búsqueda se quedaría
+       incompleta para siempre y diciendo que está completa. */
+    await marcarIndexado(uid, backupId, VERSION_INDICE);
+    indicesAbiertos.current.set(backupId, indice);
+  };
+
+  /** Lee el índice de un backup, de la caché o de Storage. */
+  const obtenerIndice = async (backupId: string): Promise<IndiceChat | null> => {
+    if (!user?.uid || !dek) return null;
+    const cacheado = indicesAbiertos.current.get(backupId);
+    if (cacheado) return cacheado;
+
+    try {
+      const blob = await descargar(rutaDelIndice(user.uid, backupId));
+      const indice = await abrirIndice(blob, dek, backupId);
+      if (indice) indicesAbiertos.current.set(backupId, indice);
+      return indice;
+    } catch {
+      /* No existe todavía, o no se pudo bajar. No es un error: significa que
+         este chat está pendiente de indexar. */
+      return null;
+    }
+  };
+
+  /**
+   * Arranca la pasada de indexado al desbloquear la bóveda.
+   *
+   * Corre sola, sin que nadie la pida, porque si esperara a que el usuario
+   * busque ya sería tarde: la primera búsqueda saldría vacía. Y se abandona
+   * sola al bloquear la bóveda, porque sin la DEK no se puede seguir.
+   */
+  useEffect(() => {
+    if (!dek || !user?.uid) {
+      indicesAbiertos.current.clear();
+      setEstadoIndexado(estadoInicial);
+      return;
+    }
+
+    let cancelado = false;
+    const uid = user.uid;
+
+    (async () => {
+      try {
+        const docs = await listarBackups(uid);
+        const pendientes = docs
+          .filter((d) => (d.idxVersion ?? 0) < VERSION_INDICE)
+          .map((d) => d.backupId);
+
+        if (cancelado) return;
+        if (pendientes.length === 0) {
+          setEstadoIndexado({ ...estadoInicial, total: docs.length, hechos: docs.length });
+          return;
+        }
+
+        await indexarPendientes({
+          pendientes,
+          total: docs.length,
+          indexarUno: indexarBackup,
+          onProgreso: (e) => {
+            if (!cancelado) setEstadoIndexado(e);
+          },
+          debeParar: () => cancelado,
+        });
+      } catch (error) {
+        console.error("No se pudo arrancar el indexado de búsqueda:", error);
+      }
+    })();
+
+    return () => {
+      cancelado = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [dek, user?.uid]);
+
+  /**
+   * Busca en todos los chats indexados.
+   *
+   * Devuelve también cuántos chats quedaron fuera por no tener índice: la
+   * pantalla tiene que poder decirlo. Una búsqueda incompleta que se presenta
+   * como completa hace creer que el mensaje no existe, y eso no se detecta
+   * nunca; una búsqueda que avisa de que le faltan tres chats, sí.
+   */
+  const buscarEnTodos = async (consulta: string): Promise<BusquedaGlobal> => {
+    if (!user?.uid || !dek) return { resultados: [], sinIndexar: 0, consulta };
+
+    const docs = await listarBackups(user.uid);
+    const resultados: ResultadoEnChat[] = [];
+    let sinIndexar = 0;
+
+    for (const d of docs) {
+      const indice = await obtenerIndice(d.backupId);
+      if (!indice) {
+        sinIndexar++;
+        continue;
+      }
+      const r = buscarEnIndice(indice, consulta);
+      if (r) resultados.push(r);
+    }
+
+    /* Primero los chats con más coincidencias: es donde más probablemente
+       está lo que se busca. */
+    resultados.sort((a, b) => b.total - a.total);
+
+    return { resultados, sinIndexar, consulta };
+  };
+
   /** Todas las rutas de objetos bajo un prefijo, bajando por las subcarpetas. */
   const listarTodoRecursivo = async (prefijo: string): Promise<string[]> => {
     const salida: string[] = [];
@@ -1191,6 +1369,8 @@ const getFiles = async (firestoreId: string) => {
         deleteFile,
         borrarChatDelUsuario,
         borrandoChat,
+        buscarEnTodos,
+        estadoIndexado,
         fetchBucketSize,
         migrarBackup,
         migracion,

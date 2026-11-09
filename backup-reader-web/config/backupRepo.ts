@@ -51,6 +51,35 @@ export async function listarBackups(
     .sort((a, b) => b.createdAt - a.createdAt);
 }
 
+/**
+ * Deja constancia de que este backup ya tiene índice de búsqueda.
+ *
+ * Es TODO el estado de reanudación que hace falta. No hay un contador de "iba
+ * por el chat 7": lo pendiente se deduce de qué documentos no tienen esta
+ * marca. Eso sobrevive a cerrar la pestaña y a cambiar de dispositivo sin
+ * escribir nada extra, no se puede desincronizar, y un chat nuevo entra solo
+ * en la lista de pendientes.
+ *
+ * Va la VERSIÓN y no un booleano: cuando el formato del índice cambie, los
+ * índices viejos quedan marcados con la versión antigua y se reconstruyen
+ * solos, sin tener que salir a limpiar marcas a mano.
+ *
+ * `merge: true` porque esto añade un campo a un documento que ya existe. Las
+ * reglas validan el documento resultante completo, así que los campos que ya
+ * estaban siguen ahí y la validación pasa.
+ */
+export async function marcarIndexado(
+  uid: string,
+  backupId: string,
+  version: number
+): Promise<void> {
+  await setDoc(
+    doc(FirebaseDB, backupDocPath(uid, backupId)),
+    { idxVersion: version },
+    { merge: true }
+  );
+}
+
 /** Borra el registro. Las piezas de Storage se borran aparte. */
 export async function borrarRegistroBackup(
   uid: string,
