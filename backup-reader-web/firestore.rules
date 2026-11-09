@@ -9,6 +9,7 @@ rules_version = '2';
 //    userStatus/{uid}     lo escribe la CF `unzip`, lo lee el dueño
 //    vaults/{uid}         NUEVO: VaultRecord (salts + envoltorios de la DEK)
 //    vaults/{uid}/backups/{backupId}   NUEVO: metadatos no sensibles
+//    adminAudit/{id}      quién borró qué cuenta y cuándo; solo el Admin SDK
 //
 //  Importante: este archivo REEMPLAZA por completo las reglas que hoy estén en
 //  la consola. Si alguna colección viva no aparece aquí, deja de funcionar.
@@ -111,6 +112,21 @@ service cloud.firestore {
               && d.encVersion == 2;
         }
       }
+    }
+
+    // ------------------------------------------------------------------
+    // adminAudit
+    // ------------------------------------------------------------------
+    // Lo escribe el panel de administración con el Admin SDK, que se salta
+    // estas reglas. Denegado para TODO el mundo desde el navegador, también
+    // para el propio admin: es el único rastro de quién borró una cuenta, y
+    // un rastro que el interesado pueda editar o leer no sirve de rastro.
+    // Se consulta desde la consola de Firebase.
+    //
+    // El cierre por defecto de abajo ya lo cubriría; está escrito aparte para
+    // que quede claro que es deliberado y no un olvido.
+    match /adminAudit/{id} {
+      allow read, write: if false;
     }
 
     // Cierre por defecto.
