@@ -3,6 +3,12 @@ import { createContext, useState } from "react";
 
 export interface PropsDataState {
   visible?: boolean;
+  /**
+   * Ancho del diálogo. Por defecto NextUI usa uno estrecho, que en un aviso
+   * importante queda como una notita en medio de la pantalla en vez de algo
+   * que exija atención. Se puede subir por modal.
+   */
+  width?: string;
   isFullScreen?: boolean;
   withScroll?: boolean;
   withButtonClose?: boolean;
@@ -48,6 +54,7 @@ export const ModalProvider = ({
     isFullScreen,
     withScroll,
     withButtonClose,
+    width,
   }: PropsDataState): void => {
     setState({
       props: {
@@ -56,6 +63,7 @@ export const ModalProvider = ({
         isFullScreen,
         withScroll,
         withButtonClose,
+        width,
       },
     });
   };
@@ -82,6 +90,7 @@ export const ModalConsumer: React.FC = () => {
             withScroll,
             withButtonClose,
             modalContent,
+            width,
           },
         },
       }) => (
@@ -89,6 +98,9 @@ export const ModalConsumer: React.FC = () => {
           open={visible}
           closeButton={withButtonClose}
           blur
+          /* Ancho cómodo por defecto, y nunca más que la pantalla: el mínimo
+             con 92vw es lo que evita que en un móvil se salga por los lados. */
+          width={width ?? "min(560px, 92vw)"}
           aria-labelledby="modal-title"
           scroll={withScroll ? withScroll : false}
           fullScreen={isFullScreen ? isFullScreen : false}

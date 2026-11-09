@@ -248,3 +248,94 @@
   max-width: var(--page-max); margin: 0 auto;
   padding: clamp(40px, 6vw, 64px) clamp(16px, 4vw, 24px) 8px;
 }
+
+/* ============================== Móvil ==============================
+   Bloque añadido AL FINAL a propósito: nada de lo anterior se modifica, así
+   que el escritorio queda igual por construcción.
+
+   Hasta aquí la hoja se apoyaba solo en `clamp()` y en que los elementos se
+   partieran de fila al no caber. En escritorio funciona; en un móvil, lo que
+   no cabe se amontona: la cabecera de la landing llegaba a ocupar tres filas.
+
+   Los `!important` de abajo son los justos: compiten contra estilos en línea
+   escritos en el JSX, que de otro modo ganan siempre. Están acotados a este
+   bloque y a selectores concretos.
+   =================================================================== */
+@media (max-width: 720px) {
+
+  /* --- Cabecera: una sola fila, logo a la izquierda y controles a la derecha --- */
+  .br-header-inner {
+    padding: 10px 16px;
+    gap: 10px;
+    flex-wrap: nowrap;
+  }
+
+  /* Enlaces de sección de la landing (Características, FAQ, Tutorial): van a
+     anclas de la propia página, que se alcanzan bajando. Se ocultan para que
+     quepan en una fila el logo, el idioma y el botón de registro, que es el
+     que no puede desaparecer. */
+  .br-nav-secundaria { display: none !important; }
+
+  /* Cabeceras "espejo" (registro, login, planes, pago). Usan un grid de dos
+     columnas de 340px mínimo para alinearse con el formulario centrado; por
+     debajo de ese ancho el grid colapsa a una columna y las dos celdas se
+     apilan, dejando el logo arriba y los enlaces sueltos debajo a la derecha.
+     En móvil no hay formulario que reflejar, así que vuelve a ser una fila. */
+  .br-header-split {
+    display: flex !important;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    padding: 10px 16px;
+  }
+  .br-header-split > div { padding: 0 !important; }
+  .br-header-split > div > div { max-width: none !important; margin: 0 !important; }
+
+  /* Logo encogido: mismo dibujo, mismos colores, solo más pequeño. A 375px el
+     tamaño completo junto al resto de controles no cabe en una línea. */
+  .br-logo svg { width: 24px !important; height: 24px !important; }
+  .br-logo-texto { font-size: 17px !important; }
+
+  .br-navlink { white-space: nowrap; }
+
+  /* --- Burbujas del chat --- */
+
+  /* Sin esto, un enlace largo —y en WhatsApp los hay a montones— se sale de la
+     burbuja y arrastra la página entera a lo ancho. `anywhere` corta solo
+     cuando no queda alternativa, así que el texto normal se sigue partiendo
+     por espacios como hasta ahora.
+
+     Nota: el mismo problema existe en escritorio, donde pasa más desapercibido
+     porque sobra ancho. Aquí se limita a móvil a propósito. */
+  .br-burbuja, .br-mensaje { overflow-wrap: anywhere; }
+
+  /* La burbuja lleva `minWidth: 220` en línea; con los 32 de padding se queda
+     más ancha que la pantalla en móviles estrechos. El !important es porque
+     compite contra un estilo en línea del JSX. */
+  .br-burbuja { min-width: 0 !important; }
+
+  /* --- Tarjeta de información (flujo de pago) --- */
+
+  /* Lleva `width: 400` fijo, que en un móvil de 375px desborda y mete scroll
+     horizontal en toda la página. En escritorio sigue midiendo 400. */
+  .br-tarjeta-info { width: 100% !important; max-width: 400px !important; }
+}
+
+/* Pantallas muy estrechas (iPhone SE de primera generación y similares).
+   Medido en Chromium: sin esto la cabecera de registro se salía 17px a la
+   derecha a 320px de ancho, y la de la landing ocupaba dos filas. */
+@media (max-width: 380px) {
+  .br-header-inner,
+  .br-header-split { gap: 6px; padding: 8px 12px; }
+  .br-logo svg { width: 22px !important; height: 22px !important; }
+  .br-logo-texto { font-size: 15px !important; }
+  .br-logo { gap: 7px !important; }
+  .br-btn-sm { padding: 7px 11px; font-size: 12.5px; }
+  /* Último recurso a 320px: si aun así no cabe, que la navegación baje a una
+     segunda fila en vez de salirse por la derecha. Una cabecera algo más alta
+     se tolera; el scroll horizontal en toda la página, no. */
+  .br-header-inner > nav { flex-wrap: wrap; justify-content: flex-end; }
+  /* El selector de idioma lleva sus medidas en línea, de ahí los !important. */
+  .br-lang { padding: 1px !important; }
+  .br-lang button { padding: 3px 6px !important; font-size: 10px !important; }
+}

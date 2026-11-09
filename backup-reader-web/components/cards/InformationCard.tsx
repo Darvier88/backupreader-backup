@@ -30,6 +30,7 @@ export const InformationCard: FC<InformationCardPros> = ({
 }) => {
   return (
     <Box
+      className="br-tarjeta-info"
       sx={{
         ...styles.cardPaymentContainer,
       }}

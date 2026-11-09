@@ -255,6 +255,7 @@ export const ChatView: FC<ChatViewProps> = ({
   return (
     <Container style={gallery ? { marginTop: 0, padding: 0, width: "100%", minWidth: 0, display: "block" } : { marginTop: 12, display: "flex", justifyContent: isMine ? "flex-end" : "flex-start", padding: 0 }} key={'chatview'}>
       <div
+        className="br-burbuja"
         style={{
           background: cardBg,
           border: cardBorder,
@@ -291,7 +292,7 @@ export const ChatView: FC<ChatViewProps> = ({
           </div>
         ) : (
           <>
-            <p style={{ margin: 0, fontFamily: "var(--font-sans)", fontSize: 15, lineHeight: 1.5, color: textColor }}>
+            <p className="br-mensaje" style={{ margin: 0, fontFamily: "var(--font-sans)", fontSize: 15, lineHeight: 1.5, color: textColor }}>
               {message}
             </p>
             {message?.match(/https?:\/\/\S+/)?.[0] && (
