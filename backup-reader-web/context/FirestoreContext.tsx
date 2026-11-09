@@ -27,6 +27,8 @@ type FirestoreContextProps = {
   saveUserFromProviders: (user: User) => void;
   updateUser: (firestoreId: string, planId: string, name: string) => void;
   updateStorageSizeUser: (firestoreId: string, storageSize: number) => void;
+  /** Marca (o quita, con null) la fecha en que un plan cancelado deja de valer. */
+  updatePlanCancelAt: (firestoreId: string, cancelAt: number | null) => Promise<void>;
 };
 
 export const firestoreInitialState: FiresoreState = {
@@ -167,6 +169,22 @@ export const FirestoreProvider = ({ children }: any) => {
   };
 
 
+  /**
+   * Guarda hasta cuándo sigue valiendo un plan cancelado.
+   *
+   * No se borra `user.plan`: el usuario pagó el periodo en curso y se le deja
+   * terminarlo. Quien decide a partir de esa fecha es `tieneAcceso`.
+   *
+   * Se vuelve a leer el usuario al terminar para que la pantalla refleje el
+   * cambio sin recargar.
+   */
+  const updatePlanCancelAt = async (uid: string, cancelAt: number | null) => {
+    const ref = doc(FirebaseDB, "users", uid);
+    await updateDoc(ref, { "user.planCancelAt": cancelAt });
+    await getUser(uid);
+  };
+
+
   const updateStorageSizeUser = async (uid: string, storageSize: number) => {
     const ref = doc(FirebaseDB, "users", uid);
     await updateDoc(ref, {
@@ -182,11 +200,24 @@ export const FirestoreProvider = ({ children }: any) => {
       querySnapshot.forEach((doc) => {
         subscriptions.push({ details: doc.data().plan, id: doc.id });
       });
+      if (subscriptions.length === 0) {
+        /* La colección existe pero está vacía, o las reglas no dejaron leerla.
+           Sin esto, /plans se queda en "Cargando planes…" para siempre y no
+           hay forma de saber por qué. */
+        console.warn(
+          "La colección `plans` no devolvió ningún documento. En local se siembra con: " +
+            "node herramientas/sembrar-emulador.mjs planes"
+        );
+      }
       dispatch({
         type: "plans",
         payload: subscriptions,
       });
-    } catch (error) {}
+    } catch (error) {
+      /* El catch estaba vacío: cualquier fallo aquí —reglas, red, emulador
+         apagado— dejaba la pantalla cargando sin una sola pista. */
+      console.error("No se pudieron leer los planes:", error);
+    }
   };
 
   const setPlanId = (planId: string) => {
@@ -214,6 +245,7 @@ export const FirestoreProvider = ({ children }: any) => {
         updateUser,
         saveUserFromProviders,
         updateStorageSizeUser,
+        updatePlanCancelAt,
       }}
     >
       {children}

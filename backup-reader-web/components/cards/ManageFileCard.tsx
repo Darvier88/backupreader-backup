@@ -8,6 +8,10 @@ import { Button, Typography } from "@mui/material";
 import { BlockButton } from "../buttons";
 import { StorageContext } from "../../context/StorageContext";
 import { FirestoreContext } from "../../context/FirestoreContext";
+import { ModalContext } from "../../context/ModalContext";
+import { useVault } from "../../context/VaultContext";
+import { VaultRegisterModal } from "../vault/VaultRegisterModal";
+import { VaultUnlockModal } from "../vault/VaultUnlockModal";
 import UploadFileIcon from "@mui/icons-material/UploadFile";
 
 import JSZip from 'jszip';
@@ -62,6 +66,40 @@ export const ManageFileCard: FC<ManageFileCardProps> = ({ isFirstFile, chat }) =
   const hiddenFileInput = useRef<HTMLInputElement>(null);
   const hiddenFileInput2 = useRef<HTMLInputElement>(null);
   const { user } = useContext(FirestoreContext);
+  const { show } = useContext(ModalContext);
+  const { status: estadoBoveda } = useVault();
+
+  /**
+   * Comprueba la bóveda ANTES de abrir el selector de archivos.
+   *
+   * Sin esto el orden era: elegir el archivo -> `saveFile` -> `if (!dek)` ->
+   * se guardaba un código de error en el estado... que no se pinta en ninguna
+   * parte. Resultado: el usuario elegía el zip y no pasaba absolutamente nada.
+   * Es el fallo por el que Luis creía que la app estaba rota.
+   *
+   * Ahora, si la bóveda no está abierta, se le ofrece lo que le falta: activar
+   * el cifrado si todavía no lo ha hecho, o escribir su contraseña si ya lo
+   * tiene. Devuelve true solo cuando se puede seguir.
+   */
+  const bovedaLista = (): boolean => {
+    if (estadoBoveda === "unlocked") return true;
+
+    /* Todavía se está leyendo `vaults/{uid}`. Dura un instante y no se sabe
+       aún qué modal tocaría, así que no se abre ninguno. */
+    if (estadoBoveda === "checking") return false;
+
+    show({
+      withButtonClose: true,
+      modalContent:
+        estadoBoveda === "none" ? <VaultRegisterModal /> : <VaultUnlockModal />,
+    });
+    return false;
+  };
+
+  /** Envuelve a cualquier acción que acabe subiendo un archivo. */
+  const siHayBoveda = (accion: () => void) => () => {
+    if (bovedaLista()) accion();
+  };
 
   const [isGooglePickerApiLoaded, setIsGooglePickerApiLoaded] = useState<boolean>(false);
   const [isAndroidDevice, setIsAndroidDevice] = useState(false);
@@ -260,12 +298,12 @@ export const ManageFileCard: FC<ManageFileCardProps> = ({ isFirstFile, chat }) =
         <span style={{ fontFamily: mono, fontSize: 11, letterSpacing: "0.14em", textTransform: "uppercase", color: "var(--slate-500)" }}>
           {t("Subir desde:")}
         </span>
-        <button className="br-btn br-btn-ghost br-btn-sm" onClick={handleAccessTokenRequest}>
+        <button className="br-btn br-btn-ghost br-btn-sm" onClick={siHayBoveda(handleAccessTokenRequest)}>
           {t("Google Drive")}
         </button>
         {!isAndroidDevice && (
           <>
-            <button className="br-btn br-btn-ghost br-btn-sm" onClick={() => hiddenFileInput2.current ? hiddenFileInput2.current.click() : null}>
+            <button className="br-btn br-btn-ghost br-btn-sm" onClick={siHayBoveda(() => hiddenFileInput2.current?.click())}>
               {t("Archivos")}
             </button>
             <input aria-label="file Input" hidden ref={hiddenFileInput2} multiple accept=".zip,.rar,.7zip" type="file" onChange={(e) => onHandleSaveFile(e.target.files)} />
@@ -289,12 +327,12 @@ export const ManageFileCard: FC<ManageFileCardProps> = ({ isFirstFile, chat }) =
             </p>
             <div style={{ display: "flex", flexDirection: "column", gap: 12, alignItems: "center" }}>
               {!isAndroidDevice && (
-                <button className="br-btn br-btn-primary br-btn-lg br-btn-block" onClick={() => hiddenFileInput.current ? hiddenFileInput.current.click() : null}>
+                <button className="br-btn br-btn-primary br-btn-lg br-btn-block" onClick={siHayBoveda(() => hiddenFileInput.current?.click())}>
                   {t("Subir chat")}
                 </button>
               )}
               <input hidden multiple type="file" ref={hiddenFileInput} aria-label="file Input" accept="" onChange={(e) => onHandleSaveFile(e.target.files)} />
-              <button className="br-btn br-btn-ghost br-btn-md br-btn-block" onClick={handleAccessTokenRequest}>
+              <button className="br-btn br-btn-ghost br-btn-md br-btn-block" onClick={siHayBoveda(handleAccessTokenRequest)}>
                 {t("Subir Chat desde Google Drive")}
               </button>
               {isFirstFile && (

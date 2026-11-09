@@ -2,6 +2,7 @@ import { createContext, useContext, useReducer } from "react";
 
 import { User } from "../models/User";
 import { useRouter } from "next/router";
+import { useTranslation } from "react-i18next";
 import { ModalContext } from "./ModalContext";
 import { authReducer, AuthState } from "./AuthReducer";
 import { InformationModal } from "../components/modals";
@@ -37,7 +38,32 @@ export const authInitialState: AuthState = {
 
 export const AuthContext = createContext({} as AuthContextProps);
 
+/**
+ * Convierte el código de error de Firebase en algo que el usuario pueda
+ * accionar. Devuelve la cadena en español, que es la CLAVE de i18n: quien
+ * llama la pasa por `t()` para que se traduzca al cambiar de idioma.
+ */
+const motivoDeFalloAlRegistrar = (error: any): string => {
+  switch (error?.code) {
+    case "auth/email-already-in-use":
+      return "Ese correo ya tiene una cuenta. Prueba a iniciar sesión.";
+    case "auth/invalid-email":
+      return "El correo no tiene un formato válido.";
+    case "auth/weak-password":
+      return "La contraseña es demasiado débil. Usa al menos 6 caracteres.";
+    case "auth/operation-not-allowed":
+      return "El registro con correo y contraseña está desactivado. Avísanos para habilitarlo.";
+    case "auth/network-request-failed":
+      return "No se pudo conectar. Revisa tu conexión e inténtalo de nuevo.";
+    case "auth/too-many-requests":
+      return "Demasiados intentos. Espera unos minutos e inténtalo de nuevo.";
+    default:
+      return "No ha sido posible crear la cuenta. Inténtalo de nuevo en un momento.";
+  }
+};
+
 export const AuthProvider = ({ children }: any) => {
+  const { t } = useTranslation();
   const router = useRouter();
   const { show } = useContext(ModalContext);
   const { saveUser, saveUserFromProviders } = useContext(FirestoreContext);
@@ -57,11 +83,18 @@ export const AuthProvider = ({ children }: any) => {
         payload: { user },
       });
     } else {
+      /* Antes este modal decía SIEMPRE "el correo ya se encuentra registrado",
+         fallara lo que fallara. Si el registro se caía por otro motivo
+         —contraseña rechazada, sin conexión, o el método de correo y
+         contraseña desactivado en la consola de Firebase— al usuario se le
+         daba una explicación falsa y no había forma de averiguar lo que
+         pasaba de verdad. Ahora se traduce el código real. */
+      console.error("Fallo al crear la cuenta:", (resp as any)?.error);
       show({
         modalContent: (
           <InformationModal
-            title="Aviso"
-            text="No ha sido posible realizar el registro, el correo ya se encuentra registrado."
+            title={t("Aviso")}
+            text={t(motivoDeFalloAlRegistrar((resp as any)?.error))}
           />
         ),
       });
@@ -97,8 +130,8 @@ export const AuthProvider = ({ children }: any) => {
       show({
         modalContent: (
           <InformationModal
-            title="Aviso"
-            text="Los datos ingresados, no son correctos."
+            title={t("Aviso")}
+            text={t("El correo o la contraseña no son correctos.")}
           />
         ),
       });

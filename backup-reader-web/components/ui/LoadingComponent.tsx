@@ -11,7 +11,7 @@ import { AuthContext } from "../../context/AuthContext";
 import { StorageContext } from "../../context/StorageContext";
 import { FirestoreContext } from "../../context/FirestoreContext";
 import { useLoading } from "../../context/LoadingContext";
-import { isWithinTrial } from "../../config/trial";
+import { tieneAcceso } from "../../config/acceso";
 
 import { User } from "firebase/auth";
 
@@ -60,9 +60,41 @@ export const LoadingComponent: FC<LoadingComponentProps> = ({ children }) => {
   const [firebaseUser, setFirebaseUser] = useState<User | null>(null);
 
 
+  /* La subida YA NO pasa por `loading`.
+   *
+   * Antes sí: `uploadStatus === "saving"` encendía el spinner global y la
+   * pantalla "Subiendo chat" se dibujaba dentro de él. El problema es que ese
+   * mismo `loading` lo apagan otros cuatro sitios que no saben nada de la
+   * subida —la llegada del documento de Firestore, el fin de `getFiles`, la
+   * selección de un chat y la red de seguridad de 15 s—, así que a mitad de
+   * una subida larga el aviso desaparecía y volvía el dashboard. Y como
+   * `uploadStatus` seguía en "saving", cualquier otra cosa que volviera a
+   * encender `loading` (abrir un chat, por ejemplo) hacía reaparecer
+   * "Subiendo chat" de golpe: justo lo que daba la sensación de que la subida
+   * ni había empezado o iba a saltos.
+   *
+   * Ahora la subida tiene su propia capa (`SubidaEnCurso`), que se dibuja
+   * ENCIMA del dashboard y depende solo de `uploadStatus`. Mientras dure, se
+   * ve; cuando termina o falla, se va. Nadie más puede apagarla. */
+
+
+  /* Si la pestaña se cierra o se recarga a mitad de una subida, no se pierde
+     solo el aviso: se pierde la subida entera, porque el cifrado corre aquí,
+     en el navegador, y no hay nada en el servidor que pueda continuarla. Hasta
+     ahora eso ocurría en silencio. Esto hace que el navegador pregunte.
+
+     No cubre que el navegador DESCARTE la pestaña por falta de memoria —eso no
+     lo puede impedir ninguna página—, pero sí el cerrar, recargar o navegar
+     fuera, que es lo que se hace sin querer. */
   useEffect(() => {
-    if (uploadStatus === "saving") setLoading(true);
-    return;
+    if (uploadStatus !== "saving") return;
+    const avisar = (e: BeforeUnloadEvent) => {
+      e.preventDefault();
+      e.returnValue = "";
+      return "";
+    };
+    window.addEventListener("beforeunload", avisar);
+    return () => window.removeEventListener("beforeunload", avisar);
   }, [uploadStatus]);
 
 
@@ -100,6 +132,13 @@ export const LoadingComponent: FC<LoadingComponentProps> = ({ children }) => {
   useEffect(() => {
     if (downloadFilesStatus === "downloading") {
       setLoading(true);
+    }
+    /* Faltaba el caso bueno: "downloaded". Solo se apagaba el spinner cuando
+       la lista fallaba ("not-downloaded"), así que al terminar bien —que es lo
+       que pasa al refrescar la barra lateral después de subir— nadie lo
+       apagaba y se quedaba girando hasta la red de seguridad de 15 s. */
+    if (downloadFilesStatus === "downloaded") {
+      setLoading(false);
     }
     if (downloadFilesStatus === "not-downloaded") {
       setTimeout(() => {
@@ -160,7 +199,10 @@ export const LoadingComponent: FC<LoadingComponentProps> = ({ children }) => {
 
     if (user) {
 
-      const hasAccess = user.plan || isWithinTrial(daysLeft);
+      /* `tieneAcceso` en vez de `user.plan || isWithinTrial(...)`: ahora un
+         plan puede estar cancelado y seguir valiendo hasta el final del
+         periodo pagado. La regla entera vive en config/acceso.ts. */
+      const hasAccess = tieneAcceso(user, daysLeft);
 
       // Rutas por las que se llega justo tras crear cuenta o iniciar sesión.
       const cameFromAuth =
@@ -214,9 +256,14 @@ export const LoadingComponent: FC<LoadingComponentProps> = ({ children }) => {
   }, [loading]);
 
 
+  const subiendo = uploadStatus === "saving";
+
   return (
     <>
-      {loading ? (
+      {/* Mientras se sube se deja el dashboard debajo: la capa de subida ya
+          tapa la pantalla, y cambiar además lo de abajo era parte del efecto
+          de "la página se cambia sola". */}
+      {loading && !subiendo ? (
         <Container
           style={{
             ...styles.container,
@@ -224,39 +271,105 @@ export const LoadingComponent: FC<LoadingComponentProps> = ({ children }) => {
             alignItems: "center",
           }}
         >
-          {uploadStatus === "saving" ? (
-            <>
-              <Box
-                sx={{
-                  display: "flex",
-                  flexDirection: "column",
-                  alignItems: "center",
-                }}
-              >
-                <Typography
-                  fontSize={25}
-                  fontFamily={"Open Sans"}
-                  style={{ color: "#3C3C3C" }}
-                >
-                  {t("Subiendo chat")}
-                </Typography>
-                <CircularProgress
-                  size={100}
-                  value={progress}
-                  variant="determinate"
-                  sx={{ color: "#0F52BA", marginTop: 2 }}
-                />
-              </Box>
-            </>
-          ) : (
-            <Loading
-              loadingCss={{ $$loadingSize: "100px", $$loadingBorder: "10px" }}
-            />
-          )}
+          <Loading
+            loadingCss={{ $$loadingSize: "100px", $$loadingBorder: "10px" }}
+          />
         </Container>
       ) : (
         children
       )}
+
+      {subiendo && <SubidaEnCurso progreso={progress} />}
     </>
+  );
+};
+
+/**
+ * Capa de "Subiendo chat".
+ *
+ * Fija, centrada y por encima de todo (incluidos los modales de NextUI, que
+ * viven sobre el z-index 1000). Bloquea el clic a propósito: mientras se cifra
+ * y se sube no hay nada útil que tocar, y evita que se lance una segunda
+ * subida encima de la primera.
+ *
+ * El progreso es determinado solo cuando hay un porcentaje real que enseñar.
+ * Con `variant="determinate"` y `value={0}` —que es como estaba— se pinta un
+ * círculo vacío y quieto durante los primeros segundos, que es exactamente la
+ * imagen de "esto no está haciendo nada".
+ */
+const SubidaEnCurso: FC<{ progreso: number }> = ({ progreso }) => {
+  const { t } = useTranslation();
+  const pct = Math.max(0, Math.min(100, Math.round(progreso || 0)));
+  const arrancando = pct <= 0;
+
+  return (
+    <div
+      role="status"
+      aria-live="polite"
+      style={{
+        position: "fixed",
+        inset: 0,
+        zIndex: 2000,
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        padding: 16,
+        background: "rgba(27, 31, 35, 0.45)",
+        backdropFilter: "blur(2px)",
+      }}
+    >
+      <div
+        className="br-card"
+        style={{
+          width: "min(420px, 100%)",
+          padding: "34px 28px",
+          textAlign: "center",
+          background: "var(--paper-50, #FAF7F0)",
+        }}
+      >
+        <Box sx={{ position: "relative", display: "inline-flex", marginBottom: 2 }}>
+          <CircularProgress
+            size={96}
+            thickness={3.5}
+            value={arrancando ? undefined : pct}
+            variant={arrancando ? "indeterminate" : "determinate"}
+            sx={{ color: "var(--brass-500, #0F52BA)" }}
+          />
+          {!arrancando && (
+            <Box
+              sx={{
+                position: "absolute",
+                inset: 0,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+              }}
+            >
+              <Typography
+                fontSize={18}
+                style={{ color: "var(--ink-900, #3C3C3C)", fontVariantNumeric: "tabular-nums" }}
+              >
+                {pct}%
+              </Typography>
+            </Box>
+          )}
+        </Box>
+
+        <Typography
+          fontSize={22}
+          style={{
+            fontFamily: "var(--font-serif)",
+            color: "var(--ink-900, #3C3C3C)",
+            marginBottom: 6,
+          }}
+        >
+          {t("Subiendo chat")}
+        </Typography>
+
+        <Typography fontSize={14.5} style={{ color: "var(--slate-700, #5A5A5A)", lineHeight: 1.55 }}>
+          {t("Se está cifrando en tu navegador antes de subirse. No cierres esta pestaña.")}
+        </Typography>
+      </div>
+    </div>
   );
 };

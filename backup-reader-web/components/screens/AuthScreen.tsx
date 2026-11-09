@@ -31,17 +31,36 @@ export const AuthScreen: FC = () => {
     signUp(email, password);
   };
 
-  const validateEmail = (value: string) =>
-    value.match(/^[A-Z0-9._%+-]+@[A-Z0-9.-]+.[A-Z]{2,4}$/i)?.input === formState.email;
+  /* Mínimo de Firebase. NO hay máximo: el de antes eran 8 caracteres, así que
+     cualquiera con una contraseña normal —la de un gestor, por ejemplo— se
+     encontraba el botón apagado para siempre. */
+  const MIN_PASSWORD = 6;
 
-  const isValidForm = () => {
+  /* El `{2,4}` de antes dejaba fuera los dominios de más de cuatro letras
+     (.online, .company...), y el punto sin escapar hacía que "a@bXcom" pasara
+     por bueno. */
+  const validateEmail = (value: string) =>
+    /^[A-Z0-9._%+-]+@[A-Z0-9-]+(\.[A-Z0-9-]+)*\.[A-Z]{2,}$/i.test(value.trim());
+
+  /**
+   * Por qué no se puede enviar todavía, o null si sí se puede.
+   *
+   * Antes esto era un booleano a secas: el botón se quedaba gris y no se decía
+   * en ninguna parte qué faltaba. Entre eso y el tope de 8 caracteres, la
+   * pantalla parecía simplemente rota.
+   */
+  const motivoInvalido = (): string | null => {
     const { name, email, password, repeatpassword } = formState;
-    if (!validateEmail(email)) return true;
-    if (password.length <= 5 || password.length >= 9) return true;
-    if (name.length === 0) return true;
-    if (repeatpassword != password) return true;
-    return false;
+    if (name.trim().length === 0) return t("Escribe tu nombre.");
+    if (!validateEmail(email)) return t("Escribe un correo válido.");
+    if (password.length < MIN_PASSWORD)
+      return t("La contraseña debe tener al menos 6 caracteres.");
+    if (repeatpassword !== password) return t("Las contraseñas no coinciden.");
+    return null;
   };
+
+  const motivo = motivoInvalido();
+  const isValidForm = () => motivo !== null;
 
   const mismatch = formState.repeatpassword.length > 0 && formState.password !== formState.repeatpassword;
 
@@ -69,7 +88,7 @@ export const AuthScreen: FC = () => {
             </div>
             <div className="br-field" style={{ position: "relative" }}>
               <label className="br-label">{t("Contraseña")}</label>
-              <input className="br-input" type={showPw ? "text" : "password"} placeholder={t("De 6 a 8 caracteres")} onChange={(e) => setFormState("password", e.target.value)} />
+              <input className="br-input" type={showPw ? "text" : "password"} placeholder={t("Mínimo 6 caracteres")} onChange={(e) => setFormState("password", e.target.value)} />
               <button type="button" onClick={() => setShowPw((v) => !v)} style={{ position: "absolute", right: 12, bottom: 11, background: "transparent", border: "none", cursor: "pointer", fontFamily: "var(--font-mono)", fontSize: 10.5, letterSpacing: "0.12em", textTransform: "uppercase", color: "var(--brass-600)" }}>
                 {showPw ? t("Ocultar") : t("Mostrar")}
               </button>
@@ -83,6 +102,13 @@ export const AuthScreen: FC = () => {
             <button className="br-btn br-btn-primary br-btn-lg br-btn-block" style={{ marginTop: 6, opacity: isValidForm() ? 0.5 : 1, cursor: isValidForm() ? "not-allowed" : "pointer" }} disabled={isValidForm()} onClick={onHandleSignUp}>
               {t("Crear cuenta")}
             </button>
+
+            {/* Nunca se deja el botón apagado sin decir por qué. */}
+            {motivo && (
+              <span style={{ fontSize: 13, color: "var(--slate-700)", textAlign: "center" }}>
+                {motivo}
+              </span>
+            )}
           </div>
 
           <p className="br-fineprint" style={{ marginTop: 28 }}>

@@ -126,6 +126,112 @@ const resources = {
       "Archivos":"Files",
       "Subir desde:":"Upload from:",
       "Subiendo chat":"Uploading chat",
+      "Escribe tu nombre.":"Enter your name.",
+      "Escribe un correo válido.":"Enter a valid email address.",
+      "La contraseña debe tener al menos 6 caracteres.":"Your password must be at least 6 characters.",
+      "Las contraseñas no coinciden.":"The passwords don't match.",
+      "Escribe tu contraseña.":"Enter your password.",
+      "Mínimo 6 caracteres":"At least 6 characters",
+
+      // --- Cifrado / bóveda (Etapas 5-8) ---------------------------------
+      // Toda esta parte se escribió sin pasar por aquí, así que en inglés la
+      // bóveda entera se quedaba en español.
+      "Protege tus chats":"Protect your chats",
+      "Elige una contraseña de cifrado. Con ella, tus chats se cifran en tu navegador antes de subirse: nadie más puede leerlos, ni siquiera nosotros.":"Choose an encryption password. With it, your chats are encrypted in your browser before they're uploaded: nobody else can read them, not even us.",
+      "Importante: esta contraseña no se puede recuperar. Si la pierdes junto con el código de recuperación, tus chats quedan inaccesibles para siempre.":"Important: this password cannot be recovered. If you lose it along with your recovery code, your chats will be inaccessible forever.",
+      "Contraseña de cifrado":"Encryption password",
+      "Repite la contraseña":"Repeat the password",
+      "Las dos contraseñas no coinciden.":"The two passwords don't match.",
+      "No se pudo crear la protección. Inténtalo de nuevo.":"Encryption couldn't be set up. Please try again.",
+      "Crear":"Create",
+      "Ahora no":"Not now",
+      "Activar cifrado":"Turn on encryption",
+      "Aún no has activado el cifrado. Actívalo para que tus próximos chats se cifren en tu navegador antes de subirse.":"You haven't turned on encryption yet. Turn it on so your next chats are encrypted in your browser before they're uploaded.",
+      "Tus chats cifrados están bloqueados. Introduce tu contraseña para verlos.":"Your encrypted chats are locked. Enter your password to see them.",
+      "Desbloquear":"Unlock",
+      "Desbloquea tus chats":"Unlock your chats",
+      "Introduce tu contraseña de cifrado para ver tus chats.":"Enter your encryption password to see your chats.",
+      "Introduce tu código de recuperación.":"Enter your recovery code.",
+      "La contraseña no es correcta.":"That password isn't correct.",
+      "El código de recuperación no es correcto.":"That recovery code isn't correct.",
+      "He olvidado la contraseña":"I forgot my password",
+      "Usar la contraseña":"Use my password",
+      "Guarda tu código de recuperación":"Save your recovery code",
+      "Este código es la única forma de recuperar tus chats si olvidas la contraseña. No volverá a mostrarse.":"This code is the only way to recover your chats if you forget your password. It won't be shown again.",
+      "He guardado el código en un lugar seguro":"I've saved the code somewhere safe",
+      "Código de recuperación":"Recovery code",
+      "Generar código nuevo":"Generate a new code",
+      "Generar uno nuevo invalida el anterior. Requiere la bóveda desbloqueada.":"Generating a new one invalidates the previous code. Your vault must be unlocked.",
+      "No se pudo generar un código nuevo. Desbloquea la bóveda e inténtalo otra vez.":"A new code couldn't be generated. Unlock your vault and try again.",
+      "Copiar":"Copy",
+      "Copiado":"Copied",
+      "Descargar":"Download",
+      "Cifrado":"Encryption",
+      "Todavía no has activado el cifrado de tus chats.":"You haven't turned on encryption for your chats yet.",
+      "La bóveda está desbloqueada en esta sesión.":"Your vault is unlocked in this session.",
+      "La bóveda está bloqueada en esta sesión.":"Your vault is locked in this session.",
+      "Bloquear ahora":"Lock now",
+      "Cambiar contraseña":"Change password",
+      "Cambiar la contraseña de cifrado":"Change your encryption password",
+      "Contraseña actual":"Current password",
+      "Nueva contraseña":"New password",
+      "Repite la nueva contraseña":"Repeat the new password",
+      "La contraseña actual no es correcta.":"Your current password isn't correct.",
+      "Contraseña actualizada.":"Password updated.",
+      "Sin cifrar · Cifrar":"Unencrypted · Encrypt",
+      "Desbloquea para cifrar":"Unlock to encrypt",
+      "¿Cifrar y borrar el original?":"Encrypt and delete the original?",
+      "Este chat está guardado sin cifrar. Al cifrarlo, el original se borra del servidor.":"This chat is stored unencrypted. Once it's encrypted, the original is deleted from the server.",
+      "Leyendo…":"Reading…",
+      "Cifrando":"Encrypting",
+      "Cifrando…":"Encrypting…",
+      "Verificando…":"Verifying…",
+      "Limpiando…":"Cleaning up…",
+
+      // --- Sueltas que nunca tuvieron traducción --------------------------
+      "Chats":"Chats",
+      "Mi cuenta":"My account",
+      "Continuar":"Continue",
+      "Google Drive":"Google Drive",
+
+      // --- Errores de registro (AuthContext) ------------------------------
+      "Ese correo ya tiene una cuenta. Prueba a iniciar sesión.":"That email already has an account. Try signing in.",
+      "El correo no tiene un formato válido.":"That email address isn't valid.",
+      "La contraseña es demasiado débil. Usa al menos 6 caracteres.":"That password is too weak. Use at least 6 characters.",
+      "El registro con correo y contraseña está desactivado. Avísanos para habilitarlo.":"Signing up with email and password is turned off. Let us know so we can enable it.",
+      "No se pudo conectar. Revisa tu conexión e inténtalo de nuevo.":"Couldn't connect. Check your connection and try again.",
+      "Demasiados intentos. Espera unos minutos e inténtalo de nuevo.":"Too many attempts. Wait a few minutes and try again.",
+      "No ha sido posible crear la cuenta. Inténtalo de nuevo en un momento.":"The account couldn't be created. Please try again in a moment.",
+      "Aviso":"Notice",
+      "El correo o la contraseña no son correctos.":"That email or password isn't correct.",
+
+      // --- Suscripción (Mi cuenta) ----------------------------------------
+      "Suscripción":"Subscription",
+      "No tienes una suscripción activa.":"You don't have an active subscription.",
+      "Ver planes":"See plans",
+      "Tienes un plan activo.":"You have an active plan.",
+      "Se renueva cada mes. Puedes cancelar cuando quieras.":"It renews monthly. You can cancel whenever you want.",
+      "Cancelar suscripción":"Cancel subscription",
+      "Sí, cancelar":"Yes, cancel",
+      "Reactivar suscripción":"Resume subscription",
+      "Cancelada. Mantienes el acceso hasta el":"Cancelled. You keep access until",
+      "Tu suscripción terminó el":"Your subscription ended on",
+      "Dejaremos de cobrarte, y mantendrás el acceso hasta el final del periodo que ya pagaste. Tus chats no se borran.":"We'll stop charging you, and you'll keep access until the end of the period you've already paid for. Your chats aren't deleted.",
+      "Suscripción cancelada. No se te volverá a cobrar.":"Subscription cancelled. You won't be charged again.",
+      "Suscripción reactivada.":"Subscription resumed.",
+      "No se pudo completar la operación. Inténtalo de nuevo.":"That didn't go through. Please try again.",
+      "No encontramos una suscripción activa en Stripe para tu correo. Escríbenos a info@backupreader.com y lo revisamos.":"We couldn't find an active Stripe subscription for your email. Write to us at info@backupreader.com and we'll look into it.",
+      "Tu sesión ha caducado. Vuelve a iniciar sesión.":"Your session has expired. Please sign in again.",
+
+      // --- Restablecer la contraseña de cifrado ---------------------------
+      "He olvidado mi contraseña de cifrado":"I forgot my encryption password",
+      "Restablecer con el código de recuperación":"Reset it with your recovery code",
+      "Introduce el código que guardaste al activar el cifrado y elige una contraseña nueva. Tus chats no se vuelven a cifrar: siguen intactos.":"Enter the code you saved when you turned on encryption and choose a new password. Your chats aren't re-encrypted: they stay as they are.",
+      "Al restablecerla se te dará un código de recuperación nuevo y el anterior dejará de servir.":"You'll get a new recovery code, and the old one will stop working.",
+      "Restablecer contraseña":"Reset password",
+      "Contraseña restablecida. Guarda tu código nuevo.":"Password reset. Save your new code.",
+      "La nueva contraseña debe tener al menos 10 caracteres.":"Your new password must be at least 10 characters.",
+      "Se está cifrando en tu navegador antes de subirse. No cierres esta pestaña.":"It's being encrypted in your browser before upload. Don't close this tab.",
       "Extrayendo chat":"Extracting chat",
       "Texto, fotos, videos, audios y links":"Messages, photos, videos, audios, and links",
       "Evita los dolores de cabeza que puede llegar a ser el recuperar viejas fotos, videos o información importante.":"Avoid the headaches that can come with recovering old photos, videos, or important information.",
@@ -224,11 +330,9 @@ const resources = {
         "Backup your Whatsapp Chats.",
       "Guarda y lee tus conversaciones de forma segura en la nube.":
         "Save and read your conversations securely in the cloud.",
-      "Comienza ahora": "Start now",
       "Imagenes y Texto": "Photos and Text",
       "Revisa todas las fotos de una conversacion busca texto en las conversaciones, todo en la nube.":
         "Review all photos of a conversation search text in conversations, all in the cloud.",
-      "Libera espacio en tu teléfono": "Free space on your phone",
       "Elimina conversaciones en tu celular de forma segura haciendo un Backup en la nube.":
         "Delete conversations on your cell phone safely by making a Backup in the cloud.",
       "Multiples Versiones": "Multiple Versions",
@@ -245,14 +349,18 @@ const resources = {
         "¿Is it safe to use a Backup Reader?",
       "Backup your memories": "Respalda tus recuerdos",
       "Crear cuenta": "Create Account",
-      "Iniciar sesión": "Or login",
+      /* Había dos "Iniciar sesión" ("Or login" y "Login"). En un objeto gana
+         la última, así que la primera no se usaba nunca; se quita la muerta. */
       "Continuar con email": "Continue with email",
       "Iniciar sesión": "Login",
       "Todas las opciones de inicio de sesión": "All login options",
       Continuar: "Continue",
       "¿Olvidaste tu contraseña?": "¿Forgot your password?",
       Registrarme: "Or create an account",
-      "Iniciar con Google": "Sign up with Google",
+      /* Este duplicado decía "Sign up with Google" y, por ser el último,
+         ganaba. Pero la clave solo se usa en la pantalla de ENTRAR, así que en
+         inglés el login invitaba a registrarse. Se queda el de más arriba,
+         "Sign in with Google". */
       "Sube un chat": "Upload a new chat",
       "Selecciona un chat": "Select a chat",
       "Subir chat": "Upload chat",
@@ -294,9 +402,23 @@ i18n
     lng: "es",
     fallbackLng: "es",
     detection: {
-      order: ["querystring", "cookie", "localStorage", "navigator", "htmlTag"],
+      /* El detector SOLO mira lo que dice el navegador.
+       *
+       * Nada de `cookie` ni `localStorage` aquí, y `caches` vacío. Ese era el
+       * fallo: con `lng: "es"` arriba, i18next escribía la cookie `i18next=es`
+       * durante el init, ANTES de detectar nada. Después `detect()` se leía su
+       * propia cookie y devolvía "es" la primera, así que un navegador en
+       * inglés jamás ganaba. La app guardaba "es" como si el visitante lo
+       * hubiera elegido.
+       *
+       * Lo que el visitante elige de verdad se guarda aparte, bajo `br_lang`,
+       * y se consulta antes que esto. Así las dos señales no se pisan.
+       *
+       * `htmlTag` también fuera: leía el atributo `lang` del <html>, escrito a
+       * mano, así que devolvía siempre lo mismo. No dice nada del visitante. */
+      order: ["querystring", "navigator"],
       lookupQuerystring: "lng",
-      caches: ["cookie"],
+      caches: [],
     },
     interpolation: {
       escapeValue: false,
@@ -306,13 +428,91 @@ i18n
     },
   });
 
-/** Detecta el idioma del visitante. Solo tiene sentido en el navegador. */
+/* Nombre propio, a propósito. Los que usa i18next por defecto —`i18next` en
+   cookie, `i18nextLng` en localStorage— pueden traer valores que escribió el
+   propio i18next, no el visitante, y esos no se pueden distinguir de una
+   elección real. Con una clave nuestra, lo que haya ahí lo pusimos nosotros
+   porque alguien pulsó el botón. */
+const CLAVE_IDIOMA = "br_lang";
+const IDIOMAS = ["es", "en"];
+
+/** "en-US" -> "en". Lo que se guarda y se compara es siempre el código base. */
+const base = (valor) => String(valor || "").split("-")[0].toLowerCase();
+
+/** Uno de los que existen, o null. Evita acabar en un idioma sin traducciones. */
+const soportado = (valor) => (IDIOMAS.includes(base(valor)) ? base(valor) : null);
+
+/**
+ * Qué idioma eligió el visitante, si es que eligió.
+ *
+ * Se lee a mano en vez de dejárselo al detector porque hay que distinguir dos
+ * cosas que el detector mezcla: "este señor pulsó EN" y "su navegador está en
+ * inglés". La primera manda siempre; la segunda solo sirve la primera vez.
+ */
+function idiomaGuardado() {
+  if (typeof window === "undefined") return null;
+  try {
+    const m = document.cookie.match(new RegExp("(?:^|;\\s*)" + CLAVE_IDIOMA + "=([^;]*)"));
+    if (m) return soportado(decodeURIComponent(m[1]));
+  } catch (e) {}
+  try {
+    return soportado(window.localStorage.getItem(CLAVE_IDIOMA));
+  } catch (e) {
+    return null;
+  }
+}
+
+/**
+ * Cambia el idioma y lo deja guardado.
+ *
+ * El guardado se hace aquí, explícitamente, y no se confía a que
+ * `changeLanguage` llame al `cacheUserLanguage` del detector: ese
+ * comportamiento depende de la versión de i18next y, si falla, el síntoma es
+ * justo el que se veía —pulsas EN, recargas, y vuelve a español porque la
+ * detección por navegador pisa tu elección—. Una cookie de un año, escrita a
+ * mano, no depende de nada.
+ */
+export function cambiarIdioma(valor) {
+  const idioma = soportado(valor) || "es";
+  if (typeof window !== "undefined") {
+    try {
+      const unAno = 60 * 60 * 24 * 365;
+      document.cookie = `${CLAVE_IDIOMA}=${idioma};path=/;max-age=${unAno};SameSite=Lax`;
+      window.localStorage.setItem(CLAVE_IDIOMA, idioma);
+    } catch (e) {}
+    /* Que el <html lang> diga la verdad: lo leen los buscadores, los lectores
+       de pantalla y el corrector del navegador. */
+    document.documentElement.lang = idioma;
+  }
+  if (idioma !== i18n.language) i18n.changeLanguage(idioma);
+  return idioma;
+}
+
+/**
+ * Aplica el idioma al cargar. Solo tiene sentido en el navegador.
+ *
+ * Prioridad: lo que el visitante eligió > lo que dice su navegador > español.
+ */
 export function aplicarIdiomaDetectado() {
   if (typeof window === "undefined") return;
+
+  const elegido = idiomaGuardado();
+  if (elegido) {
+    /* Ya eligió: se respeta y no se vuelve a detectar nada. */
+    document.documentElement.lang = elegido;
+    if (elegido !== i18n.language) i18n.changeLanguage(elegido);
+    return;
+  }
+
+  /* Primera visita. `detect()` devuelve una lista en el orden configurado;
+     se coge el primero que tenga traducciones, no el primero a secas, porque
+     un "fr-FR" dejaría la interfaz en un idioma que no existe. */
   const detectado = i18n.services.languageDetector?.detect();
-  const idioma = Array.isArray(detectado) ? detectado[0] : detectado;
-  const base = (idioma || "es").split("-")[0];
-  if (base !== i18n.language) i18n.changeLanguage(base);
+  const lista = Array.isArray(detectado) ? detectado : [detectado];
+  const idioma = lista.map(soportado).find(Boolean) || "es";
+
+  document.documentElement.lang = idioma;
+  if (idioma !== i18n.language) i18n.changeLanguage(idioma);
 }
 
 export default i18n;

@@ -73,7 +73,13 @@ export const PaymentCard: FC = () => {
           headers: {
             'Content-Type': 'application/json',
           },
-          body: JSON.stringify({ name: formState.name, email: formState.email }),
+          /* El uid viaja para quedar en metadata del cliente de Stripe. Es lo
+             que permite encontrarlo al cancelar sin depender del correo. */
+          body: JSON.stringify({
+            name: formState.name,
+            email: formState.email,
+            uid: user?.uid,
+          }),
         });
 
         if (response.ok) {

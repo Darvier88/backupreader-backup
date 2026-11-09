@@ -28,14 +28,27 @@ export const LoginScreen: FC = () => {
   };
 
   const validateEmail = (value: string) =>
-    value.match(/^[A-Z0-9._%+-]+@[A-Z0-9.-]+.[A-Z]{2,4}$/i)?.input === formState.email;
+    /^[A-Z0-9._%+-]+@[A-Z0-9-]+(\.[A-Z0-9-]+)*\.[A-Z]{2,}$/i.test(value.trim());
 
-  const isValidForm = () => {
+  /**
+   * Aquí NO se valida el largo de la contraseña, solo que no esté vacía.
+   *
+   * Antes exigía entre 6 y 8 caracteres, y era peor que en el registro: a
+   * quien ya tenía una cuenta con una contraseña más larga —todas las creadas
+   * con Google, o con un gestor— el botón de entrar le salía gris y no había
+   * manera de iniciar sesión. Cualquier regla de largo en el login puede dejar
+   * fuera a una cuenta que es válida; quien decide si la contraseña sirve es
+   * Firebase, no esta pantalla.
+   */
+  const motivoInvalido = (): string | null => {
     const { email, password } = formState;
-    if (!validateEmail(email)) return true;
-    if (password.length <= 5 || password.length >= 9) return true;
-    return false;
+    if (!validateEmail(email)) return t("Escribe un correo válido.");
+    if (password.length === 0) return t("Escribe tu contraseña.");
+    return null;
   };
+
+  const motivo = motivoInvalido();
+  const isValidForm = () => motivo !== null;
 
   return (
     <div className="br-root br-split">
@@ -66,6 +79,12 @@ export const LoginScreen: FC = () => {
             <button className="br-btn br-btn-primary br-btn-lg br-btn-block" style={{ marginTop: 6, opacity: isValidForm() ? 0.5 : 1, cursor: isValidForm() ? "not-allowed" : "pointer" }} disabled={isValidForm()} onClick={onHandleSignIn}>
               {t("Iniciar sesión")}
             </button>
+
+            {motivo && (
+              <span style={{ fontSize: 13, color: "var(--slate-700)", textAlign: "center" }}>
+                {motivo}
+              </span>
+            )}
           </div>
 
           <p className="br-fineprint" style={{ marginTop: 28 }}>

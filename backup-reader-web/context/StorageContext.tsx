@@ -76,6 +76,8 @@ type StorageContextProps = {
   migrarBackup: (fullPath: string, chatName: string) => Promise<void>;
   /** Progreso de la migración en curso, o null si no hay ninguna. */
   migracion: EstadoMigracion | null;
+  /** Descarta el error actual. Lo usa el aviso que lo muestra al cerrarse. */
+  limpiarError: () => void;
   chat: Chat[] | null;
   errorMessage: string;
   progress: number;
@@ -378,6 +380,11 @@ function parsearJsonInstagram(texto: string): string[][] {
    * para cualquiera que lo tenga, saltándose las reglas. getBlob va con el
    * token de sesión, así que las reglas sí se aplican.
    */
+  /* El reducer ya tenía `removeError`, pero no estaba expuesto, así que nadie
+     podía descartar un error... entre otras cosas porque tampoco había nada
+     que los mostrara. */
+  const limpiarError = () => dispatch({ type: "removeError" });
+
   const descargar = (ruta: string): Promise<Blob> => getBlob(ref(storage, ruta));
 
   /**
@@ -1026,6 +1033,7 @@ const getFiles = async (firestoreId: string) => {
         fetchBucketSize,
         migrarBackup,
         migracion,
+        limpiarError,
       }}
     >
       {children}

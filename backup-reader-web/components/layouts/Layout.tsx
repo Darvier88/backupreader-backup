@@ -9,6 +9,7 @@ import { BrandHeader, BrandFooter } from "../ui/BrandChrome";
 import { LoadingComponent } from "../ui/LoadingComponent";
 import { FirestoreContext, ModalConsumer } from "../../context";
 import { ConversationsDrawerMobile } from "../drawers/ConversationsDrawerMobile";
+import { AvisoDeErrores } from "../ui/AvisoDeErrores";
 
 interface LayoutProps {
   children: JSX.Element | JSX.Element[];
@@ -89,6 +90,11 @@ export const Layout: FC<LayoutProps> = ({ children }) => {
           <NavBar drawerButtonOnPress={() => setOpenState(!openState)} />
         )}
         <ModalConsumer />
+
+        {/* Hasta ahora los errores de subida y de lectura se guardaban en el
+            reducer y no los pintaba nadie. Va en el Layout para que cubra
+            todas las rutas, no solo el dashboard. */}
+        <AvisoDeErrores />
 
         <ConversationsDrawerMobile
           openState={openState}

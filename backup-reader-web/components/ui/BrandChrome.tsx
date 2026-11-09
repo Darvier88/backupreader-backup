@@ -2,6 +2,7 @@ import { FC, useState, useEffect, useContext } from "react";
 import { useRouter } from "next/router";
 import { useTranslation } from "react-i18next";
 import { AuthContext, FirestoreContext } from "../../context";
+import { cambiarIdioma } from "../../i18n";
 
 /* ============================================================================
    BrandHeader / BrandFooter — cromo "Expediente" para las páginas de marketing
@@ -43,7 +44,10 @@ export const LangToggle: FC = () => {
   useEffect(() => setMounted(true), []);
   // Antes de montar, render estable ("es") para que coincida servidor/cliente.
   const current = mounted && (i18n.language || "es").startsWith("en") ? "en" : "es";
-  const set = (l: "es" | "en") => i18n.changeLanguage(l);
+  /* `cambiarIdioma` en vez de `i18n.changeLanguage` a secas: además de
+     cambiarlo, lo guarda. Sin eso, al recargar la detección por navegador
+     volvía a pisar la elección. */
+  const set = (l: "es" | "en") => cambiarIdioma(l);
   const pill = (active: boolean): React.CSSProperties => ({
     fontFamily: mono, fontSize: 11, letterSpacing: "0.08em", textTransform: "uppercase",
     padding: "4px 8px", borderRadius: 100, cursor: "pointer", border: "none",
@@ -78,6 +82,9 @@ export const BrandHeader: FC<{ minimal?: boolean; app?: boolean; wide?: boolean;
           <div className="br-header-inner" style={{ maxWidth: 1360 }}>
             <Logo onClick={() => go("/")} />
             <nav style={{ display: "flex", alignItems: "center", gap: "clamp(14px,2.2vw,24px)" }}>
+              {/* /account existía pero no se enlazaba desde ningún sitio, así
+                  que el plan y la contraseña de cifrado no se podían tocar. */}
+              <span className="br-navlink" style={{ cursor: "pointer" }} onClick={() => go("/account")}>{t("Mi cuenta")}</span>
               <span className="br-navlink" style={{ cursor: "pointer" }} onClick={() => go("/help")}>{t("Ayuda")}</span>
               <span className="br-navlink" style={{ cursor: "pointer" }} onClick={onLogout}>{t("Cerrar sesión")}</span>
               <LangToggle />
