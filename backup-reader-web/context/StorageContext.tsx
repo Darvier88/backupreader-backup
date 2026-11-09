@@ -39,6 +39,7 @@ import {
   tieneTextoDeChat,
   nombreDesdeCarpeta,
   origenDeRuta,
+  indexByName,
 } from "../lib/backupreader-crypto";
 import type { BackupAbierto, ArchivoV1 } from "../lib/backupreader-crypto";
 import { prepararAudio } from "../lib/audio/opusFallback";
@@ -452,8 +453,16 @@ function parsearJsonInstagram(texto: string): string[][] {
         }
       } catch (error) {
         /* Un backup ilegible (subida a medias, formato futuro) no debe tumbar
-           la lista entera: se omite y se sigue con los demás. */
-        console.warn("No se pudo abrir el backup", d.backupId, error);
+           la lista entera: se omite y se sigue con los demás.
+
+           Pero omitirlo significa que un chat del usuario NO aparece, así que
+           va como error y no como aviso: era lo único que quedaba del fallo
+           del primer chat tras crear la cuenta, y pasaba desapercibido entre
+           los avisos normales de la consola. */
+        console.error(
+          `El backup ${d.backupId} no se pudo abrir y NO se mostrará en la lista.`,
+          error
+        );
       }
     }
     return salida;
@@ -767,6 +776,23 @@ function parsearJsonInstagram(texto: string): string[][] {
         pieceCount: manifest.pieces.length,
         cipherBytes: cipherBytes(manifest),
         fmt: FORMAT_VERSION,
+      });
+
+      /* Sembrar la caché con el manifiesto que YA tenemos en memoria.
+       *
+       * Sin esto, el `getFiles` de abajo vuelve a descargar y descifrar el
+       * manifiesto que se acaba de subir, segundos antes. Y si esa descarga
+       * falla una sola vez, `listarCifrados` se come el error con un
+       * `console.warn` y omite el backup: el usuario ve que la subida terminó
+       * y su chat no aparece por ninguna parte. Al volver a entrar más tarde
+       * sí sale, porque entonces la descarga va bien.
+       *
+       * Es el fallo que se veía justo después de crear la cuenta y la
+       * contraseña de cifrado: el primer chat subido no se mostraba. */
+      backupsAbiertos.current.set(backupId, {
+        backupId,
+        manifest,
+        porNombre: indexByName(manifest),
       });
 
       dispatch({ type: "setProgress", payload: 0 });
