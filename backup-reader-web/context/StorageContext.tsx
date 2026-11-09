@@ -10,6 +10,7 @@ import {
   uploadBytesResumable,
   getBlob,
   StorageReference,
+  ListResult,
 } from "firebase/storage";
 
 import { storage } from "../config/firebase";
@@ -18,13 +19,19 @@ import { Chat, FileDetail, FileList } from "../models/Files";
 import { storageReducer, StorageState } from "./StorageReducer";
 import { useLoading } from "../context/LoadingContext";
 import { VaultContext } from "./VaultContext";
-import { registrarBackup, listarBackups } from "../config/backupRepo";
+import {
+  registrarBackup,
+  listarBackups,
+  borrarRegistroBackup,
+} from "../config/backupRepo";
+import { borrarChat, type ResultadoChat } from "../lib/borrar-chat";
 import {
   uploadBackup,
   cipherBytes,
   newId,
   piecePath,
   manifestPath,
+  backupPrefix,
   BLOB_CONTENT_TYPE,
   BLOB_CACHE_CONTROL,
   FORMAT_VERSION,
@@ -68,6 +75,10 @@ export type EstadoMigracion = {
 type StorageContextProps = {
   saveFile: (file: File) => void;
   deleteFile: (uid: string) => void;
+  /** Borra un chat del usuario, cifrado o en texto plano. */
+  borrarChatDelUsuario: (handle: string) => Promise<ResultadoChat>;
+  /** Handle del chat que se está borrando ahora mismo, o null. */
+  borrandoChat: string | null;
   getFiles: (firestoreId: string) => void;
   getAsset: (fullpath: string) => Promise<string>;
   getMediaUrl: (nombreArchivo: string) => Promise<MediaResuelta>;
@@ -119,6 +130,11 @@ export const StorageProvider = ({ children }: any) => {
   const { dek, status: estadoBoveda } = useContext(VaultContext);
   const [state, dispatch] = useReducer(storageReducer, StorageInitialState);
   const [migracion, setMigracion] = useState<EstadoMigracion | null>(null);
+  /* Qué chat se está borrando. Sirve para desactivar su botón: pulsar dos
+     veces no rompe nada (el borrado es repetible), pero lanzar dos barridos
+     a la vez sobre el mismo prefijo hace que cada uno cuente como fallos los
+     objetos que borró el otro. */
+  const [borrandoChat, setBorrandoChat] = useState<string | null>(null);
   const { setLoading } = useLoading();
 
 
@@ -971,6 +987,123 @@ function parsearJsonInstagram(texto: string): string[][] {
   };
 
   /**
+   * Borra un chat del usuario, cifrado (v2) o en texto plano (v1).
+   *
+   * No pide la bóveda desbloqueada a propósito. Borrar no necesita leer nada:
+   * las rutas salen de listar Storage, no del manifiesto. Exigir la contraseña
+   * de cifrado para tirar un chat sería pedir que se abra lo que se quiere
+   * tirar, y además dejaría sin borrar precisamente los backups cuyo
+   * manifiesto no se puede leer, que son los que más estorban.
+   *
+   * La lógica —paginación, contabilidad, orden— vive en `lib/borrar-chat.ts` y
+   * está probada aparte. Aquí solo se le dan las piezas reales de Firebase.
+   */
+  const borrarChatDelUsuario = async (handle: string): Promise<ResultadoChat> => {
+    const vacio: ResultadoChat = {
+      borrados: 0,
+      fallidos: 0,
+      rutasFallidas: [],
+      registroBorrado: false,
+      aviso: "sin-sesion",
+    };
+    if (!user?.uid) return vacio;
+    if (borrandoChat) return { ...vacio, aviso: "ya-hay-borrado" };
+
+    const uid = user.uid;
+    const esV2 = esHandleV2(handle);
+    const backupId = esV2 ? backupIdDeHandle(handle) : null;
+
+    if (esV2 && !backupId) {
+      return { ...vacio, aviso: "chat-no-reconocido" };
+    }
+
+    /* En v2 el prefijo se construye con el backupId; en v1 el handle YA es la
+       carpeta. Y se comprueba que caiga dentro de lo propio: un handle
+       manipulado no debe poder apuntar al prefijo de otro usuario. Las reglas
+       lo rechazarían igual, pero fallar aquí da un error claro en vez de un
+       permiso denegado a mitad del borrado. */
+    const prefijo = esV2 ? backupPrefix(uid, backupId!) : handle;
+    if (!prefijo.startsWith(`backups/${uid}/`)) {
+      console.error("Se intentó borrar fuera del prefijo propio:", prefijo);
+      return { ...vacio, aviso: "chat-no-reconocido" };
+    }
+
+    setBorrandoChat(handle);
+    try {
+      const resultado = await borrarChat(prefijo, {
+        listar: async (prefijoRuta, pageToken) => {
+          const pagina: ListResult = await list(ref(storage, prefijoRuta), {
+            maxResults: 1000,
+            pageToken,
+          });
+          /* Las subcarpetas (`prefixes`) no se devuelven como rutas: lo que se
+             borra son objetos. En v2 no hay anidamiento más allá de `p/`, y en
+             v1 las carpetas se recorren abajo. */
+          const rutas = pagina.items.map((i) => i.fullPath);
+          const subcarpetas = pagina.prefixes.map((p) => p.fullPath);
+          for (const sub of subcarpetas) {
+            /* v1 tiene carpetas dentro de la carpeta del chat. Se recorren
+               aquí, en el mismo listado, para que la lógica de arriba siga
+               viendo una lista plana de objetos. */
+            const dentro = await listarTodoRecursivo(sub);
+            rutas.push(...dentro);
+          }
+          return { rutas, siguiente: pagina.nextPageToken ?? null };
+        },
+        borrar: (ruta: string) => deleteObject(ref(storage, ruta)),
+        /* Solo v2 tiene registro en Firestore. */
+        borrarRegistro: esV2
+          ? () => borrarRegistroBackup(uid, backupId!)
+          : undefined,
+      });
+
+      /* La caché en memoria guarda el manifiesto descifrado, con el nombre del
+         chat y de sus archivos. Si no se tira, la barra lateral seguiría
+         pudiendo nombrar un chat que ya no existe. */
+      if (backupId) backupsAbiertos.current.delete(backupId);
+
+      /* Si el chat borrado era el que estaba abierto, se limpia la vista: si
+         no, quedarían en pantalla los mensajes de un chat que ya no está. */
+      if (state.fullPath === handle) {
+        dispatch({ type: "chatFile", payload: null });
+        dispatch({ type: "fileDownloaded", payload: { file: [] } });
+        dispatch({ type: "setChatName", payload: null });
+        dispatch({ type: "setFullPath", payload: null });
+      }
+
+      await getFiles(uid);
+      return resultado;
+    } catch (error) {
+      console.error("No se pudo borrar el chat:", handle, error);
+      return { ...vacio, aviso: "fallo-general" };
+    } finally {
+      setBorrandoChat(null);
+    }
+  };
+
+  /** Todas las rutas de objetos bajo un prefijo, bajando por las subcarpetas. */
+  const listarTodoRecursivo = async (prefijo: string): Promise<string[]> => {
+    const salida: string[] = [];
+    const pendientes = [prefijo];
+
+    while (pendientes.length) {
+      const actual = pendientes.pop()!;
+      let pageToken: string | undefined = undefined;
+      do {
+        const pagina: ListResult = await list(ref(storage, actual), {
+          maxResults: 1000,
+          pageToken,
+        });
+        for (const item of pagina.items) salida.push(item.fullPath);
+        for (const sub of pagina.prefixes) pendientes.push(sub.fullPath);
+        pageToken = pagina.nextPageToken ?? undefined;
+      } while (pageToken);
+    }
+
+    return salida;
+  };
+
+  /**
    * Carpetas donde la Cloud Function `unzip` dejaba los backups en texto plano.
    *
    * "other" estaba sin listar: `detectarOrigen` devolvía "other" para cualquier
@@ -1056,6 +1189,8 @@ const getFiles = async (firestoreId: string) => {
         getFiles,
         getFile,
         deleteFile,
+        borrarChatDelUsuario,
+        borrandoChat,
         fetchBucketSize,
         migrarBackup,
         migracion,

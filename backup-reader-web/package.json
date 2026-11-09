@@ -21,7 +21,8 @@
     "test:acceso": "vitest run tests/acceso",
     "test:descuentos": "vitest run tests/descuentos",
     "test:lista": "vitest run tests/lista",
-    "test:admin": "vitest run tests/admin"
+    "test:admin": "vitest run tests/admin",
+    "test:borrado": "vitest run tests/borrado"
   },
   "dependencies": {
     "@emotion/react": "^11.10.6",

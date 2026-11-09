@@ -3,6 +3,7 @@ import { FC, useContext, useState } from "react";
 import { Text, Button, Collapse } from "@nextui-org/react";
 import { StorageContext } from "../../context/StorageContext";
 import { BotonCifrar } from "../vault/BotonCifrar";
+import { BotonBorrarChat } from "../chat/BotonBorrarChat";
 import { Box, Container, Drawer, Typography } from "@mui/material";
 import { storage } from "../../config/firebase";
 import {
@@ -188,6 +189,7 @@ export const ConversationsDrawerMobile: FC<ConversationsDrawerMobileProps> = ({
               {!item.cifrado && (
                 <BotonCifrar fullPath={item.fullPath} name={item.name} />
               )}
+              <BotonBorrarChat fullPath={item.fullPath} name={item.name} />
             </div>
           )
         })}

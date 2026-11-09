@@ -10,6 +10,7 @@ import { ModalContext } from "../../context/ModalContext";
 import { StorageContext } from "../../context/StorageContext";
 import { InformationModal } from "../modals/InformationModal";
 import { BotonCifrar } from "../vault/BotonCifrar";
+import { BotonBorrarChat } from "../chat/BotonBorrarChat";
 import { FirebaseAuth } from "../../config/firebase";
 import { storage } from "../../config/firebase";
 
@@ -293,15 +294,18 @@ export const ConversationsDrawer: FC<ConversationsDrawerProps> = ({
                   </span>
                 )}
               </div>
-              {/* Un backup todavía en texto plano ofrece cifrarse en vez de
-                  la flecha. Cuando no queden v1, esto vuelve a ser solo el svg. */}
-              {item.cifrado ? (
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--brass-600)" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
-                  <path d="M9 6l6 6-6 6" />
-                </svg>
-              ) : (
-                <BotonCifrar fullPath={item.fullPath} name={item.name} />
-              )}
+              <div style={{ display: "flex", alignItems: "center", gap: 2, flexShrink: 0 }}>
+                {/* Un backup todavía en texto plano ofrece cifrarse en vez de
+                    la flecha. Cuando no queden v1, esto vuelve a ser solo el svg. */}
+                {item.cifrado ? (
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--brass-600)" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
+                    <path d="M9 6l6 6-6 6" />
+                  </svg>
+                ) : (
+                  <BotonCifrar fullPath={item.fullPath} name={item.name} />
+                )}
+                <BotonBorrarChat fullPath={item.fullPath} name={item.name} />
+              </div>
             </div>
           );
         })}
