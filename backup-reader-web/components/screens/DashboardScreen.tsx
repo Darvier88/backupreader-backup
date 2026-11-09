@@ -14,7 +14,6 @@ import { ManageFileCard } from "../cards";
 import { DividerLine } from "../ui/DividerLine";
 import { ConversationsDrawer } from "../drawers";
 import { SearchInput } from "../inputs/SearchInput";
-import { ResultadosGlobales } from "../chat/ResultadosGlobales";
 import { StorageContext } from "../../context/StorageContext";
 import { useLoading } from "../../context/LoadingContext";
 import useInView from "../../hooks/useInView";
@@ -253,14 +252,14 @@ export const DashboardScreen: FC = () => {
                   justifyContent={"space-between"}
                   width={phone ? "100%" : "45%"}
                 >
+                  {/* Filtra los mensajes del chat ABIERTO. La búsqueda en
+                      todos los chats vive en la barra lateral, porque tiene
+                      que estar disponible sin abrir ninguno. */}
                   <SearchInput
                     width={phone ? 100 : 150}
                     placeHolder="Buscar"
                     onSearch={onHandleSearch}
                   />
-                  {/* El buscador de arriba filtra los mensajes del chat
-                      abierto. Esto añade en qué OTROS chats aparece lo
-                      buscado, que es lo que faltaba. */}
                   <Button
                     variant="outlined"
                     style={{
@@ -314,13 +313,6 @@ export const DashboardScreen: FC = () => {
                   </Button>
                 </Box>
               </Box>
-              {/* En qué OTROS chats aparece lo buscado. Va aquí, debajo de la
-                  barra, para que se lea junto a los mensajes filtrados del
-                  chat abierto y no en un panel aparte. */}
-              <ResultadosGlobales
-                consulta={chatSearch}
-                alAbrirChat={onHandleGetFile}
-              />
               <DividerLine width={"100%"} />
             </Container>
             <Grid

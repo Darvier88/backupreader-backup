@@ -204,6 +204,7 @@ const resources = {
       "Contraseña actualizada.":"Password updated.",
       "Sin cifrar · Cifrar":"Unencrypted · Encrypt",
       "Desbloquea para cifrar":"Unlock to encrypt",
+      "Buscar en todos los chats":"Search all chats",
       "En otros chats":"In other chats",
       "Buscando…":"Searching…",
       "Sin coincidencias en otros chats.":"No matches in other chats.",

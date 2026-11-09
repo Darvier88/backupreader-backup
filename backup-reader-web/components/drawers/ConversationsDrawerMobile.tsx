@@ -4,6 +4,7 @@ import { Text, Button, Collapse } from "@nextui-org/react";
 import { StorageContext } from "../../context/StorageContext";
 import { BotonCifrar } from "../vault/BotonCifrar";
 import { BotonBorrarChat } from "../chat/BotonBorrarChat";
+import { ResultadosGlobales } from "../chat/ResultadosGlobales";
 import { Box, Container, Drawer, Typography } from "@mui/material";
 import { storage } from "../../config/firebase";
 import {
@@ -46,6 +47,8 @@ export const ConversationsDrawerMobile: FC<ConversationsDrawerMobileProps> = ({
   };
 
   const [instagramConversations, setInstagramConversations] = useState<JSX.Element[] | null>(null);
+  /* Lo buscado en TODOS los chats. */
+  const [consulta, setConsulta] = useState("");
 
   function extractUsername(instagramString: string): string {
     if (!instagramString.includes('_')) {
@@ -138,6 +141,29 @@ export const ConversationsDrawerMobile: FC<ConversationsDrawerMobileProps> = ({
             Chats
           </Typography>
         </Box>
+
+        {/* Buscar en todos los chats, igual que en escritorio: tiene que estar
+            disponible sin abrir ninguno. Al pulsar un resultado se abre ese
+            chat y el cajón se cierra, que es lo que ya hace onHandleGetFile. */}
+        <input
+          value={consulta}
+          onChange={(e) => setConsulta(e.target.value)}
+          placeholder="Buscar en todos los chats"
+          style={{
+            width: "calc(100% - 20px)",
+            margin: "0 10px 10px",
+            padding: "8px 10px",
+            borderRadius: 8,
+            border: "1px solid var(--border)",
+            background: "var(--surface)",
+            fontFamily: "var(--font-sans)",
+            fontSize: 14,
+            color: "var(--ink-900)",
+          }}
+        />
+        <div style={{ width: "calc(100% - 20px)", margin: "0 10px" }}>
+          <ResultadosGlobales consulta={consulta} alAbrirChat={onHandleGetFile} />
+        </div>
 
         {fileList?.map((item, i) =>{
 

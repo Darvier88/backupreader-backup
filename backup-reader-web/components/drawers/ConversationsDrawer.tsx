@@ -11,6 +11,11 @@ import { StorageContext } from "../../context/StorageContext";
 import { InformationModal } from "../modals/InformationModal";
 import { BotonCifrar } from "../vault/BotonCifrar";
 import { BotonBorrarChat } from "../chat/BotonBorrarChat";
+import { ResultadosGlobales } from "../chat/ResultadosGlobales";
+
+/** `t()` puede devolver null según sus tipos; esto lo deja en string. */
+const enTexto = (traducido: unknown): string =>
+  (traducido as string | null | undefined) ?? "";
 import { FirebaseAuth } from "../../config/firebase";
 import { storage } from "../../config/firebase";
 
@@ -95,6 +100,9 @@ export const ConversationsDrawer: FC<ConversationsDrawerProps> = ({
   const [bucketSize, setBucketSize] = useState<number>(0);
   const [userEmail,setUserEmail] = useState<string | null>();
   const [instagramConversations, setInstagramConversations] = useState<JSX.Element[] | null>(null);
+  /* Lo que se busca en TODOS los chats. Es estado de la barra lateral y no del
+     dashboard porque el buscador tiene que funcionar sin ningún chat abierto. */
+  const [consulta, setConsulta] = useState("");
 
   const deletingFile = () => {
     show({
@@ -234,7 +242,31 @@ export const ConversationsDrawer: FC<ConversationsDrawerProps> = ({
         </Typography>
         { /* bucketSize === 0 ? <p style={{ fontSize: '11px', color: '#999999', marginLeft: '10px' }}> </p>  : <p style={{ fontSize: '11px', color: '#999999', marginLeft: '10px' }}>Conversaciones: { bucketSize } MB</p>  */ }
         <p style={{ fontFamily: 'var(--font-mono)', fontSize: '11.5px', letterSpacing: '0.06em', color: 'var(--slate-500)', marginLeft: '10px' }}>{ userEmail }</p>
-        
+
+        {/* Buscar en TODOS los chats.
+            Vive aquí, con la lista, y no en la barra del chat abierto: buscar
+            en todos los chats es lo primero que se hace al entrar, y pedir que
+            se abra uno antes es justo lo contrario de para qué sirve. */}
+        <input
+          value={consulta}
+          onChange={(e) => setConsulta(e.target.value)}
+          placeholder={enTexto(t("Buscar en todos los chats"))}
+          style={{
+            width: "calc(100% - 20px)",
+            margin: "10px",
+            padding: "8px 10px",
+            borderRadius: 8,
+            border: "1px solid var(--border)",
+            background: "var(--surface)",
+            fontFamily: "var(--font-sans)",
+            fontSize: 14,
+            color: "var(--ink-900)",
+          }}
+        />
+        <div style={{ width: "calc(100% - 20px)", margin: "0 10px" }}>
+          <ResultadosGlobales consulta={consulta} alAbrirChat={onPress} />
+        </div>
+
       </Container>
       
 
