@@ -8,6 +8,7 @@ import { Button, Typography } from "@mui/material";
 import { BlockButton } from "../buttons";
 import { InicioChats } from "../chat/InicioChats";
 import { HojaSubirChat } from "../chat/HojaSubirChat";
+import { ResultadosGlobales } from "../chat/ResultadosGlobales";
 import { usePanelChats } from "../../context/PanelChatsContext";
 import { StorageContext } from "../../context/StorageContext";
 import { FirestoreContext } from "../../context/FirestoreContext";
@@ -68,6 +69,7 @@ export const ManageFileCard: FC<ManageFileCardProps> = ({ isFirstFile, chat }) =
   const { saveFile, fileList, getFile: abrirChat } = useContext(StorageContext);
   const { abrir: abrirPanel } = usePanelChats();
   const [hojaSubir, setHojaSubir] = useState(false);
+  const [consulta, setConsulta] = useState("");
   const hiddenFileInput = useRef<HTMLInputElement>(null);
   const hiddenFileInput2 = useRef<HTMLInputElement>(null);
   const { user } = useContext(FirestoreContext);
@@ -315,6 +317,14 @@ export const ManageFileCard: FC<ManageFileCardProps> = ({ isFirstFile, chat }) =
           onAbrirChat={(ruta, nombre) => {
             abrirChat(ruta, nombre);
           }}
+          consulta={consulta}
+          onConsulta={setConsulta}
+          resultados={
+            <ResultadosGlobales
+              consulta={consulta}
+              alAbrirChat={(ruta, nombre) => abrirChat(ruta, nombre)}
+            />
+          }
         />
         {inputArchivos}
         <HojaSubirChat

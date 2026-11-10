@@ -30,6 +30,28 @@ const enTexto = (traducido: unknown): string =>
 const mono = "var(--font-mono)";
 const serif = "var(--font-serif)";
 
+const tarjetaAccion: React.CSSProperties = {
+  flex: 1,
+  minWidth: 0,
+  display: "flex",
+  flexDirection: "column",
+  alignItems: "flex-start",
+  minHeight: 64,
+  padding: "12px 14px",
+  borderRadius: 12,
+  border: "1px solid var(--border)",
+  background: "var(--surface-raised)",
+  cursor: "pointer",
+  textAlign: "left",
+};
+
+const tituloAccion: React.CSSProperties = {
+  fontFamily: "var(--font-sans)",
+  fontSize: 14.5,
+  fontWeight: 600,
+  color: "var(--ink-900)",
+};
+
 const etiqueta: React.CSSProperties = {
   fontFamily: mono,
   fontSize: 10.5,
@@ -50,9 +72,14 @@ export const InicioChats: FC<{
   onVerMisChats: () => void;
   onSubir: () => void;
   onAbrirChat: (fullPath: string, nombre: string) => void;
+  /** Lo que hay escrito en el buscador general. */
+  consulta: string;
+  onConsulta: (valor: string) => void;
+  /** Los resultados, que los pinta quien llama. */
+  resultados?: React.ReactNode;
   /** Cuántos recientes enseñar. Más de cuatro ya es la lista entera. */
   maxRecientes?: number;
-}> = ({ chats, onVerMisChats, onSubir, onAbrirChat, maxRecientes = 4 }) => {
+}> = ({ chats, onVerMisChats, onSubir, onAbrirChat, consulta, onConsulta, resultados, maxRecientes = 4 }) => {
   const { t } = useTranslation();
   const hayChats = chats.length > 0;
 
@@ -65,80 +92,77 @@ export const InicioChats: FC<{
         padding: "28px 18px 40px",
       }}
     >
-      {hayChats ? (
-        <>
-          <span style={{ ...etiqueta, color: "var(--brass-600)" }}>
-            {t("Tu respaldo")}
-          </span>
-          <h1
-            style={{
-              margin: "10px 0 8px",
-              fontFamily: serif,
-              fontWeight: 500,
-              fontSize: 30,
-              lineHeight: 1.2,
-              letterSpacing: "-0.015em",
-              color: "var(--ink-900)",
-            }}
-          >
-            {t("Tus chats, en un solo lugar.")}
-          </h1>
-          <p style={{ margin: "0 0 22px", fontSize: 15.5, lineHeight: 1.6, color: "var(--slate-700)" }}>
-            {t("Léelos con calma. Solo tú tienes acceso.")}
-          </p>
-
-          <button className="br-btn br-btn-primary br-btn-lg br-btn-block" onClick={onVerMisChats}>
-            {t("Ver mis chats")}
-          </button>
-
-          <p style={{ ...etiqueta, margin: "14px 0 0", textAlign: "center" }}>
-            {enTexto(
-              t("{{total}} chats guardados", { total: chats.length })
-            )}
-          </p>
-        </>
-      ) : (
-        <>
-          <h1
+      {/* El buscador es lo primero cuando ya hay chats (3a): con dos o tres
+          respaldos se entra a leer, pero en cuanto hay unos cuantos lo que se
+          quiere es encontrar algo concreto, y tenerlo que buscar entre las
+          acciones es lo que hace que nadie lo use. */}
+      {hayChats && (
+        <div style={{ marginBottom: 24 }}>
+          <h2
             style={{
               margin: "0 0 10px",
               fontFamily: serif,
               fontWeight: 500,
-              fontSize: 28,
-              lineHeight: 1.25,
-              letterSpacing: "-0.015em",
+              fontSize: 22,
               color: "var(--ink-900)",
             }}
           >
-            {t("Aún no tienes chats guardados.")}
-          </h1>
-          <p style={{ margin: "0 0 24px", fontSize: 15.5, lineHeight: 1.6, color: "var(--slate-700)" }}>
-            {/* La ruta exacta dentro de WhatsApp, no "exporta tu chat": el
-                usuario que no sabe hacerlo es justo el que está aquí. */}
-            {t("En WhatsApp, abre el chat → Más → Exportar chat. Luego súbelo aquí.")}
+            {t("¿Qué estás buscando?")}
+          </h2>
+          <input
+            value={consulta}
+            onChange={(e) => onConsulta(e.target.value)}
+            placeholder={enTexto(t("Personas o mensajes"))}
+            style={{
+              width: "100%",
+              height: 46,
+              padding: "0 14px",
+              borderRadius: 10,
+              border: "1px solid var(--border)",
+              background: "var(--surface)",
+              fontFamily: "var(--font-sans)",
+              fontSize: 15,
+              color: "var(--ink-900)",
+            }}
+          />
+          <p style={{ ...etiqueta, marginTop: 8 }}>
+            {enTexto(t("Busca en tus {{total}} chats", { total: chats.length }))}
           </p>
-        </>
+          {resultados}
+        </div>
       )}
 
-      <div style={{ marginTop: hayChats ? 26 : 0 }}>
-        <button
-          className={
-            hayChats
-              ? "br-btn br-btn-ghost br-btn-md br-btn-block"
-              : "br-btn br-btn-primary br-btn-lg br-btn-block"
-          }
-          onClick={onSubir}
-        >
-          {t("Subir un chat")}
-        </button>
-        <p style={{ ...etiqueta, margin: "10px 0 0", textAlign: "center" }}>
-          {hayChats
-            ? t("Archivo .zip exportado de WhatsApp")
-            : t("Desde Google Drive o Archivos · .zip")}
-        </p>
-      </div>
+      {/* La ronda 3 sustituye al bloque grande de la 2a por dos tarjetas
+          compactas: con el buscador arriba, un titular de dos lineas y un
+          boton a todo ancho empujan los recientes fuera de la pantalla, y los
+          recientes son lo que de verdad se pulsa. */}
+      {hayChats && !consulta.trim() && (
+        <div style={{ display: "flex", gap: 10 }}>
+          <button onClick={onVerMisChats} style={tarjetaAccion}>
+            <span style={tituloAccion}>{t("Ver mis chats")}</span>
+            <span style={{ ...etiqueta, marginTop: 4 }}>
+              {enTexto(t("{{total}} guardados", { total: chats.length }))}
+            </span>
+          </button>
+          <button onClick={onSubir} style={tarjetaAccion}>
+            <span style={tituloAccion}>{t("Subir un chat")}</span>
+            <span style={{ ...etiqueta, marginTop: 4 }}>{t("Archivo .zip")}</span>
+          </button>
+        </div>
+      )}
 
-      {hayChats && (
+      {!hayChats && (
+        <div>
+          <button className="br-btn br-btn-primary br-btn-lg br-btn-block" onClick={onSubir}>
+            {t("Subir un chat")}
+          </button>
+          <p style={{ ...etiqueta, margin: "10px 0 0", textAlign: "center" }}>
+            {t("Desde Google Drive o Archivos · .zip")}
+          </p>
+        </div>
+      )}
+
+      {hayChats && !consulta.trim() && (
         <div style={{ marginTop: 30 }}>
           <span style={etiqueta}>{t("Recientes")}</span>
           <div style={{ marginTop: 10, display: "flex", flexDirection: "column", gap: 8 }}>

@@ -39,6 +39,14 @@ import {
   type EstadoIndexado,
 } from "../lib/busqueda/indexador";
 
+/** Un mensaje concreto, con lo que hace falta para enseñarlo en una fila. */
+export type FragmentoMensaje = {
+  mensaje: number;
+  fecha: string;
+  remitente: string;
+  texto: string;
+};
+
 /** Lo que devuelve una búsqueda en todos los chats. */
 export type BusquedaGlobal = {
   resultados: ResultadoEnChat[];
@@ -102,6 +110,8 @@ type StorageContextProps = {
   borrandoChat: string | null;
   /** Busca en todos los chats que ya tengan índice. */
   buscarEnTodos: (consulta: string) => Promise<BusquedaGlobal>;
+  /** El texto de unos mensajes de un chat, para enseñar el fragmento. */
+  fragmentosDeChat: (backupId: string, numeros: number[]) => Promise<FragmentoMensaje[]>;
   /** Progreso del indexado, para que la pantalla pueda avisar. */
   estadoIndexado: EstadoIndexado;
   getFiles: (firestoreId: string) => void;
@@ -1235,6 +1245,61 @@ function parsearJsonInstagram(texto: string): string[][] {
    * como completa hace creer que el mensaje no existe, y eso no se detecta
    * nunca; una búsqueda que avisa de que le faltan tres chats, sí.
    */
+  /**
+   * El texto de unos mensajes concretos de un chat.
+   *
+   * El índice guarda qué palabras hay y en qué número de mensaje, pero NO el
+   * texto. Para enseñar el fragmento con la frase resaltada hay que ir a
+   * buscarlo, y eso significa descifrar ese chat.
+   *
+   * Se eligió así sobre la alternativa de guardar los fragmentos dentro del
+   * índice. Guardarlos lo haría instantáneo, pero el índice pasaría a contener
+   * el texto de las conversaciones: cifrado, sí, pero un índice con frases
+   * dentro revela mucho más que uno con palabras sueltas si alguna vez se
+   * descifrara. Y solo se descifran los chats que de verdad coinciden, que en
+   * una búsqueda normal son dos o tres, no los cuarenta.
+   *
+   * El chat descifrado queda en la caché de manifiestos, así que abrirlo
+   * después desde un resultado ya no vuelve a bajarlo.
+   */
+  const fragmentosDeChat = async (
+    backupId: string,
+    numeros: number[]
+  ): Promise<FragmentoMensaje[]> => {
+    if (!user?.uid || !dek || numeros.length === 0) return [];
+
+    try {
+      const abierto = await obtenerBackup(backupId);
+      if (!abierto) return [];
+
+      const chat = await leerTextoDelChat(user.uid, abierto, dek, descargar);
+      if (!chat) return [];
+
+      /* Se parsea con el MISMO parser que la pantalla y que el indexador: si
+         no, los números del índice apuntarían a otras filas y el fragmento
+         enseñado no sería el que coincidió. */
+      const esJson =
+        abierto.manifest.source === "instagram" ||
+        chat.nombre.toLowerCase().endsWith(".json");
+      const filas = esJson ? parsearJsonInstagram(chat.texto) : parsearTextoChat(chat.texto);
+
+      return numeros
+        .filter((n) => n >= 0 && n < filas.length)
+        .map((n) => ({
+          mensaje: n,
+          fecha: filas[n]?.[0] || "",
+          remitente: filas[n]?.[1] || "",
+          texto: filas[n]?.[2] || "",
+        }));
+    } catch (error) {
+      /* Un chat que no se puede abrir no debe tumbar la búsqueda entera: el
+         resultado se queda sin fragmento, pero el chat sigue listado con su
+         recuento, que es lo que permite entrar a verlo. */
+      console.warn("No se pudieron leer los fragmentos de", backupId, error);
+      return [];
+    }
+  };
+
   const buscarEnTodos = async (consulta: string): Promise<BusquedaGlobal> => {
     if (!user?.uid || !dek) return { resultados: [], sinIndexar: 0, consulta };
 
@@ -1370,6 +1435,7 @@ const getFiles = async (firestoreId: string) => {
         borrarChatDelUsuario,
         borrandoChat,
         buscarEnTodos,
+        fragmentosDeChat,
         estadoIndexado,
         fetchBucketSize,
         migrarBackup,

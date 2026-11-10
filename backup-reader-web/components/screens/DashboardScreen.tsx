@@ -16,6 +16,7 @@ import { ConversationsDrawer } from "../drawers";
 import { BuscadorEnChat } from "../chat/BuscadorEnChat";
 import { ControlSegmentado } from "../ui/ControlSegmentado";
 import { cuantasVeces } from "../../lib/busqueda/resaltar";
+import { usePanelChats } from "../../context/PanelChatsContext";
 
 /** `t()` puede devolver null segun sus tipos; esto lo deja en string. */
 const enTexto = (traducido: unknown): string =>
@@ -83,6 +84,7 @@ export const DashboardScreen: FC = () => {
   const [toShow, setToShow] = useState<"photos" | "message">("message");
   const [state, setState] = useState<boolean>(true);
   const { fileList } = useContext(StorageContext);
+  const { objetivo, limpiarObjetivo } = usePanelChats();
 
   const phone = useMediaQuery(({ breakpoints }: Theme) =>
     breakpoints.down("sm")
@@ -158,6 +160,23 @@ export const DashboardScreen: FC = () => {
       setVisibleCount(Math.ceil((mensajeDeLaActiva + 1) / CHUNK) * CHUNK);
     }
   }, [mensajeDeLaActiva, visibleCount]);
+
+  /* Llegada desde un resultado de la busqueda global: se trae lo buscado y el
+     numero de mensaje. Se espera a que el chat este cargado y a que se hayan
+     contado las coincidencias, porque hasta entonces no se sabe que numero de
+     coincidencia global le toca a ese mensaje. */
+  useEffect(() => {
+    if (!objetivo || !chat) return;
+    if (chatSearch !== objetivo.consulta) {
+      setChatSearch(objetivo.consulta);
+      return;
+    }
+    const desplazamiento = coincidencias.desplazamientos[objetivo.mensaje];
+    if (desplazamiento === undefined) return;
+    setActiva(desplazamiento);
+    limpiarObjetivo();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [objetivo, chat, chatSearch, coincidencias]);
 
   /* Desplazarse hasta la marca activa. Va en un efecto y no en el manejador de
      la flecha porque el elemento puede no existir todavía: si el salto obligó
