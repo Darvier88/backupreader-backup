@@ -244,14 +244,50 @@ export const EntradaScreen: FC = () => {
                 <span style={{ flex: 1, height: 1, background: "var(--border)" }} />
               </div>
 
-              <button
-                type="button"
-                onClick={() => setPaso("correo")}
-                className="br-btn br-btn-ghost"
-                style={{ width: "100%", minHeight: 52, borderRadius: 10, cursor: "pointer" }}
-              >
-                {t("Continuar con correo")}
-              </button>
+              {/* En escritorio el correo va EN LINEA, sin pantalla aparte: es
+                  un clic menos y alli sobra el sitio. En movil se mantiene el
+                  boton que lleva al paso 1, porque meter un campo mas en la
+                  primera pantalla empuja los botones de Apple y Google fuera
+                  del alcance del pulgar, que es donde el diseno los quiere.
+                  (7a frente a 4a.) */}
+              <div className="br-solo-escritorio">
+                {campo(
+                  enTexto(t("O con tu correo")),
+                  {
+                    type: "email",
+                    value: correo,
+                    placeholder: "tucorreo@ejemplo.com",
+                    onChange: (e) => {
+                      setCorreo(e.target.value);
+                      setErrorCorreo("");
+                    },
+                    onKeyDown: (e) => {
+                      if (e.key === "Enter") seguirConCorreo();
+                    },
+                  },
+                  errorCorreo
+                )}
+                <button
+                  type="button"
+                  onClick={seguirConCorreo}
+                  disabled={comprobando}
+                  className="br-btn br-btn-primary br-btn-lg"
+                  style={{ width: "100%", minHeight: 52, cursor: comprobando ? "default" : "pointer", opacity: comprobando ? 0.6 : 1 }}
+                >
+                  {comprobando ? t("Comprobando…") : t("Continuar")}
+                </button>
+              </div>
+
+              <div className="br-solo-movil">
+                <button
+                  type="button"
+                  onClick={() => setPaso("correo")}
+                  className="br-btn br-btn-ghost"
+                  style={{ width: "100%", minHeight: 52, borderRadius: 10, cursor: "pointer" }}
+                >
+                  {t("Continuar con correo")}
+                </button>
+              </div>
             </>
           )}
 

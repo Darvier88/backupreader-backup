@@ -339,3 +339,25 @@
   .br-lang { padding: 1px !important; }
   .br-lang button { padding: 3px 6px !important; font-size: 10px !important; }
 }
+
+/* ---------------------------------------------------------------------------
+   Mostrar solo en una medida de pantalla.
+
+   El corte son 720px, que es el que ya usa el resto de esta hoja. Anadir un
+   numero nuevo haria que el formulario cambiara de forma en un ancho y el
+   resto de la pagina en otro, y entre los dos quedaria una franja en la que
+   nada encaja.
+
+   (`br-split` no vale de referencia: reparte con auto-fit y minmax, asi que
+   colapsa sobre los 680px sin que ningun media query lo diga.)
+
+   Van con `display: none` y no montando y desmontando en React: asi el campo
+   existe siempre en el DOM y el navegador puede autocompletar el correo.
+   --------------------------------------------------------------------------- */
+.br-solo-escritorio { display: block; }
+.br-solo-movil { display: none; }
+
+@media (max-width: 720px) {
+  .br-solo-escritorio { display: none; }
+  .br-solo-movil { display: block; }
+}

@@ -88,6 +88,12 @@ export const PlansScreen: FC = () => {
       {/* Aside ilustrado */}
       <aside className="br-aside">
         <div className="br-aside-inner">
+          {/* La columna de los tres pasos, la misma en 7c, 7d y 7e. En
+              escritorio sobra el sitio, y los nombres de cada paso anticipan
+              lo que va a pedirse despues de pagar. */}
+          <div style={{ marginBottom: 26 }}>
+            <PasosOnboarding actual={1} />
+          </div>
           {asideItems(t).map((it, i) => (
             <div key={i} className="br-aside-item">
               <img src={it.img} alt="" />

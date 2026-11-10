@@ -1,4 +1,4 @@
-import { FC, useContext, useEffect, useState, ReactElement } from "react";
+import { FC, useContext, useEffect, useRef, useState, ReactElement } from "react";
 
 import { useTranslation } from "react-i18next";
 import { Box, Typography } from "@mui/material";
@@ -12,6 +12,7 @@ import { InformationModal } from "../modals/InformationModal";
 import { BotonCifrar } from "../vault/BotonCifrar";
 import { BotonBorrarChat } from "../chat/BotonBorrarChat";
 import { ResultadosGlobales } from "../chat/ResultadosGlobales";
+import { useAtajoDeBusqueda } from "../../hooks/useAtajoDeBusqueda";
 
 /** `t()` puede devolver null según sus tipos; esto lo deja en string. */
 const enTexto = (traducido: unknown): string =>
@@ -103,6 +104,9 @@ export const ConversationsDrawer: FC<ConversationsDrawerProps> = ({
   /* Lo que se busca en TODOS los chats. Es estado de la barra lateral y no del
      dashboard porque el buscador tiene que funcionar sin ningún chat abierto. */
   const [consulta, setConsulta] = useState("");
+  /* Comando-K lleva aqui el cursor desde cualquier parte de la aplicacion. */
+  const campoBusqueda = useRef<HTMLInputElement>(null);
+  useAtajoDeBusqueda(campoBusqueda);
 
   const deletingFile = () => {
     show({
@@ -248,8 +252,18 @@ export const ConversationsDrawer: FC<ConversationsDrawerProps> = ({
             en todos los chats es lo primero que se hace al entrar, y pedir que
             se abra uno antes es justo lo contrario de para qué sirve. */}
         <input
+          ref={campoBusqueda}
           value={consulta}
           onChange={(e) => setConsulta(e.target.value)}
+          onKeyDown={(e) => {
+            /* Escape limpia lo escrito antes de soltar el campo: dejarlo con
+               texto y sin foco deja los resultados abiertos tapando la lista
+               de chats, que es lo contrario de lo que pide Escape. */
+            if (e.key === "Escape" && consulta) {
+              e.preventDefault();
+              setConsulta("");
+            }
+          }}
           placeholder={enTexto(t("Buscar en todos los chats"))}
           style={{
             width: "calc(100% - 20px)",

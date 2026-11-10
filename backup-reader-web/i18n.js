@@ -235,6 +235,7 @@ const resources = {
       "Si lo descargaste a este dispositivo":"If you downloaded it to this device",
       "Solo tú puedes ver tus chats":"Only you can see your chats",
       "Buscar en todos los chats":"Search all chats",
+      "O con tu correo":"Or with your email",
       "Escribe tu correo y te enviamos un enlace para crear una nueva.":"Enter your email and we'll send you a link to create a new one.",
       "¿Entraste con Apple o Google? No tienes contraseña aquí; vuelve y usa ese botón.":"Did you sign in with Apple or Google? You don't have a password here; go back and use that button.",
       "Enviar enlace":"Send link",
