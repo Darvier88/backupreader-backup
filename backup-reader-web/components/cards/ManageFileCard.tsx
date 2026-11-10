@@ -6,6 +6,9 @@ import { useTranslation } from "react-i18next";
 import { Button, Typography } from "@mui/material";
 
 import { BlockButton } from "../buttons";
+import { InicioChats } from "../chat/InicioChats";
+import { HojaSubirChat } from "../chat/HojaSubirChat";
+import { usePanelChats } from "../../context/PanelChatsContext";
 import { StorageContext } from "../../context/StorageContext";
 import { FirestoreContext } from "../../context/FirestoreContext";
 import { ModalContext } from "../../context/ModalContext";
@@ -62,7 +65,9 @@ type ManageFileCardProps = {
 export const ManageFileCard: FC<ManageFileCardProps> = ({ isFirstFile, chat }) => {
   const router = useRouter();
   const { t } = useTranslation();
-  const { saveFile } = useContext(StorageContext);
+  const { saveFile, fileList, getFile: abrirChat } = useContext(StorageContext);
+  const { abrir: abrirPanel } = usePanelChats();
+  const [hojaSubir, setHojaSubir] = useState(false);
   const hiddenFileInput = useRef<HTMLInputElement>(null);
   const hiddenFileInput2 = useRef<HTMLInputElement>(null);
   const { user } = useContext(FirestoreContext);
@@ -291,6 +296,38 @@ export const ManageFileCard: FC<ManageFileCardProps> = ({ isFirstFile, chat }) =
     }
   };  
 
+  /* El inicio movil (2a/2b) vive aqui dentro y no en DashboardScreen porque
+     toda la maquinaria de subir —el selector de Google Drive, los inputs
+     ocultos, la comprobacion de la boveda— ya esta en este componente.
+     Sacarla fuera para pintar una pantalla nueva habria significado
+     duplicarla o exponerla, y es la parte con mas aristas del archivo. */
+  const inputArchivos = (
+    <input aria-label="file Input" hidden ref={hiddenFileInput2} multiple accept=".zip,.rar,.7zip" type="file" onChange={(e) => onHandleSaveFile(e.target.files)} />
+  );
+
+  if (!chat && phone) {
+    return (
+      <>
+        <InicioChats
+          chats={(fileList || []).map((f: any) => ({ fullPath: f.fullPath, name: f.name }))}
+          onVerMisChats={abrirPanel}
+          onSubir={() => setHojaSubir(true)}
+          onAbrirChat={(ruta, nombre) => {
+            abrirChat(ruta, nombre);
+          }}
+        />
+        {inputArchivos}
+        <HojaSubirChat
+          abierta={hojaSubir}
+          onCerrar={() => setHojaSubir(false)}
+          onGoogleDrive={siHayBoveda(handleAccessTokenRequest)}
+          onArchivos={siHayBoveda(() => hiddenFileInput2.current?.click())}
+          mostrarArchivos={!isAndroidDevice}
+        />
+      </>
+    );
+  }
+
   return (
     <>
       {/* Barra "Subir desde" */}
@@ -306,7 +343,7 @@ export const ManageFileCard: FC<ManageFileCardProps> = ({ isFirstFile, chat }) =
             <button className="br-btn br-btn-ghost br-btn-sm" onClick={siHayBoveda(() => hiddenFileInput2.current?.click())}>
               {t("Archivos")}
             </button>
-            <input aria-label="file Input" hidden ref={hiddenFileInput2} multiple accept=".zip,.rar,.7zip" type="file" onChange={(e) => onHandleSaveFile(e.target.files)} />
+            {inputArchivos}
           </>
         )}
       </div>

@@ -9,6 +9,7 @@ import { BrandHeader, BrandFooter } from "../ui/BrandChrome";
 import { LoadingComponent } from "../ui/LoadingComponent";
 import { FirestoreContext, ModalConsumer } from "../../context";
 import { ConversationsDrawerMobile } from "../drawers/ConversationsDrawerMobile";
+import { usePanelChats } from "../../context/PanelChatsContext";
 import { AvisoDeErrores } from "../ui/AvisoDeErrores";
 
 interface LayoutProps {
@@ -19,7 +20,10 @@ export const Layout: FC<LayoutProps> = ({ children }) => {
   const router = useRouter();
   const { user } = useContext(FirestoreContext);
   const [title, setTitle] = useState<string>("");
-  const [openState, setOpenState] = useState<boolean>(false);
+  /* El estado del panel vive ahora en su contexto: ademas de la cabecera, lo
+     abre «Ver mis chats» desde la pantalla de inicio (2a), que cuelga de
+     DashboardScreen y no es hijo de este componente. */
+  const { abierto: openState, alternar, cerrar } = usePanelChats();
   const phone = useMediaQuery(({ breakpoints }: Theme) =>
     breakpoints.down("sm")
   );
@@ -87,7 +91,7 @@ export const Layout: FC<LayoutProps> = ({ children }) => {
         ) : router.pathname === "/dashboard" && !phone ? (
           <BrandHeader app wide />
         ) : (
-          <NavBar drawerButtonOnPress={() => setOpenState(!openState)} />
+          <NavBar drawerButtonOnPress={alternar} />
         )}
         <ModalConsumer />
 
@@ -98,7 +102,7 @@ export const Layout: FC<LayoutProps> = ({ children }) => {
 
         <ConversationsDrawerMobile
           openState={openState}
-          setOpenState={setOpenState}
+          setOpenState={(v: boolean) => (v ? alternar() : cerrar())}
         />
 
         <div style={{ flex: 1, display: "flex", flexDirection: "column" }}>

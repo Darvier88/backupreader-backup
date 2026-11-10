@@ -11,6 +11,7 @@ import { VaultProvider } from "../context/VaultContext";
 import { StorageProvider } from "../context/StorageContext";
 import { FirestoreProvider } from "../context/FirestoreContext";
 import { LoadingProvider } from "../context/LoadingContext";
+import { PanelChatsProvider } from "../context/PanelChatsContext";
 import { AudioPlayingProvider, ModalProvider } from "../context";
 import { aplicarIdiomaDetectado } from "../i18n";
 import ReactGA from "react-ga4";
@@ -39,7 +40,11 @@ const Appstate = ({ children }: { children: JSX.Element | JSX.Element[] }) => {
           <FirestoreProvider>
             <StorageProvider>
               <AuthProvider>
-                <AudioPlayingProvider>{children}</AudioPlayingProvider>
+                <AudioPlayingProvider>
+                  {/* Quien abre el panel de chats: la cabecera y, desde la
+                      ronda 2, tambien «Ver mis chats» del inicio. */}
+                  <PanelChatsProvider>{children}</PanelChatsProvider>
+                </AudioPlayingProvider>
               </AuthProvider>
             </StorageProvider>
           </FirestoreProvider>
