@@ -499,7 +499,28 @@ function parsearJsonInstagram(texto: string): string[][] {
    * de no filtrar con quién chatea el usuario.
    */
   const listarCifrados = async (uid: string): Promise<FileList[]> => {
-    if (!dek) return [];
+    /* Con la boveda bloqueada no se pueden leer los NOMBRES, que viven dentro
+       del manifiesto cifrado. Pero si se sabe CUANTOS hay, porque eso esta en
+       Firestore. Antes se devolvia una lista vacia, y entonces la pantalla
+       decia "Sin chats aun" justo encima de un aviso que decia que los chats
+       estaban bloqueados: dos mensajes que se contradicen, y el que el usuario
+       cree es el que ve mas grande.
+       Ahora salen como entradas bloqueadas, sin nombre. Eso es la verdad: los
+       chats estan ahi y no se pueden leer todavia. (Pantalla 4d.) */
+    if (!dek) {
+      try {
+        const docs = await listarBackups(uid);
+        return docs.map((d) => ({
+          name: "",
+          fullPath: handleDeBackup(d.backupId),
+          cifrado: true,
+          bloqueado: true,
+        }));
+      } catch (error) {
+        console.error("No se pudo contar los backups bloqueados:", error);
+        return [];
+      }
+    }
     const docs = await listarBackups(uid);
     const salida: FileList[] = [];
     for (const d of docs) {

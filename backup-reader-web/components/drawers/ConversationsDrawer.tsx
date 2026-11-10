@@ -298,6 +298,40 @@ export const ConversationsDrawer: FC<ConversationsDrawerProps> = ({
           // For non-Instagram items (e.g., WhatsApp), keep the original rendering logic
           const isSelected = selected === item.name;
           const parts = splitNameDate(item.name);
+          /* Boveda bloqueada: el chat existe pero su nombre vive dentro del
+             manifiesto cifrado, asi que todavia no se puede leer. Se pinta con
+             candado y no se deja abrir, en vez de esconderlo: esconderlo haria
+             creer que no hay chats. (Pantalla 4d.) */
+          if (item.bloqueado) {
+            return (
+              <div
+                key={i}
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                  gap: 12,
+                  padding: "14px 14px",
+                  borderBottom: "1px solid var(--border)",
+                  borderLeft: "3px solid transparent",
+                  cursor: "default",
+                }}
+              >
+                <div style={{ display: "flex", alignItems: "center", gap: 10, minWidth: 0 }}>
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--slate-500)" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
+                    <rect x="3" y="11" width="18" height="11" rx="2" />
+                    <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+                  </svg>
+                  <span style={{ fontFamily: "var(--font-sans)", fontSize: 15, color: "var(--slate-500)" }}>
+                    {t("Chat cifrado")}
+                  </span>
+                </div>
+                <span style={{ fontFamily: "var(--font-mono)", fontSize: 10, letterSpacing: "0.12em", textTransform: "uppercase", color: "var(--slate-500)", flexShrink: 0 }}>
+                  {t("Bloqueado")}
+                </span>
+              </div>
+            );
+          }
           return (
             <div
               key={i}
