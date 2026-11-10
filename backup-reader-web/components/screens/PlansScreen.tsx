@@ -2,6 +2,7 @@ import { FC, useContext } from "react";
 import { useRouter } from "next/router";
 import { useTranslation } from "react-i18next";
 import { FirestoreContext } from "../../context";
+import { PasosOnboarding } from "../ui/PasosOnboarding";
 
 /* ============================================================================
    Selecciona tu plan — rediseño "Expediente".
@@ -40,8 +41,16 @@ export const PlansScreen: FC = () => {
       {/* Columna del plan */}
       <div className="br-split-main">
         <div className="br-split-inner">
-          <h1 className="br-page-title">{t("Selecciona tu Plan")}</h1>
-          <p className="br-page-sub">{t("Puedes cancelar tu suscripción en cualquier momento")}</p>
+          {/* Cuantos pasos faltan, antes del titulo (6a y 7c).
+              Despues de pagar viene crear la clave de cifrado y confirmarla.
+              Sin saberlo, cada pantalla nueva parece un obstaculo mas y es
+              donde la gente abandona: no por lo que se le pide, sino porque no
+              sabe si se le va a seguir pidiendo cosas. */}
+          <div style={{ marginBottom: 10 }}>
+            <PasosOnboarding actual={1} variante="linea" />
+          </div>
+          <h1 className="br-page-title">{t("Activa tu plan")}</h1>
+          <p className="br-page-sub">{t("Cancela cuando quieras, sin trámites.")}</p>
 
           {plan ? (
             <div className="br-card" style={{ overflow: "hidden" }}>

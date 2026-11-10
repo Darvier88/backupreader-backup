@@ -356,10 +356,25 @@ export const EntradaScreen: FC = () => {
                 {esNueva ? t("Crear cuenta") : t("Entrar")}
               </button>
 
-              {/* "Olvide mi contrasena" de la cuenta llega en la ronda 5
-                  (pantallas 5d, 5e y 5f), que es donde se disena el envio del
-                  correo y la pantalla de clave nueva. No se pone un enlace a
-                  una ruta que todavia no existe. */}
+              {!esNueva && (
+                <button
+                  type="button"
+                  onClick={() => router.push("/recuperar")}
+                  style={{
+                    marginTop: 14,
+                    minHeight: 44,
+                    width: "100%",
+                    background: "transparent",
+                    border: "none",
+                    cursor: "pointer",
+                    fontFamily: "var(--font-sans)",
+                    fontSize: 14.5,
+                    color: "var(--brass-600)",
+                  }}
+                >
+                  {t("¿Olvidaste tu contraseña?")}
+                </button>
+              )}
             </>
           )}
 
