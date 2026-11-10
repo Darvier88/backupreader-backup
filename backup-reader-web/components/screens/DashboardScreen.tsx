@@ -13,7 +13,13 @@ import { ChatView } from "../chat";
 import { ManageFileCard } from "../cards";
 import { DividerLine } from "../ui/DividerLine";
 import { ConversationsDrawer } from "../drawers";
-import { SearchInput } from "../inputs/SearchInput";
+import { BuscadorEnChat } from "../chat/BuscadorEnChat";
+import { ControlSegmentado } from "../ui/ControlSegmentado";
+import { cuantasVeces } from "../../lib/busqueda/resaltar";
+
+/** `t()` puede devolver null segun sus tipos; esto lo deja en string. */
+const enTexto = (traducido: unknown): string =>
+  (traducido as string | null | undefined) ?? "";
 import { StorageContext } from "../../context/StorageContext";
 import { useLoading } from "../../context/LoadingContext";
 import useInView from "../../hooks/useInView";
@@ -87,6 +93,8 @@ export const DashboardScreen: FC = () => {
   // En su lugar mostramos bloques y vamos cargando más al hacer scroll.
   const CHUNK = 60;
   const [visibleCount, setVisibleCount] = useState<number>(CHUNK);
+  /* En qué coincidencia de la búsqueda está el usuario ahora mismo. */
+  const [activa, setActiva] = useState<number>(0);
 
   // Lista ya filtrada según la pestaña (mensajes / solo media).
   const visibleMessages = useMemo(
@@ -103,6 +111,62 @@ export const DashboardScreen: FC = () => {
       }),
     [chat, toShow]
   );
+
+  /* Coincidencias de la búsqueda dentro del chat (pantalla 1c).
+   *
+   * Se numeran de corrido sobre TODO el chat, no sobre lo que está pintado:
+   * el contador dice "2 de 17" y esas 17 tienen que ser las del chat entero,
+   * no las de los primeros 60 mensajes. Para cada mensaje se guarda en qué
+   * número empieza, que es lo que permite a cada burbuja saber si alguna de
+   * sus marcas es la activa sin volver a contar.
+   */
+  const coincidencias = useMemo(() => {
+    const porMensaje: number[] = [];
+    const desplazamientos: number[] = [];
+    let acumulado = 0;
+
+    if (chatSearch.trim().length < 2) {
+      return { porMensaje, desplazamientos, total: 0 };
+    }
+
+    for (const item of visibleMessages) {
+      const n = cuantasVeces((item as any)[2] || "", chatSearch);
+      desplazamientos.push(acumulado);
+      porMensaje.push(n);
+      acumulado += n;
+    }
+
+    return { porMensaje, desplazamientos, total: acumulado };
+  }, [visibleMessages, chatSearch]);
+
+  /* En qué mensaje vive la coincidencia activa. Hace falta para dos cosas:
+     ampliar la lista si está más allá de lo pintado, y desplazarse hasta ella. */
+  const mensajeDeLaActiva = useMemo(() => {
+    if (coincidencias.total === 0) return -1;
+    for (let i = coincidencias.porMensaje.length - 1; i >= 0; i--) {
+      if (coincidencias.porMensaje[i] > 0 && coincidencias.desplazamientos[i] <= activa) {
+        return i;
+      }
+    }
+    return -1;
+  }, [coincidencias, activa]);
+
+  /* Saltar a una coincidencia que todavía no se ha pintado no haría nada: el
+     elemento no existe en el DOM. Se amplía la lista hasta incluirla. */
+  useEffect(() => {
+    if (mensajeDeLaActiva >= visibleCount) {
+      setVisibleCount(Math.ceil((mensajeDeLaActiva + 1) / CHUNK) * CHUNK);
+    }
+  }, [mensajeDeLaActiva, visibleCount]);
+
+  /* Desplazarse hasta la marca activa. Va en un efecto y no en el manejador de
+     la flecha porque el elemento puede no existir todavía: si el salto obligó
+     a ampliar la lista, React tiene que pintarla primero. */
+  useEffect(() => {
+    if (coincidencias.total === 0) return;
+    const marca = document.querySelector(`[data-coincidencia="${activa}"]`);
+    marca?.scrollIntoView({ block: "center", behavior: "smooth" });
+  }, [activa, coincidencias.total, visibleCount]);
 
   // En chats de 2 personas, "tú" = el remitente que NO es el contacto del título.
   const myName = useMemo(() => {
@@ -245,74 +309,32 @@ export const DashboardScreen: FC = () => {
                     </Typography>
                   )}
                 </div>
-                <Box
-                  display={"flex"}
-                  flexDirection={"row"}
-                  alignItems={"center"}
-                  justifyContent={"space-between"}
-                  width={phone ? "100%" : "45%"}
-                >
-                  {/* Filtra los mensajes del chat ABIERTO. La búsqueda en
-                      todos los chats vive en la barra lateral, porque tiene
-                      que estar disponible sin abrir ninguno. */}
-                  <SearchInput
-                    width={phone ? 100 : 150}
-                    placeHolder="Buscar"
-                    onSearch={onHandleSearch}
-                  />
-                  <Button
-                    variant="outlined"
-                    style={{
-                      textTransform: "none",
-                      height: 40,
-                      marginLeft: 10,
-                      marginRight: 10,
-                      borderRadius: 8,
-                      borderColor: toShow === "message" ? "var(--ink-900)" : "var(--border)",
-                      width: phone ? 70 : 100,
-                      backgroundColor:
-                        toShow === "message" ? "var(--ink-900)" : "var(--surface-raised)",
-                    }}
-                    onClick={() => setToShow("message")}
-                  >
-                    <Typography
-                      fontFamily={"var(--font-sans)"}
-                      fontSize={13}
-                      style={{
-                        color: toShow === "message" ? "var(--paper-50)" : "var(--slate-700)",
-                        fontWeight: 600,
-                      }}
-                    >
-                      Mensajes
-                    </Typography>
-                  </Button>
-
-                  <Button
-                    variant="outlined"
-                    style={{
-                      textTransform: "none",
-                      height: 40,
-                      borderRadius: 8,
-                      borderColor: toShow === "photos" ? "var(--ink-900)" : "var(--border)",
-                      width: phone ? 70 : 100,
-                      backgroundColor:
-                        toShow === "photos" ? "var(--ink-900)" : "var(--surface-raised)",
-                    }}
-                    onClick={() => setToShow("photos")}
-                  >
-                    <Typography
-                      fontFamily={"var(--font-sans)"}
-                      fontSize={13}
-                      style={{
-                        color: toShow === "photos" ? "var(--paper-50)" : "var(--slate-700)",
-                        fontWeight: 600,
-                      }}
-                    >
-                      Media
-                    </Typography>
-                  </Button>
-                </Box>
+                {/* Control segmentado: Mensajes y Media son dos vistas de
+                    lo mismo, no dos acciones. */}
+                <ControlSegmentado
+                  completo={phone}
+                  valor={toShow}
+                  onCambio={(v) => setToShow(v as "photos" | "message")}
+                  opciones={[
+                    { valor: "message", etiqueta: enTexto(t("Mensajes")) },
+                    { valor: "photos", etiqueta: enTexto(t("Media")) },
+                  ]}
+                />
               </Box>
+
+              {/* Buscador del chat abierto, a ancho completo (1a/1c). No
+                  filtra: resalta y deja saltar entre coincidencias, para que
+                  no se pierda el hilo de la conversación. */}
+              <Box marginTop={1.5} marginBottom={1}>
+                <BuscadorEnChat
+                  consulta={chatSearch}
+                  onConsulta={setChatSearch}
+                  total={coincidencias.total}
+                  activa={activa}
+                  onActiva={setActiva}
+                />
+              </Box>
+
               <DividerLine width={"100%"} />
             </Container>
             <Grid
@@ -379,6 +401,8 @@ export const DashboardScreen: FC = () => {
                         message={item[2]}
                         messenger={item[1]}
                         chatSearch={chatSearch}
+                        coincidenciaActiva={activa}
+                        desplazamiento={coincidencias.desplazamientos[i] ?? 0}
                         isMine={!!myName && (item[1] || "").trim() === myName}
                       />
                     )

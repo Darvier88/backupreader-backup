@@ -5,6 +5,7 @@ import { ChatAudioPlayer } from ".";
 import { Typography } from "@mui/material";
 import { Container } from "@nextui-org/react";
 import { ChatImage, ChatVideoPlayer } from ".";
+import { TextoResaltado } from "./TextoResaltado";
 import { StorageContext } from '../../context/StorageContext';
 
 import useInView from '../../hooks/useInView';
@@ -38,6 +39,10 @@ type ChatViewProps = {
   message: string;
   messenger: string;
   chatSearch: string;
+  /** Indice global de la coincidencia en la que esta el usuario. */
+  coincidenciaActiva?: number | null;
+  /** En que numero global empiezan las coincidencias de este mensaje. */
+  desplazamiento?: number;
   toShow: "photos" | "message";
   isMine?: boolean;
   gallery?: boolean;
@@ -48,6 +53,8 @@ export const ChatView: FC<ChatViewProps> = ({
   messenger,
   date,
   chatSearch,
+  coincidenciaActiva = null,
+  desplazamiento = 0,
   toShow,
   isMine,
   gallery,
@@ -241,10 +248,14 @@ export const ChatView: FC<ChatViewProps> = ({
   const highlighted = onHandleSearchText();
 
   // Navy solo para TEXTO propio; la media siempre en tarjeta clara para que se vea.
-  const useDark = isMine && !isMedia && !highlighted;
-  const cardBg = highlighted
-    ? "var(--accent-pale)"
-    : useDark ? "var(--ink-900)" : "var(--surface-raised)";
+  const useDark = isMine && !isMedia;
+  /* La burbuja ya NO cambia de color al coincidir: ahora se marca el termino
+     dentro del texto. Tenir la burbuja entera ademas del termino compite con
+     el propio resaltado y hace que la coincidencia activa se distinga peor,
+     que es lo unico que el contador y las flechas necesitan que se vea.
+     Se conserva un borde en laton para los mensajes que SI coinciden, porque
+     al desplazarse por un chat largo sigue ayudando a localizarlos. */
+  const cardBg = useDark ? "var(--ink-900)" : "var(--surface-raised)";
   const cardBorder = highlighted
     ? "1px solid var(--brass-400)"
     : useDark ? "1px solid var(--ink-800)" : "1px solid var(--border)";
@@ -293,7 +304,15 @@ export const ChatView: FC<ChatViewProps> = ({
         ) : (
           <>
             <p className="br-mensaje" style={{ margin: 0, fontFamily: "var(--font-sans)", fontSize: 15, lineHeight: 1.5, color: textColor }}>
-              {message}
+              {/* Se marca el termino DENTRO del texto. Antes cambiaba de color
+                  la burbuja entera, que dice en que mensaje esta la palabra
+                  pero no donde: en un mensaje largo hay que releerlo. */}
+              <TextoResaltado
+                texto={message}
+                consulta={chatSearch}
+                activa={coincidenciaActiva}
+                desplazamiento={desplazamiento}
+              />
             </p>
             {message?.match(/https?:\/\/\S+/)?.[0] && (
               <a href={message.match(/https?:\/\/\S+/)?.[0] ?? "#"} target="_blank" rel="noopener noreferrer">

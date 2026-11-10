@@ -127,19 +127,48 @@ export const ConversationsDrawerMobile: FC<ConversationsDrawerMobileProps> = ({
       anchor={"left"}
       open={openState}
       onClose={() => setOpenState(false)}
+      /* El velo va en tinta y no en el gris del navegador: el gris de serie
+         enfria toda la pantalla y rompe el papel calido del resto. */
+      slotProps={{ backdrop: { style: { backgroundColor: "rgba(15,24,38,0.55)" } } }}
+      PaperProps={{ style: { width: 322, background: "var(--paper-50)" } }}
     >
-      <Container style={{ width: 310 }}>
-        <Box marginTop={5} marginBottom={5}>
+      <Container style={{ width: 322, padding: 0 }}>
+        <Box
+          marginTop={3}
+          marginBottom={2}
+          paddingX={"10px"}
+          display={"flex"}
+          alignItems={"center"}
+          justifyContent={"space-between"}
+        >
           <Typography
-            fontFamily={"PT Serif"}
+            fontFamily={"var(--font-serif)"}
+            style={{ fontSize: 22, fontWeight: 500, color: "var(--ink-900)" }}
+          >
+            BackupReader
+          </Typography>
+          {/* Cerrar el panel desde dentro: en un telefono grande el borde
+              derecho de la pantalla no siempre llega con el pulgar. */}
+          <button
+            type="button"
+            aria-label="Cerrar"
+            onClick={() => setOpenState(false)}
             style={{
-              ...styles.drawerTitle,
-              textAlign: "center",
-              color: "#3C3C3C",
+              width: 44,
+              height: 44,
+              display: "inline-flex",
+              alignItems: "center",
+              justifyContent: "center",
+              background: "transparent",
+              border: "none",
+              cursor: "pointer",
+              color: "var(--slate-500)",
             }}
           >
-            Chats
-          </Typography>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+              <path d="M18 6L6 18M6 6l12 12" />
+            </svg>
+          </button>
         </Box>
 
         {/* Buscar en todos los chats, igual que en escritorio: tiene que estar
