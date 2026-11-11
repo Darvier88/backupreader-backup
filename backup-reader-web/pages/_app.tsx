@@ -15,7 +15,6 @@ import { PanelChatsProvider } from "../context/PanelChatsContext";
 import { AudioPlayingProvider, ModalProvider } from "../context";
 import i18n, { aplicarIdiomaDetectado } from "../i18n";
 import { FirebaseAuth } from "../config/firebase";
-import ReactGA from "react-ga4";
 
 type NextPageWithLayout = NextPage & {
   getLayout?: () => JSX.Element;
@@ -85,13 +84,15 @@ function MyApp({ Component, pageProps }: AppPropsWithLayout) {
     return () => { i18n.off("languageChanged", aplicar); };
   }, []);
 
-  /* GA4 se inicia UNA vez, al montar la aplicación. Antes la llamada estaba en
-     el cuerpo del componente y se repetía en cada render de MyApp, y cada
-     llamada a `initialize` vuelve a mandar la configuración (y con ella un
-     page_view). Flujo de datos de backupreader.com: G-PV00WX4FM0. */
-  useEffect(() => {
-    ReactGA.initialize("G-PV00WX4FM0");
-  }, []);
+  /* Aquí se iniciaba GA4 a mano, con el identificador escrito en el código.
+     Se quita: la medición entra ahora por Google Tag Manager, que se carga en
+     `_document.tsx`. Con las dos cosas a la vez, cada visita se contaba dos
+     veces —una por el `initialize` de aquí y otra por la etiqueta de GTM—, y
+     un panel que infla los números es peor que no tener panel, porque las
+     decisiones se toman igual pero sobre datos falsos.
+
+     Si en algún momento no aparecen visitas en Analytics, lo que hay que
+     revisar es el contenedor de GTM, no este archivo. */
 
   return (
     <Appstate>
