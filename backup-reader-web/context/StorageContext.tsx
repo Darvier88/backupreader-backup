@@ -887,6 +887,31 @@ function parsearJsonInstagram(texto: string): string[][] {
          que sabe cuándo terminó. */
       await getFiles(uid);
 
+      /* Indexar el chat recien subido para que se pueda buscar YA.
+       *
+       * La pasada de indexado arranca al desbloquear la boveda, asi que un
+       * chat subido despues se quedaba fuera hasta la siguiente recarga: el
+       * usuario subia su primer chat, buscaba una palabra que acababa de ver
+       * en pantalla, y el buscador le decia que no cubria ese chat todavia.
+       * Justo en el estreno, que es cuando peor sienta.
+       *
+       * Va DESPUES de `getFiles` y sin bloquear el final de la subida: si
+       * indexar falla, la subida sigue siendo buena y el chat ya esta en la
+       * lista. La pasada de la proxima sesion lo recogera.
+       */
+      void (async () => {
+        try {
+          await indexarBackup(backupId);
+          setEstadoIndexado((e) => ({
+            ...e,
+            total: e.total + 1,
+            hechos: e.hechos + 1,
+          }));
+        } catch (error) {
+          console.error("El chat se subio pero no se pudo indexar:", backupId, error);
+        }
+      })();
+
       if (omitidas.length) {
         console.warn(`${omitidas.length} pieza(s) no se cifraron`, omitidas);
       }

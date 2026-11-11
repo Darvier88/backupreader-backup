@@ -235,6 +235,7 @@ const resources = {
       "Si lo descargaste a este dispositivo":"If you downloaded it to this device",
       "Solo tú puedes ver tus chats":"Only you can see your chats",
       "Buscar en todos los chats":"Search all chats",
+      "1 coincidencia":"1 match",
       "Política de privacidad":"Privacy Policy",
       "Activa el cifrado para poder subir chats":"Turn on encryption to upload chats",
       "Hasta que elijas tu contraseña de cifrado no se pueden subir chats, porque se cifran en tu navegador antes de salir de tu dispositivo.":"Until you choose your encryption password, chats can't be uploaded: they're encrypted in your browser before leaving your device.",

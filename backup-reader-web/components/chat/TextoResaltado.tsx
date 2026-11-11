@@ -48,8 +48,15 @@ export const TextoResaltado: FC<{
             style={{
               /* <mark> trae de serie un amarillo de navegador que no es de la
                  paleta. Se redefine todo. */
-              background: esLaActiva ? "var(--brass-400)" : "var(--brass-100)",
-              color: esLaActiva ? "var(--ink-950)" : "inherit",
+              /* Ocre, no el verde de marca.
+                 Habia puesto `--brass-*`, que es el color de los botones y los
+                 enlaces de la aplicacion. Usarlo tambien para las
+                 coincidencias mezcla dos cosas distintas: "esto se puede
+                 pulsar" y "esto es lo que buscabas". El ocre no se usa para
+                 nada pulsable, asi que una marca nunca se lee como un boton.
+                 Es ademas lo que pedia el diseno. */
+              background: esLaActiva ? "var(--ochre-600)" : "var(--ochre-100)",
+              color: esLaActiva ? "var(--paper-50)" : "inherit",
               borderRadius: 3,
               padding: "0 2px",
               fontWeight: esLaActiva ? 600 : 400,

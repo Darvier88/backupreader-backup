@@ -275,6 +275,11 @@ export const ResultadosGlobales = ({
                           <span style={{ ...etiqueta, display: "block" }}>
                             {res.aproximado
                               ? enTexto(t("Más de {{total}} coincidencias", { total: res.total }))
+                              /* Singular cuando es una. "1 COINCIDENCIAS" se
+                                 lee como un error de la aplicacion, y pone en
+                                 duda lo demas que diga. */
+                              : res.total === 1
+                              ? enTexto(t("1 coincidencia"))
                               : enTexto(t("{{total}} coincidencias", { total: res.total }))}
                           </span>
                         </span>

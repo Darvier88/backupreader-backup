@@ -432,3 +432,34 @@
 @media (max-width: 360px) {
   .br-navlink { white-space: normal; }
 }
+
+
+/* ---------------------------------------------------------------------------
+   NextUI pintaba sus componentes en azul.
+
+   Su color primario de serie es #0072F5, y se veia en los botones y enlaces
+   de los modales: el de la clave de cifrado y el del codigo de recuperacion
+   salian con botones azul brillante en medio de una interfaz de papel, tinta
+   y laton. El azul ademas es el color que el resto del rediseno evita a
+   proposito.
+
+   Se redefinen sus variables en vez de perseguir cada `<Button>` uno a uno:
+   son una docena repartidos por modales, panel de administracion y cuenta, y
+   cualquiera que se anada manana volveria a salir azul. Asi hereda la paleta
+   sin que haya que acordarse.
+   --------------------------------------------------------------------------- */
+:root,
+.light-theme,
+body {
+  --nextui-colors-primary: var(--brass-500);
+  --nextui-colors-primaryLight: var(--brass-100);
+  --nextui-colors-primaryLightHover: var(--brass-100);
+  --nextui-colors-primaryLightActive: var(--brass-300);
+  --nextui-colors-primaryLightContrast: var(--brass-600);
+  --nextui-colors-primaryBorder: var(--brass-400);
+  --nextui-colors-primaryBorderHover: var(--brass-500);
+  --nextui-colors-primarySolidHover: var(--brass-600);
+  --nextui-colors-primarySolidContrast: var(--paper-50);
+  --nextui-colors-primaryShadow: var(--brass-400);
+  --nextui-colors-link: var(--brass-600);
+}
