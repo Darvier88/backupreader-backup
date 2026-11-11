@@ -4,6 +4,7 @@ import {
   signInWithPopup,
   GoogleAuthProvider,
   sendPasswordResetEmail,
+  updateProfile,
   signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
 } from "firebase/auth";
@@ -88,7 +89,13 @@ export const signInWithApple = async () => {
 
 export const signUpWithEmailPassword = async (
   correo: string,
-  password: string
+  password: string,
+  /* El nombre que escribio el usuario al crear la cuenta.
+     Firebase no lo acepta en `createUserWithEmailAndPassword`, hay que
+     guardarlo despues con `updateProfile`. Sin esto, la pantalla de registro
+     pedia un nombre y lo tiraba: el usuario lo escribia y luego no aparecia
+     por ninguna parte. */
+  nombre?: string
 ) => {
   try {
     const result = await createUserWithEmailAndPassword(
@@ -96,6 +103,16 @@ export const signUpWithEmailPassword = async (
       correo,
       password
     );
+    if (nombre && nombre.trim()) {
+      try {
+        await updateProfile(result.user, { displayName: nombre.trim() });
+      } catch (error) {
+        /* Que falle guardar el nombre no invalida la cuenta, que ya existe.
+           Se avisa y se sigue: devolver error aqui dejaria al usuario fuera
+           de una cuenta recien creada. */
+        console.error("La cuenta se creo pero no se pudo guardar el nombre:", error);
+      }
+    }
     const { uid, email, displayName, photoURL } = result.user;
     return {
       ok: true,

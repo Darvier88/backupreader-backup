@@ -143,7 +143,13 @@ export const RecuperarScreen: FC = () => {
 
               <button
                 type="button"
-                onClick={() => setRestan(ESPERA)}
+                onClick={() => {
+                  /* Reenviar tiene que REENVIAR. Antes solo reiniciaba la
+                     cuenta atras, asi que quien no recibia el correo podia
+                     pulsar el boton una y otra vez sin que saliera ninguno. */
+                  resetPassword(correo.trim());
+                  setRestan(ESPERA);
+                }}
                 disabled={restan > 0}
                 className="br-btn br-btn-ghost"
                 style={{

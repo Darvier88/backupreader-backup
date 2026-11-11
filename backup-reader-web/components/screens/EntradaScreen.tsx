@@ -91,7 +91,7 @@ export const EntradaScreen: FC = () => {
       return;
     }
     setErrorClave("");
-    if (esNueva) signUp(correo.trim(), clave);
+    if (esNueva) signUp(correo.trim(), clave, nombre);
     else signIn(correo.trim(), clave);
   };
 

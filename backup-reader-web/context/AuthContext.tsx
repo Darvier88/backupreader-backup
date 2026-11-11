@@ -24,9 +24,9 @@ type AuthContextProps = {
   logOut: () => void;
   signInApple: () => void;
   signInGoogle: () => void;
-  resetPassword: (email: string) => void;
+  resetPassword: (email: string) => Promise<boolean>;
   signIn: (email: string, password: string) => void;
-  signUp: (email: string, password: string) => void;
+  signUp: (email: string, password: string, nombre?: string) => void;
 };
 
 export const authInitialState: AuthState = {
@@ -69,11 +69,11 @@ export const AuthProvider = ({ children }: any) => {
   const { saveUser, saveUserFromProviders } = useContext(FirestoreContext);
   const [state, dispatch] = useReducer(authReducer, authInitialState);
 
-  const signUp = async (email: string, password: string) => {
+  const signUp = async (email: string, password: string, nombre?: string) => {
     dispatch({
       type: "loading",
     });
-    const resp = await signUpWithEmailPassword(email, password);
+    const resp = await signUpWithEmailPassword(email, password, nombre);
     const { ok, user } = resp;
 
     if (ok && user) {
@@ -184,24 +184,26 @@ export const AuthProvider = ({ children }: any) => {
     }
   };
 
-  const resetPassword = async (email: string) => {
-    dispatch({
-      type: "loading",
-    });
-    const resp = await sendEmailResetPassword(email);
-    const { ok, error } = resp;
-    if (ok) {
-      dispatch({
-        type: "loading",
-      });
-      router.replace("/auth");
-    } else {
-      console.log(error);
-      dispatch({
-        type: "loading",
-      });
-      router.replace("/auth");
-    }
+  /**
+   * Envia el correo para restablecer la contrasena.
+   *
+   * YA NO REDIRIGE.
+   * Antes hacia `router.replace("/auth")` en las dos ramas, la de exito y la
+   * de error. Eso dejaba la pantalla de "Revisa tu correo" sin poder verse: se
+   * asomaba un instante y la aplicacion te sacaba de ahi. Y como tambien
+   * redirigia al fallar, un fallo se vivia igual que un acierto.
+   *
+   * Devuelve si salio bien y deja que la pantalla decida que ensenar. El
+   * mensaje que ve el usuario es el mismo en los dos casos, a proposito, para
+   * no revelar que correos tienen cuenta; pero eso es cosa de la pantalla, no
+   * de aqui.
+   */
+  const resetPassword = async (email: string): Promise<boolean> => {
+    dispatch({ type: "loading" });
+    const { ok, error } = await sendEmailResetPassword(email);
+    if (!ok) console.error("No se pudo enviar el correo de restablecimiento:", error);
+    dispatch({ type: "loading" });
+    return !!ok;
   };
 
   const logOut = async () => {

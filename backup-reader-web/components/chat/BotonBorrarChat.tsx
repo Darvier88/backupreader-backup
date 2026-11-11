@@ -211,11 +211,22 @@ export const BotonBorrarChat = ({
           <Button auto light onPress={cerrar} disabled={esteBorrando}>
             {t("Cancelar")}
           </Button>
+          {/* Arcilla, no el rojo de NextUI.
+              `color="error"` pinta un rojo de alarma, el de "algo ha fallado".
+              Aqui no ha fallado nada: el usuario ha pedido borrar y esto es la
+              confirmacion de lo que pidio. El rojo de error en un boton que
+              funciona bien gasta el unico color que deberia significar
+              problema, y ademas asusta en un sitio donde solo hace falta que
+              el usuario se detenga un segundo. El diseno pide arcilla. */}
           <Button
             auto
-            color="error"
             onPress={alConfirmar}
             disabled={esteBorrando}
+            css={{
+              bg: "var(--clay-600)",
+              color: "var(--paper-50)",
+              "&:hover": { bg: "var(--clay-600)", filter: "brightness(0.92)" },
+            }}
           >
             {esteBorrando ? t("Borrando…") : t("Borrar")}
           </Button>
