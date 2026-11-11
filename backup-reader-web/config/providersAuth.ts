@@ -9,6 +9,7 @@ import {
   createUserWithEmailAndPassword,
 } from "firebase/auth";
 import i18n from "../i18n";
+import { RECUPERAR_CONTRASENA } from "../lib/funciones-activas";
 import { FirebaseAuth } from "./firebase";
 
 import { fetchSignInMethodsForEmail } from "firebase/auth";
@@ -190,6 +191,12 @@ export const logOutFunction = async () => {
 export const sendEmailResetPassword = async (
   correo: string
 ): Promise<{ ok: boolean; error?: unknown }> => {
+  /* Apagado: ni por nuestro endpoint ni por Firebase.
+     Sin esto, el repliegue haría justo lo que el interruptor quiere evitar:
+     el endpoint contesta 404 y el navegador, al ver que falló, mandaría el
+     correo de Firebase de todas formas. */
+  if (!RECUPERAR_CONTRASENA) return { ok: false, error: "desactivado" };
+
   const porFirebase = async (): Promise<{ ok: boolean; error?: unknown }> => {
     try {
       await sendPasswordResetEmail(FirebaseAuth, correo);

@@ -3,6 +3,7 @@ import { useRouter } from "next/router";
 import { useTranslation } from "react-i18next";
 
 import { CarruselIlustraciones } from "../ui/CarruselIlustraciones";
+import { RECUPERAR_CONTRASENA } from "../../lib/funciones-activas";
 import { BotonAtras, Trazo } from "../ui/Paso";
 import { Logo } from "../ui/BrandChrome";
 
@@ -462,8 +463,9 @@ export const EntradaScreen: FC = () => {
                   : undefined,
                 ojo,
                 /* «¿La olvidaste?» junto al campo (7b), no debajo del botón:
-                    se busca justo cuando se está mirando el campo vacío. */
-                esNueva ? undefined : (
+                    se busca justo cuando se está mirando el campo vacío.
+                    Apagado por ahora: ver `lib/funciones-activas.ts`. */
+                esNueva || !RECUPERAR_CONTRASENA ? undefined : (
                   <button
                     type="button"
                     onClick={() => router.push("/recuperar")}

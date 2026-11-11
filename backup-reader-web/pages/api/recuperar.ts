@@ -1,6 +1,7 @@
 import type { NextApiRequest, NextApiResponse } from "next";
 
 import { authAdmin } from "../../lib/admin-servidor";
+import { RECUPERAR_CONTRASENA } from "../../lib/funciones-activas";
 import { enviarCorreo, hayProveedor } from "../../lib/correo/enviar";
 import { correoDeRecuperacion, enlaceDeRecuperacion, type Idioma } from "../../lib/correo/recuperacion";
 
@@ -88,6 +89,14 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   if (req.method !== "POST") {
     res.setHeader("Allow", "POST");
     return res.status(405).json({ ok: false });
+  }
+
+  /* El interruptor también cierra la puerta de atrás.
+     Esconder el enlace y redirigir las rutas no sirve de nada si el endpoint
+     sigue abierto: cualquiera con `curl` podría seguir disparando correos de
+     recuperación a direcciones ajenas. */
+  if (!RECUPERAR_CONTRASENA) {
+    return res.status(404).json({ ok: false, motivo: "desactivado" });
   }
 
   const correo = String(req.body?.correo || "").trim().toLowerCase();
