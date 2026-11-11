@@ -48,9 +48,17 @@ export const LangToggle: FC = () => {
      cambiarlo, lo guarda. Sin eso, al recargar la detección por navegador
      volvía a pisar la elección. */
   const set = (l: "es" | "en") => cambiarIdioma(l);
+  /* El area pulsable sube a 40x40 sin agrandar el texto.
+     Medía 31x22, y por debajo de unos 44px el dedo falla a menudo. Este boton
+     ademas es el que pulsa quien no entiende lo que esta leyendo: alguien que
+     ya esta perdido y al que, si falla, el toque le cambia de pagina en vez de
+     cambiarle el idioma. Se agranda con padding, que es lo que cuenta para el
+     dedo, y el tipo de 11px se queda igual. */
   const pill = (active: boolean): React.CSSProperties => ({
     fontFamily: mono, fontSize: 11, letterSpacing: "0.08em", textTransform: "uppercase",
-    padding: "4px 8px", borderRadius: 100, cursor: "pointer", border: "none",
+    minWidth: 40, minHeight: 40,
+    display: "inline-flex", alignItems: "center", justifyContent: "center",
+    padding: "0 10px", borderRadius: 100, cursor: "pointer", border: "none",
     background: active ? "var(--ink-900)" : "transparent",
     color: active ? "var(--paper-50)" : "var(--slate-500)",
   });
@@ -81,7 +89,7 @@ export const BrandHeader: FC<{ minimal?: boolean; app?: boolean; wide?: boolean;
         <header className="br-header">
           <div className="br-header-inner" style={{ maxWidth: 1360 }}>
             <Logo onClick={() => go("/")} />
-            <nav style={{ display: "flex", alignItems: "center", gap: "clamp(14px,2.2vw,24px)" }}>
+            <nav style={{ display: "flex", alignItems: "center", flexWrap: "wrap", justifyContent: "flex-end", rowGap: 4, gap: "clamp(10px,2.2vw,24px)", minWidth: 0 }}>
               {/* /account existía pero no se enlazaba desde ningún sitio, así
                   que el plan y la contraseña de cifrado no se podían tocar. */}
               <span className="br-navlink" style={{ cursor: "pointer" }} onClick={() => go("/account")}>{t("Mi cuenta")}</span>
@@ -96,7 +104,7 @@ export const BrandHeader: FC<{ minimal?: boolean; app?: boolean; wide?: boolean;
     // Planes / Pago: espejo del contenido (logo sobre el formulario centrado).
     return (
       <header className="br-header">
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(340px, 1fr))", alignItems: "center" }}>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(340px, 100%), 1fr))", alignItems: "center" }}>
           <div style={{ padding: "12px clamp(16px, 4vw, 24px)" }}>
             <div style={{ maxWidth: 460, margin: "0 auto", display: "flex", alignItems: "center" }}>
               <Logo onClick={() => go("/")} />
@@ -117,7 +125,7 @@ export const BrandHeader: FC<{ minimal?: boolean; app?: boolean; wide?: boolean;
   if (minimal) {
     return (
       <header className="br-header">
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(340px, 1fr))", alignItems: "center" }}>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(340px, 100%), 1fr))", alignItems: "center" }}>
           <div style={{ padding: "12px clamp(16px, 4vw, 24px)" }}>
             <div style={{ maxWidth: 420, margin: "0 auto", display: "flex", alignItems: "center" }}>
               <Logo onClick={() => go("/")} />

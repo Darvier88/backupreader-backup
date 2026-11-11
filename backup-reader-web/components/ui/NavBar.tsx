@@ -231,7 +231,14 @@ export const NavBar: FC<NavBarProps> = ({ drawerButtonOnPress }) => {
             {/* Sustituye al menú de idioma que colgaba de un IconButton
                 comentado: el <Menu> seguía en el árbol pero nada podía abrirlo.
                 Este es el mismo control que usa BrandHeader. */}
-            <span style={phone ? { transform: "scale(0.88)", transformOrigin: "right center" } : undefined}>
+            {/* Sin encoger el selector de idioma.
+                Llevaba `scale(0.88)` en movil para ganar sitio en la cabecera,
+                y eso dejaba sus botones en 35px reales aunque el CSS pidiera
+                40: un escalado reduce el area pulsable igual que reduce el
+                dibujo, asi que el dedo tiene que acertar en 35.
+                El sitio que se ganaba ya no hace falta: la cabecera ahora
+                puede pasar a dos lineas en pantallas estrechas. */}
+            <span>
               <LangToggle />
             </span>
           </nav>

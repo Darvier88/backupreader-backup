@@ -163,7 +163,14 @@
 .br-shell { display: flex; flex-direction: column; min-height: 100vh; }
 .br-split {
   flex: 1; display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+  /* `min(340px, 100%)` y no `340px` a secas.
+     Con el valor fijo, en una pantalla de 320px el navegador sigue
+     reservando 340 y la pagina entera se desplaza 20px hacia la derecha: la
+     columna no puede encoger por debajo de su minimo. Se nota en los iPhone
+     SE de primera generacion y en varios Android pequenos, donde aparecia
+     barra horizontal y el titulo se salia por el borde.
+     Con `min()`, el minimo deja de ser 340 cuando la pantalla mide menos. */
+  grid-template-columns: repeat(auto-fit, minmax(min(340px, 100%), 1fr));
   align-items: stretch;
 }
 .br-split-main { padding: clamp(48px, 7vw, 88px) clamp(16px, 4vw, 24px); }
@@ -360,4 +367,68 @@
 @media (max-width: 720px) {
   .br-solo-escritorio { display: none; }
   .br-solo-movil { display: block; }
+}
+
+
+/* ---------------------------------------------------------------------------
+   Objetivos tactiles de la cabecera en movil.
+
+   El selector ES/EN medía 31x22 y el boton de la cabecera 117x29. Por debajo
+   de unos 44px el dedo falla a menudo, y el de idioma es justo el que pulsa
+   quien no entiende lo que esta leyendo: alguien que ya esta perdido y al que
+   el primer intento le cambia de pagina en vez de cambiarle el idioma.
+
+   Se agranda el area pulsable sin tocar el tamano del texto, con padding, que
+   es lo que cuenta para el dedo.
+   --------------------------------------------------------------------------- */
+@media (max-width: 720px) {
+  .br-header button,
+  .br-header a,
+  .br-header-inner button,
+  .br-header-inner a {
+    min-height: 44px;
+  }
+  .br-lang button,
+  .br-lang a {
+    min-width: 44px;
+    padding-top: 11px;
+    padding-bottom: 11px;
+  }
+}
+
+
+/* ---------------------------------------------------------------------------
+   Que la cabecera no arrastre la pagina en pantallas estrechas.
+
+   El logo, los enlaces y el selector de idioma sumaban mas ancho del que hay
+   en un telefono pequeno, y como nada podia encoger ni pasar a la linea de
+   abajo, empujaban el documento entero: aparecia barra horizontal y el
+   contenido se salia por el borde derecho. Se veia a 320px, y en la pantalla
+   de recuperacion tambien a 360 y 390, porque alli la cabecera lleva ademas
+   un boton.
+
+   `flex-wrap` deja que lo que no quepa baje de linea, y `min-width: 0`
+   permite que los hijos encojan: sin eso, un elemento flex se niega a bajar
+   de su tamano de contenido y sigue desbordando aunque haya wrap.
+   --------------------------------------------------------------------------- */
+@media (max-width: 720px) {
+  .br-header-inner,
+  .br-header nav {
+    flex-wrap: wrap;
+    row-gap: 4px;
+    min-width: 0;
+  }
+  .br-header-inner > *,
+  .br-header nav > * { min-width: 0; }
+}
+
+
+/* En pantallas muy estrechas los enlaces de la cabecera pueden partirse.
+   `white-space: nowrap` esta bien mientras quepan, pero a 320px un enlace
+   como "Volver al inicio" no cabe, y al no poder partirse empuja la pagina
+   entera: aparecia barra horizontal en /login y /plans. Partir una etiqueta en
+   dos lineas es mas feo que no partirla, y mucho menos malo que desplazar la
+   pagina de lado. */
+@media (max-width: 360px) {
+  .br-navlink { white-space: normal; }
 }
