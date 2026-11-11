@@ -2,6 +2,8 @@ import { FC, useContext, useState } from "react";
 import { useRouter } from "next/router";
 import { useTranslation } from "react-i18next";
 
+import { CarruselIlustraciones } from "../ui/CarruselIlustraciones";
+
 import { AuthContext } from "../../context";
 import { checkIfRegistered } from "../../config/providersAuth";
 
@@ -209,6 +211,13 @@ export const EntradaScreen: FC = () => {
               <p style={{ margin: "0 0 26px", fontSize: 15.5, color: "var(--slate-700)" }}>
                 {t("Revisa fotos, textos y audios de cada conversación.")}
               </p>
+
+              {/* En movil, donde no hay columna al lado, las laminas van aqui
+                  de una en una (4a). En escritorio esta misma informacion la
+                  pinta la columna de la derecha (7a), asi que aqui estorbaria. */}
+              <div className="br-solo-movil">
+                <CarruselIlustraciones compacto />
+              </div>
 
               {/* Apple y Google van en sus estilos oficiales porque las dos
                   marcas lo exigen en sus condiciones de uso. */}
@@ -433,6 +442,14 @@ export const EntradaScreen: FC = () => {
           </p>
         </div>
       </div>
+
+      {/* Columna de ilustraciones (7a). Las mismas tres laminas que en movil
+          rotan, aqui quietas y a la vez: hay sitio y tres cosas quietas se
+          comparan de un vistazo, mientras que tres que giran hay que
+          esperarlas. */}
+      <aside className="br-aside br-solo-escritorio">
+        <CarruselIlustraciones />
+      </aside>
     </div>
   );
 };

@@ -527,6 +527,29 @@ const resources = {
       "Cerrar": "Close",
       "Hoy": "Today",
       "Ayer": "Yesterday",
+
+      // --- Entrada, clave de cifrado y recuperación (rondas 4 y 5) ---------
+      "Tus chats, enteros": "Your chats, whole",
+      "Fotos, audios y videos tal como los enviaste, no solo el texto.":
+        "Photos, audio and video just as you sent them, not only the text.",
+      "Sitio libre en el teléfono": "Free space on your phone",
+      "Guarda la conversación aquí y bórrala del móvil sin perderla.":
+        "Keep the conversation here and delete it from your phone without losing it.",
+      "Cifrado con una clave que solo tú conoces":
+        "Encrypted with a key only you know",
+      "Ni nosotros podemos leer lo que subes.": "Not even we can read what you upload.",
+      "Tus chats están aquí, cerrados. Escribe tu contraseña de cifrado para leerlos.":
+        "Your chats are here, locked. Enter your encryption password to read them.",
+      "Desbloquea para buscar": "Unlock to search",
+      "Guarda tu código de recuperación": "Save your recovery code",
+      "Es lo único que abre tus chats si olvidas la clave. Solo se enseña ahora.":
+        "It is the only thing that opens your chats if you forget your key. It is shown only now.",
+      "Copiar código": "Copy code",
+      "Lo he guardado en un lugar seguro.": "I have saved it somewhere safe.",
+      "Entrar a mis chats": "Go to my chats",
+      "Volver a escribirla": "Type it again",
+      "Guardando…": "Saving…",
+      "Abrir app de correo": "Open mail app",
       "Respalda tus chat de WhatsApp.":
         "Backup your Whatsapp Chats.",
       "Guarda y lee tus conversaciones de forma segura en la nube.":

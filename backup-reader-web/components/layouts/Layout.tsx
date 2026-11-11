@@ -11,6 +11,7 @@ import { FirestoreContext, ModalConsumer } from "../../context";
 import { ConversationsDrawerMobile } from "../drawers/ConversationsDrawerMobile";
 import { usePanelChats } from "../../context/PanelChatsContext";
 import { AvisoDeErrores } from "../ui/AvisoDeErrores";
+import { PasoBoveda } from "../vault/PasoBoveda";
 
 interface LayoutProps {
   children: JSX.Element | JSX.Element[];
@@ -99,6 +100,10 @@ export const Layout: FC<LayoutProps> = ({ children }) => {
             reducer y no los pintaba nadie. Va en el Layout para que cubra
             todas las rutas, no solo el dashboard. */}
         <AvisoDeErrores />
+
+        {/* Fuera de LoadingComponent a proposito: ver la nota del componente.
+            Dentro, cada encendido del spinner global reiniciaba el paso. */}
+        <PasoBoveda />
 
         <ConversationsDrawerMobile
           openState={openState}

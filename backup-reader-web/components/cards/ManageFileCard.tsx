@@ -14,6 +14,7 @@ import { StorageContext } from "../../context/StorageContext";
 import { FirestoreContext } from "../../context/FirestoreContext";
 import { ModalContext } from "../../context/ModalContext";
 import { useVault } from "../../context/VaultContext";
+import { claveRecienCreada } from "../vault/PantallaCrearClave";
 import { VaultRegisterModal } from "../vault/VaultRegisterModal";
 import { VaultUnlockModal } from "../vault/VaultUnlockModal";
 import UploadFileIcon from "@mui/icons-material/UploadFile";
@@ -107,6 +108,16 @@ export const ManageFileCard: FC<ManageFileCardProps> = ({ isFirstFile, chat }) =
   const siHayBoveda = (accion: () => void) => () => {
     if (bovedaLista()) accion();
   };
+
+  /* El saludo de 5c solo tiene sentido justo después de crear la clave, y
+     sessionStorage no existe en el render de servidor: se consulta ya montado. */
+  const [recienCreada, setRecienCreada] = useState(false);
+  useEffect(() => {
+    const mirar = () => setRecienCreada(claveRecienCreada());
+    mirar();
+    window.addEventListener("br:clave-creada", mirar);
+    return () => window.removeEventListener("br:clave-creada", mirar);
+  }, []);
 
   const [isGooglePickerApiLoaded, setIsGooglePickerApiLoaded] = useState<boolean>(false);
   const [isAndroidDevice, setIsAndroidDevice] = useState(false);
@@ -327,6 +338,12 @@ export const ManageFileCard: FC<ManageFileCardProps> = ({ isFirstFile, chat }) =
       <>
         <InicioChats
           chats={(fileList || []).map((f: any) => ({ fullPath: f.fullPath, name: f.name }))}
+          /* 4d: la bóveda existe pero está cerrada. Los chats se enseñan con
+             candado y el buscador se apaga, en vez de esconderlos, que haría
+             creer que se han perdido. */
+          bloqueada={estadoBoveda === "locked"}
+          reciénCreada={recienCreada}
+          onDesbloquear={() => bovedaLista()}
           onVerMisChats={abrirPanel}
           onSubir={() => setHojaSubir(true)}
           onAbrirChat={(ruta, nombre) => {

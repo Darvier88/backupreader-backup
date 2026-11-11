@@ -1,56 +1,36 @@
 import { FC, useContext, useEffect, useState } from "react";
 import { DashboardScreen } from ".";
-import { VaultBanner } from "../vault";
-import { PantallaDesbloqueo, yaSeOmitio } from "../vault/PantallaDesbloqueo";
 import { BarraBloqueada } from "../vault/BarraBloqueada";
+import { yaSeOmitio } from "../vault/PantallaDesbloqueo";
 import { VaultContext } from "../../context/VaultContext";
 
 /**
- * El panel, con el estado de la bóveda delante cuando toca (4c y 4d).
+ * El panel, con la barra de bóveda cerrada cuando toca (4d).
  *
- * Tres situaciones, y cada una pide algo distinto:
+ * Los pasos que ocupan la pantalla entera —desbloquear (4c) y crear la clave
+ * (5a-5c)— ya no se pintan aquí sino en el Layout, a través de `PasoBoveda`.
+ * El motivo está en ese componente: aquí dentro los desmontaba el spinner
+ * global cada vez que algo lo encendía.
  *
- *  - Bóveda abierta: no hay nada que decir, se ve el panel y ya.
- *  - Bloqueada y recién entrado: el desbloqueo ocupa la pantalla (4c). Es lo
- *    único que hay que hacer para que la aplicación sirva de algo, así que
- *    compartir sitio con el panel solo conseguía que se ignorara.
- *  - Bloqueada y ya omitido: una línea con el botón (4d). Quien omitió ya leyó
- *    la explicación hace un momento; repetírsela entera ocupa el sitio de sus
- *    chats.
- *
- * La bóveda sin crear sigue con el aviso de siempre: ahí no hay contraseña que
- * pedir todavía, el paso es otro (crearla), y eso es la ronda 5.
+ * Lo que queda es el caso de 4d: la bóveda está cerrada y el usuario ya pasó
+ * del paso, así que sus chats se ven con candado y una línea le recuerda cómo
+ * abrirlos. Repetirle la explicación entera ocuparía el sitio de los chats.
  */
 export const DashboardMain: FC = () => {
   const { status } = useContext(VaultContext);
-
-  /* Arranca en true para no enseñar el paso durante el parpadeo inicial, en el
-     que `status` todavía es "checking" y aún no se sabe si hace falta. */
   const [omitido, setOmitido] = useState(true);
 
-  /* `yaSeOmitio` lee sessionStorage, que no existe durante el renderizado del
-     servidor. Se consulta ya montado, que además es cuando el estado de la
-     bóveda es de fiar. */
+  /* `yaSeOmitio` lee sessionStorage, que no existe en el render de servidor. */
   useEffect(() => {
     setOmitido(yaSeOmitio());
   }, []);
 
   const bloqueada = status === "locked";
-  const mostrarPaso = bloqueada && !omitido;
-
-  if (mostrarPaso) {
-    return <PantallaDesbloqueo onOmitir={() => setOmitido(true)} />;
-  }
 
   return (
     <>
       {/* Las medidas son las de `br-header-inner`: 1360 de ancho, centrado, y
-          el mismo padding lateral, para que empiece donde empieza el logo.
-
-          Ojo a una inconsistencia que ya existía y que esto NO arregla: el
-          `Grid.Container` de DashboardScreen va con `gap={0}`, que en NextUI
-          se traduce en padding 0, así que el panel de chats empieza entre 16 y
-          24 px más a la izquierda que el logo. */}
+          el mismo padding lateral, para que empiece donde empieza el logo. */}
       <div
         style={{
           maxWidth: 1360,
@@ -59,11 +39,16 @@ export const DashboardMain: FC = () => {
           padding: "12px clamp(16px, 4vw, 24px) 0",
         }}
       >
-        {bloqueada ? (
-          <BarraBloqueada onDesbloquear={() => setOmitido(false)} />
-        ) : (
-          /* Bóveda sin crear: el aviso de siempre, que lleva a crearla. */
-          <VaultBanner />
+        {bloqueada && omitido && (
+          <BarraBloqueada
+            onDesbloquear={() => {
+              /* Volver al paso completo: lo pinta el Layout, que lee esta
+                 misma marca de sessionStorage. */
+              try { sessionStorage.removeItem("br:desbloqueo-omitido"); } catch {}
+              setOmitido(false);
+              window.dispatchEvent(new Event("br:revisar-boveda"));
+            }}
+          />
         )}
       </div>
       <DashboardScreen />

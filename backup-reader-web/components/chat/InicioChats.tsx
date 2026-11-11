@@ -81,7 +81,11 @@ export const InicioChats: FC<{
   maxRecientes?: number;
   /** Si la clave de cifrado se acaba de crear, para saludarlo (5c). */
   reciénCreada?: boolean;
-}> = ({ chats, onVerMisChats, onSubir, onAbrirChat, consulta, onConsulta, resultados, maxRecientes = 4, reciénCreada = false }) => {
+  /** La bóveda está cerrada: los chats existen pero no se pueden leer (4d). */
+  bloqueada?: boolean;
+  /** Abre el paso de desbloqueo. Solo se usa si `bloqueada`. */
+  onDesbloquear?: () => void;
+}> = ({ chats, onVerMisChats, onSubir, onAbrirChat, consulta, onConsulta, resultados, maxRecientes = 4, reciénCreada = false, bloqueada = false, onDesbloquear }) => {
   const { t } = useTranslation();
   const hayChats = chats.length > 0;
 
@@ -94,6 +98,40 @@ export const InicioChats: FC<{
         padding: "28px 18px 40px",
       }}
     >
+      {/* Bóveda cerrada (4d).
+          Se dice arriba y una sola vez, en vez de repetir un candado en cada
+          sitio donde algo no funciona. Lo importante es que el usuario sepa
+          que sus chats SIGUEN AHÍ: sin esta frase, una lista con candados se
+          lee como «se han perdido». */}
+      {bloqueada && (
+        <div
+          style={{
+            display: "flex",
+            flexWrap: "wrap",
+            alignItems: "center",
+            gap: 10,
+            padding: "12px 14px",
+            marginBottom: 20,
+            borderRadius: 10,
+            border: "1px solid var(--border)",
+            background: "var(--paper-100)",
+          }}
+        >
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--brass-600)" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
+            <rect x="3" y="11" width="18" height="11" rx="2" />
+            <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+          </svg>
+          <span style={{ flex: 1, minWidth: 140, fontSize: 14, lineHeight: 1.5, color: "var(--slate-700)" }}>
+            {t("Tus chats están aquí, cerrados. Escribe tu contraseña de cifrado para leerlos.")}
+          </span>
+          {onDesbloquear && (
+            <button type="button" className="br-btn br-btn-primary br-btn-sm" onClick={onDesbloquear}>
+              {t("Desbloquear")}
+            </button>
+          )}
+        </div>
+      )}
+
       {/* El buscador es lo primero cuando ya hay chats (3a): con dos o tres
           respaldos se entra a leer, pero en cuanto hay unos cuantos lo que se
           quiere es encontrar algo concreto, y tenerlo que buscar entre las
@@ -111,11 +149,20 @@ export const InicioChats: FC<{
           >
             {t("¿Qué estás buscando?")}
           </h2>
+          {/* Con la bóveda cerrada el buscador no puede buscar: el índice
+              está cifrado con la misma clave que los chats. Se desactiva en
+              vez de dejarlo escribir y contestar «sin resultados», que haría
+              creer que esos mensajes no existen. */}
           <input
             value={consulta}
+            disabled={bloqueada}
             onChange={(e) => onConsulta(e.target.value)}
-            placeholder={enTexto(t("Personas o mensajes"))}
+            placeholder={enTexto(
+              bloqueada ? t("Desbloquea para buscar") : t("Personas o mensajes")
+            )}
             style={{
+              cursor: bloqueada ? "default" : "text",
+              opacity: bloqueada ? 0.55 : 1,
               width: "100%",
               height: 46,
               padding: "0 14px",
@@ -128,7 +175,9 @@ export const InicioChats: FC<{
             }}
           />
           <p style={{ ...etiqueta, marginTop: 8 }}>
-            {enTexto(t("Busca en tus {{total}} chats", { total: chats.length }))}
+            {bloqueada
+              ? t("Bloqueado")
+              : enTexto(t("Busca en tus {{total}} chats", { total: chats.length }))}
           </p>
           {resultados}
         </div>
@@ -245,8 +294,10 @@ export const InicioChats: FC<{
                 <button
                   key={c.fullPath}
                   type="button"
-                  onClick={() => onAbrirChat(c.fullPath, c.name)}
+                  disabled={bloqueada}
+                  onClick={() => { if (!bloqueada) onAbrirChat(c.fullPath, c.name); }}
                   style={{
+                    opacity: bloqueada ? 0.6 : 1,
                     display: "flex",
                     alignItems: "center",
                     gap: 12,
@@ -277,7 +328,18 @@ export const InicioChats: FC<{
                       color: "var(--brass-600)",
                     }}
                   >
-                    {iniciales(c.name)}
+                    {bloqueada ? (
+                      /* Candado en lugar de las iniciales: con la bóveda
+                         cerrada el nombre del contacto vive dentro del
+                         manifiesto cifrado, así que unas iniciales aquí
+                         serían inventadas. */
+                      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
+                        <rect x="3" y="11" width="18" height="11" rx="2" />
+                        <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+                      </svg>
+                    ) : (
+                      iniciales(c.name)
+                    )}
                   </span>
                   <span style={{ minWidth: 0, flex: 1 }}>
                     <span

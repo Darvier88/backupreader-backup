@@ -141,6 +141,28 @@ export const RecuperarScreen: FC = () => {
                 )}
               </p>
 
+              {/* Abrir el correo, sin salir a buscarlo (5e).
+                  En un teléfono, "revisa tu correo" significa salir de aquí,
+                  encontrar el icono del correo entre las demás aplicaciones y
+                  abrirlo. `message:` lo abre en iOS; en lo demás, el
+                  navegador no hace nada con el enlace, así que debajo queda
+                  el reenvío, que es la otra cosa que se puede necesitar. */}
+              <a
+                href="message:"
+                className="br-btn br-btn-primary br-btn-lg"
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  width: "100%",
+                  minHeight: 52,
+                  marginBottom: 12,
+                  textDecoration: "none",
+                }}
+              >
+                {t("Abrir app de correo")}
+              </a>
+
               <button
                 type="button"
                 onClick={() => {
