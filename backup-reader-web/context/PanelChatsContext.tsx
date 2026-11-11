@@ -48,6 +48,9 @@ type PanelChats = {
   /** backupId -> cuántas coincidencias tiene ese chat. */
   porChat: Record<string, number>;
   setPorChat: (valor: Record<string, number>) => void;
+  /** Chat (backupId) al que se limitan los resultados al pulsarlo en el panel (8c). */
+  chatFiltro: string | null;
+  setChatFiltro: (valor: string | null) => void;
   abierto: boolean;
   abrir: () => void;
   cerrar: () => void;
@@ -62,6 +65,8 @@ const Contexto = createContext<PanelChats>({
   setConsulta: () => {},
   porChat: {},
   setPorChat: () => {},
+  chatFiltro: null,
+  setChatFiltro: () => {},
   abierto: false,
   abrir: () => {},
   cerrar: () => {},
@@ -76,6 +81,7 @@ export const PanelChatsProvider: FC<{ children: ReactNode }> = ({ children }) =>
   const [objetivo, setObjetivo] = useState<ObjetivoBusqueda | null>(null);
   const [consulta, setConsulta] = useState("");
   const [porChat, setPorChat] = useState<Record<string, number>>({});
+  const [chatFiltro, setChatFiltro] = useState<string | null>(null);
 
   const valor = useMemo(
     () => ({
@@ -83,6 +89,8 @@ export const PanelChatsProvider: FC<{ children: ReactNode }> = ({ children }) =>
       setConsulta,
       porChat,
       setPorChat,
+      chatFiltro,
+      setChatFiltro,
       abierto,
       abrir: () => setAbierto(true),
       cerrar: () => setAbierto(false),
@@ -96,7 +104,7 @@ export const PanelChatsProvider: FC<{ children: ReactNode }> = ({ children }) =>
       },
       limpiarObjetivo: () => setObjetivo(null),
     }),
-    [abierto, objetivo, consulta, porChat]
+    [abierto, objetivo, consulta, porChat, chatFiltro]
   );
 
   return <Contexto.Provider value={valor}>{children}</Contexto.Provider>;

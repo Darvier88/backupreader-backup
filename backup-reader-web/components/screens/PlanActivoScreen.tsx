@@ -4,6 +4,7 @@ import { useTranslation } from "react-i18next";
 
 import { AuthContext, FirestoreContext } from "../../context";
 import { PasosOnboarding } from "../ui/PasosOnboarding";
+import { BarraProgreso, IconoPaso } from "../ui/Paso";
 
 /**
  * Plan activo (pantalla 6b).
@@ -51,29 +52,30 @@ export const PlanActivoScreen: FC = () => {
     year: "numeric",
   });
 
-  const dato = (etiqueta: string, valor: string) => (
+  /* Fila de dato como en 6b: etiqueta normal a la izquierda, valor en
+     negrita a la derecha; la fecha en mono. */
+  const dato = (etiqueta: string, valor: string, mono = false, ultima = false) => (
     <div
       style={{
         display: "flex",
-        alignItems: "baseline",
+        alignItems: "center",
         justifyContent: "space-between",
         gap: 16,
-        padding: "12px 0",
-        borderBottom: "1px solid var(--border)",
+        padding: "12px 14px",
+        borderBottom: ultima ? "none" : "1px solid var(--border)",
       }}
     >
+      <span style={{ fontFamily: "var(--font-sans)", fontSize: 14, color: "var(--slate-700)" }}>{etiqueta}</span>
       <span
         style={{
-          fontFamily: "var(--font-mono)",
-          fontSize: 11,
-          letterSpacing: "0.12em",
-          textTransform: "uppercase",
-          color: "var(--slate-500)",
+          fontFamily: mono ? "var(--font-mono)" : "var(--font-sans)",
+          fontSize: mono ? 13 : 14,
+          fontWeight: mono ? 400 : 600,
+          letterSpacing: mono ? "0.04em" : undefined,
+          textTransform: mono ? "uppercase" : undefined,
+          color: "var(--ink-900)",
         }}
       >
-        {etiqueta}
-      </span>
-      <span style={{ fontFamily: "var(--font-sans)", fontSize: 15, color: "var(--ink-900)" }}>
         {valor}
       </span>
     </div>
@@ -81,59 +83,60 @@ export const PlanActivoScreen: FC = () => {
 
   return (
     <div className="br-root br-split">
-      <div className="br-split-main">
+      {/* Pasos a la izquierda en escritorio, como en 7c–7e. En móvil no se
+          pinta: antes dejaba un bloque beige vacío bajo el botón. */}
+      <aside
+        className="br-aside br-solo-escritorio"
+        style={{ borderLeft: "none", background: "var(--ink-900)" }}
+      >
+        <div className="br-aside-inner" style={{ width: "100%" }}>
+          <PasosOnboarding actual={2} />
+        </div>
+      </aside>
+
+      <div className="br-split-main br-movil-alto">
         <div className="br-split-inner" style={{ maxWidth: 460 }}>
-          <div style={{ marginBottom: 10 }}>
-            <PasosOnboarding actual={2} variante="linea" />
+          {/* Barra de progreso con el plan hecho (6b), en vez de un «Paso 2
+              de 3» que repetía el número de la pantalla siguiente (5a). */}
+          <div style={{ marginBottom: 32 }}>
+            <BarraProgreso hechos={1} />
           </div>
 
-          <h1 className="br-page-title">{t("Tu plan está activo")}</h1>
+          <IconoPaso tipo="check" tono="suave" redondo />
+          <h1 className="br-page-title" style={{ marginTop: 24 }}>{t("Tu plan está activo")}</h1>
           <p style={{ margin: "0 0 24px", fontSize: 15.5, color: "var(--slate-700)" }}>
             {user?.email
               ? enTexto(t("Te enviamos el recibo a {{correo}}.", { correo: user.email }))
               : t("Te enviamos el recibo por correo.")}
           </p>
 
-          <div className="br-card" style={{ padding: "6px 20px 14px" }}>
+          <div style={{ border: "1px solid var(--border)", borderRadius: 10, background: "var(--surface-raised)" }}>
             {dato(
               enTexto(t("Plan")),
               plan
                 ? `${plan.details.name} · $${plan.details.price}/${t("mes")}`
                 : "Personal · $2.99/" + t("mes")
             )}
-            {dato(enTexto(t("Próximo cobro")), fecha)}
+            {dato(enTexto(t("Próximo cobro")), fecha, true, true)}
           </div>
 
-          {/* Se anuncia el siguiente paso antes de llevar a él. */}
-          <p
-            style={{
-              margin: "24px 0 14px",
-              fontSize: 15.5,
-              color: "var(--slate-700)",
-              lineHeight: 1.5,
-            }}
-          >
-            {t("Último paso: crea la clave con la que ciframos tus chats.")}
-          </p>
-
-          <button
-            type="button"
-            className="br-btn br-btn-primary br-btn-lg"
-            style={{ width: "100%", minHeight: 52, cursor: "pointer" }}
-            onClick={() => router.replace("/dashboard")}
-          >
-            {t("Crear clave de cifrado")}
-          </button>
+          {/* Se anuncia el siguiente paso antes de llevar a él, abajo junto
+              al botón (6b). */}
+          <div className="br-movil-abajo">
+            <p style={{ margin: "0 0 12px", fontSize: 14.5, color: "var(--slate-700)", lineHeight: 1.5 }}>
+              {t("Último paso: crea la clave con la que ciframos tus chats.")}
+            </p>
+            <button
+              type="button"
+              className="br-btn br-btn-primary br-btn-lg"
+              style={{ width: "100%", minHeight: 52, cursor: "pointer" }}
+              onClick={() => router.replace("/dashboard")}
+            >
+              {t("Crear clave de cifrado")}
+            </button>
+          </div>
         </div>
       </div>
-
-      <aside className="br-aside">
-        <div className="br-aside-inner">
-          <div className="br-solo-escritorio">
-            <PasosOnboarding actual={2} />
-          </div>
-        </div>
-      </aside>
     </div>
   );
 };

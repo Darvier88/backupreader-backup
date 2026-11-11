@@ -29,28 +29,19 @@ export const DashboardMain: FC = () => {
 
   return (
     <>
-      {/* Las medidas son las de `br-header-inner`: 1360 de ancho, centrado, y
-          el mismo padding lateral, para que empiece donde empieza el logo. */}
-      <div
-        style={{
-          maxWidth: 1360,
-          margin: "0 auto",
-          width: "100%",
-          padding: "12px clamp(16px, 4vw, 24px) 0",
-        }}
-      >
-        {bloqueada && omitido && (
-          <BarraBloqueada
-            onDesbloquear={() => {
-              /* Volver al paso completo: lo pinta el Layout, que lee esta
-                 misma marca de sessionStorage. */
-              try { sessionStorage.removeItem("br:desbloqueo-omitido"); } catch {}
-              setOmitido(false);
-              window.dispatchEvent(new Event("br:revisar-boveda"));
-            }}
-          />
-        )}
-      </div>
+      {/* Franja a todo el ancho bajo la cabecera (4d); por dentro se alinea
+          con el logo (1360 centrado). */}
+      {bloqueada && omitido && (
+        <BarraBloqueada
+          onDesbloquear={() => {
+            /* Volver al paso completo: lo pinta el Layout, que lee esta
+               misma marca de sessionStorage. */
+            try { sessionStorage.removeItem("br:desbloqueo-omitido"); } catch {}
+            setOmitido(false);
+            window.dispatchEvent(new Event("br:revisar-boveda"));
+          }}
+        />
+      )}
       <DashboardScreen />
     </>
   );

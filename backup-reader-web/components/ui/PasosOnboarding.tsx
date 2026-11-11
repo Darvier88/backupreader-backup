@@ -51,9 +51,9 @@ export const PasosOnboarding: FC<{
   return (
     <div
       style={{
-        background: "var(--ink-950, #0B1220)",
+        background: "var(--ink-900)",
         borderRadius: 12,
-        padding: "26px 24px",
+        padding: "8px 0",
         height: "100%",
       }}
     >

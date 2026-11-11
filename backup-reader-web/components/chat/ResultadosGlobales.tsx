@@ -65,7 +65,11 @@ export const ResultadosGlobales = ({
 }) => {
   const { t } = useTranslation();
   const { buscarEnTodos, fragmentosDeChat, estadoIndexado } = useContext(StorageContext);
-  const { irAMensaje, setPorChat } = usePanelChats();
+  const { irAMensaje, setPorChat, chatFiltro, setChatFiltro } = usePanelChats();
+  /* «Más recientes primero» (8c). El índice devuelve los mensajes en el orden
+     del chat, del más antiguo al más nuevo; lo que se busca suele ser reciente,
+     así que por defecto se piden y se enseñan los últimos. */
+  const [orden, setOrden] = useState<"recientes" | "antiguos">("recientes");
   /* Qué resultado está marcado para el teclado (8c): ↓ pasa al siguiente,
      ↵ lo abre en el chat. `null` es "ninguno todavía", que es distinto de
      "el primero": al escribir no se marca nada, para que ↵ no abra un chat
@@ -88,6 +92,7 @@ export const ResultadosGlobales = ({
       setSinIndexar(0);
       setFragmentos({});
       setPorChat({});
+      setChatFiltro(null);
       setMarcado(null);
       return;
     }
@@ -115,11 +120,17 @@ export const ResultadosGlobales = ({
            mientras ya se sabe en qué chats hay algo. */
         for (const res of r.resultados) {
           if (!vigente) return;
-          const quiero = res.mensajes.slice(0, 10);
+          const ordenados = [...res.mensajes].sort((a, b) =>
+            orden === "recientes" ? b - a : a - b
+          );
+          const quiero = ordenados.slice(0, 10);
           if (quiero.length === 0) continue;
           const trozos = await fragmentosDeChat(res.backupId, quiero);
           if (!vigente) return;
-          setFragmentos((prev) => ({ ...prev, [res.backupId]: trozos }));
+          const enOrden = [...trozos].sort((a, b) =>
+            orden === "recientes" ? b.mensaje - a.mensaje : a.mensaje - b.mensaje
+          );
+          setFragmentos((prev) => ({ ...prev, [res.backupId]: enOrden }));
         }
       } catch (error) {
         console.error("Falló la búsqueda global:", error);
@@ -132,13 +143,21 @@ export const ResultadosGlobales = ({
       clearTimeout(temporizador);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [consulta]);
+  }, [consulta, orden]);
 
   const aviso = avisoDeBusqueda(estadoIndexado);
   const hayQueAvisar = aviso.clave !== "completa" || sinIndexar > 0;
 
-  const conPersonas = resultados.filter((r) => r.contactos.length > 0);
-  const conMensajes = resultados.filter((r) => r.total > 0);
+  /* Al pulsar un chat en el panel se ven solo sus resultados (8c). Si ese
+     chat ya no tiene coincidencias con la búsqueda actual, el filtro no
+     aplica: dejaría la pantalla vacía sin explicar por qué. */
+  const filtroVigente =
+    chatFiltro && resultados.some((r) => r.backupId === chatFiltro) ? chatFiltro : null;
+  const visibles = filtroVigente
+    ? resultados.filter((r) => r.backupId === filtroVigente)
+    : resultados;
+  const conPersonas = visibles.filter((r) => r.contactos.length > 0);
+  const conMensajes = visibles.filter((r) => r.total > 0);
   const nPersonas = conPersonas.reduce((n, r) => n + r.contactos.length, 0);
   const nMensajes = conMensajes.reduce((n, r) => n + r.total, 0);
 
@@ -193,12 +212,12 @@ export const ResultadosGlobales = ({
         display: "inline-flex",
         alignItems: "center",
         justifyContent: "center",
-        borderRadius: 999,
+        borderRadius: 8,
         background: "var(--paper-100)",
         border: "1px solid var(--border)",
-        fontFamily: mono,
-        fontSize: 11.5,
-        color: "var(--brass-600)",
+        fontFamily: "var(--font-serif)",
+        fontSize: 13,
+        color: "var(--ink-900)",
       }}
     >
       {iniciales(nombre)}
@@ -220,10 +239,10 @@ export const ResultadosGlobales = ({
           whiteSpace: "nowrap",
           border: `1px solid ${activo ? "var(--ink-900)" : "var(--border)"}`,
           background: activo ? "var(--ink-900)" : "transparent",
-          color: activo ? "var(--paper-50)" : "var(--slate-700)",
+          color: activo ? "var(--paper-50)" : "var(--ink-800)",
           fontFamily: "var(--font-sans)",
-          fontSize: 13,
-          fontWeight: activo ? 600 : 500,
+          fontSize: 13.5,
+          fontWeight: 600,
         }}
       >
         {texto}
@@ -267,8 +286,9 @@ export const ResultadosGlobales = ({
         <>
           {/* Filtros con su recuento: dicen cuánto hay de cada cosa antes de
               pulsar, así que también sirven de resumen. */}
-          <div style={{ display: "flex", gap: 8, marginBottom: 14, flexWrap: "wrap" }}>
-            {botonFiltro("todo", enTexto(t("Todo")))}
+          <div style={{ display: "flex", gap: 8, marginBottom: 14, flexWrap: "wrap", alignItems: "center" }}>
+            {/* Con recuento en escritorio (8c); en el móvil «Todo» a secas (3b). */}
+            {botonFiltro("todo", anchoCompleto ? enTexto(t("Todo · {{n}}", { n: nPersonas + nMensajes })) : enTexto(t("Todo")))}
             {nPersonas > 0 &&
               botonFiltro(
                 "personas",
@@ -279,6 +299,58 @@ export const ResultadosGlobales = ({
                 "mensajes",
                 enTexto(t("Mensajes · {{n}}", { n: nMensajes }))
               )}
+                      {/* El chat elegido en el panel, con una × para volver a todos. */}
+            {filtroVigente && (
+              <button
+                type="button"
+                onClick={() => setChatFiltro(null)}
+                aria-label={enTexto(t("Ver resultados de todos los chats"))}
+                style={{
+                  minHeight: 32,
+                  padding: "0 12px",
+                  borderRadius: 999,
+                  cursor: "pointer",
+                  border: "1px solid var(--brass-500)",
+                  background: "var(--paper-100)",
+                  color: "var(--ink-900)",
+                  fontFamily: "var(--font-sans)",
+                  fontSize: 13,
+                }}
+              >
+                {enTexto(
+                  t("Solo {{chat}}", {
+                    chat:
+                      nombreDelContacto(
+                        resultados.find((r) => r.backupId === filtroVigente)?.nombre ?? ""
+                      ) || "",
+                  })
+                )}{" "}
+                ×
+              </button>
+            )}
+            {/* Orden (8c). Un solo control que alterna, para no abrir un menú
+                por dos opciones. Solo en escritorio: en el móvil no cabe en la
+                fila de filtros (3b). */}
+            {anchoCompleto && <button
+              type="button"
+              onClick={() => setOrden((o) => (o === "recientes" ? "antiguos" : "recientes"))}
+              style={{
+                marginLeft: "auto",
+                minHeight: 32,
+                padding: "0 4px",
+                background: "transparent",
+                border: "none",
+                cursor: "pointer",
+                fontFamily: "var(--font-sans)",
+                fontSize: 13,
+                color: "var(--slate-700)",
+              }}
+            >
+              {orden === "recientes"
+                ? enTexto(t("Más recientes primero"))
+                : enTexto(t("Más antiguos primero"))}{" "}
+              ↕
+            </button>}
           </div>
 
           {/* Dos columnas en escritorio: los mensajes son lo que se lee y
@@ -288,7 +360,7 @@ export const ResultadosGlobales = ({
           <div
             style={
               anchoCompleto
-                ? { display: "grid", gridTemplateColumns: "minmax(0, 1fr) minmax(200px, 280px)", gap: 28, alignItems: "start" }
+                ? { display: "grid", gridTemplateColumns: "minmax(0, 1fr) minmax(220px, 300px)", gap: 32, alignItems: "start" }
                 : undefined
             }
           >
@@ -324,85 +396,87 @@ export const ResultadosGlobales = ({
           {(filtro === "todo" || filtro === "mensajes") && nMensajes > 0 && (
             <div>
               <p style={etiqueta}>{enTexto(t("Mensajes"))}</p>
-              <div style={{ marginTop: 8, display: "flex", flexDirection: "column", gap: 14 }}>
+              <div style={{ marginTop: 8, display: "flex", flexDirection: "column", gap: 10 }}>
                 {conMensajes.map((res) => {
                   const trozos = fragmentos[res.backupId];
                   const todos = desplegados[res.backupId];
                   const aEnsenar = trozos ? (todos ? trozos : trozos.slice(0, POR_CHAT)) : [];
                   const restantes = (trozos?.length ?? 0) - aEnsenar.length;
 
+                  /* Una tarjeta por chat (3b/8c): el nombre y el recuento
+                     arriba, los mensajes en filas separadas por una línea y
+                     «Ver N más» al pie. */
                   return (
-                    <div key={res.backupId}>
-                      <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 6 }}>
-                        {avatar(res.nombre)}
-                        <span style={{ minWidth: 0, flex: 1 }}>
-                          <span style={nombreFila}>
-                            {nombreDelContacto(res.nombre) || res.nombre}
-                          </span>
-                          <span style={{ ...etiqueta, display: "block" }}>
-                            {res.aproximado
-                              ? enTexto(t("Más de {{total}} coincidencias", { total: res.total }))
-                              /* Singular cuando es una. "1 COINCIDENCIAS" se
-                                 lee como un error de la aplicacion, y pone en
-                                 duda lo demas que diga. */
-                              : res.total === 1
-                              ? enTexto(t("1 coincidencia"))
-                              : enTexto(t("{{total}} coincidencias", { total: res.total }))}
-                          </span>
+                    <div key={res.backupId} style={{ display: "flex", flexDirection: "column", background: "#fff", border: "1px solid var(--border)", borderRadius: 10, overflow: "hidden" }}>
+                      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10, padding: "12px 16px 8px" }}>
+                        <span style={{ ...nombreFila, fontSize: 14, minWidth: 0 }}>
+                          {nombreDelContacto(res.nombre) || res.nombre}
+                        </span>
+                        <span style={{ fontFamily: mono, fontSize: 10.5, letterSpacing: "0.04em", textTransform: "uppercase", color: "var(--slate-500)", whiteSpace: "nowrap" }}>
+                          {res.aproximado
+                            ? enTexto(t("Más de {{total}} coincidencias", { total: res.total }))
+                            /* Singular cuando es una. "1 COINCIDENCIAS" se lee
+                               como un error de la aplicación. */
+                            : res.total === 1
+                            ? enTexto(t("1 coincidencia"))
+                            : enTexto(t("{{total}} coincidencias", { total: res.total }))}
                         </span>
                       </div>
 
                       {/* Mientras se descifra ese chat, su hueco dice que
                           está en camino en vez de parecer que no hay nada. */}
                       {!trozos && (
-                        <p style={{ ...etiqueta, paddingLeft: 44 }}>
+                        <p style={{ ...etiqueta, margin: 0, padding: "10px 16px", borderTop: "1px solid var(--border)" }}>
                           {enTexto(t("Abriendo…"))}
                         </p>
                       )}
 
-                      <div style={{ display: "flex", flexDirection: "column", gap: 6, paddingLeft: 44 }}>
-                        {aEnsenar.map((f) => {
-                          const indice = navegables.findIndex(
-                            (n) => n.res.backupId === res.backupId && n.mensaje === f.mensaje
-                          );
-                          const activo = marcado !== null && indice === marcado;
-                          return (
+                      {aEnsenar.map((f) => {
+                        const indice = navegables.findIndex(
+                          (n) => n.res.backupId === res.backupId && n.mensaje === f.mensaje
+                        );
+                        const activo = marcado !== null && indice === marcado;
+                        return (
                           <button
                             key={f.mensaje}
                             type="button"
                             ref={(el) => { if (activo && el) el.scrollIntoView({ block: "nearest" }); }}
                             onClick={() => abrirEnMensaje(res, f.mensaje)}
                             style={{
-                              ...filaBase,
-                              alignItems: "flex-start",
-                              padding: "10px 12px",
-                              borderColor: activo ? "var(--brass-500)" : "var(--border)",
-                              boxShadow: activo ? "var(--shadow-card)" : "none",
+                              display: "flex",
+                              alignItems: "stretch",
+                              gap: 16,
+                              width: "100%",
+                              padding: activo ? "12px 16px" : anchoCompleto ? "12px 16px 12px 35px" : "10px 16px",
+                              border: "none",
+                              borderTop: "1px solid var(--border)",
+                              background: activo ? "var(--paper-50)" : "transparent",
+                              cursor: "pointer",
+                              textAlign: "left",
                             }}
                           >
-                            <span style={{ minWidth: 0, flex: 1 }}>
-                              <span
-                                style={{
-                                  display: "block",
-                                  fontFamily: "var(--font-sans)",
-                                  fontSize: 14.5,
-                                  lineHeight: 1.45,
-                                  color: "var(--ink-900)",
-                                }}
-                              >
+                            {activo && (
+                              <span aria-hidden style={{ width: 3, flexShrink: 0, borderRadius: 2, background: "var(--ochre-600)" }} />
+                            )}
+                            <span style={{ minWidth: 0, flex: 1, display: "flex", flexDirection: "column", gap: 4 }}>
+                              <span style={{ fontFamily: "var(--font-sans)", fontSize: anchoCompleto ? 14.5 : 14, lineHeight: 1.45, color: "var(--slate-900)" }}>
                                 <TextoResaltado
                                   texto={fragmentoAlrededor(f.texto, consulta)}
                                   consulta={consulta}
                                 />
                               </span>
-                              <span style={{ ...etiqueta, display: "block", marginTop: 4 }}>
+                              <span style={{ fontFamily: mono, fontSize: 10.5, letterSpacing: "0.02em", textTransform: "uppercase", color: "var(--slate-400)" }}>
                                 {[f.remitente, f.fecha].filter(Boolean).join(" · ")}
                               </span>
                             </span>
+                            {activo && anchoCompleto && (
+                              <span style={{ alignSelf: "center", flexShrink: 0, fontSize: 13, fontWeight: 600, color: "var(--brass-600)" }}>
+                                {enTexto(t("Abrir en el chat"))}
+                              </span>
+                            )}
                           </button>
-                          );
-                        })}
-                      </div>
+                        );
+                      })}
 
                       {restantes > 0 && (
                         <button
@@ -411,13 +485,15 @@ export const ResultadosGlobales = ({
                             setDesplegados((p) => ({ ...p, [res.backupId]: true }))
                           }
                           style={{
-                            marginTop: 6,
-                            marginLeft: 44,
+                            width: "100%",
+                            padding: "12px 16px",
                             background: "transparent",
                             border: "none",
+                            borderTop: "1px solid var(--border)",
                             cursor: "pointer",
                             fontFamily: "var(--font-sans)",
                             fontSize: 13.5,
+                            fontWeight: 600,
                             color: "var(--brass-600)",
                           }}
                         >
@@ -468,7 +544,7 @@ export const ResultadosGlobales = ({
 
               {/* Los atajos, escritos. Un atajo que no se anuncia no lo usa
                   nadie, y aquí hay sitio de sobra para decirlo. */}
-              <div style={{ marginTop: 22, borderTop: "1px solid var(--border)", paddingTop: 14 }}>
+              <div style={{ marginTop: 12, padding: "12px 12px 14px", background: "var(--paper-100)", border: "1px solid var(--border)", borderRadius: 10 }}>
                 <p style={etiqueta}>{enTexto(t("Atajos"))}</p>
                 <div style={{ marginTop: 8, display: "flex", flexDirection: "column", gap: 8 }}>
                   {[

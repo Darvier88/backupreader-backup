@@ -1,4 +1,5 @@
 import axios, { AxiosResponse } from 'axios';
+import { registrarApertura } from "../lib/aperturas";
 import utf8 from 'utf8';
 import { createContext, useReducer, useContext, useEffect, useRef, useState } from "react";
 
@@ -1004,6 +1005,8 @@ function parsearJsonInstagram(texto: string): string[][] {
     It gets trigger when the user clicks on a conversation present on the sidebar.
   */
   const getFile = async (fullpath: string, chatName: string) => {
+    /* Para «Abierto hoy» en Recientes (8b). */
+    registrarApertura(fullpath);
 
     /* Único punto donde se bifurca v1 / v2. Mientras esto no se filtre a los
        componentes, la convivencia se mantiene barata (ver Etapa 8). */

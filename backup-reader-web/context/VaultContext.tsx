@@ -1,19 +1,28 @@
-import { createContext, useContext, useEffect, useReducer, useRef } from "react";
+import { createContext, useContext, useEffect, useReducer, useRef, useState } from "react";
 import { onAuthStateChanged } from "firebase/auth";
 
 import { FirebaseAuth } from "../config/firebase";
 import { fetchVaultRecord, saveVaultRecord } from "../config/vaultRepo";
 import { vaultReducer, vaultInitialState, type VaultStatus } from "./VaultReducer";
+import {
+  claveRecordada,
+  hayClaveRecordada,
+  olvidarClave,
+  olvidarTodo,
+  recordarClave,
+} from "../lib/recordar-clave";
 
 /**
  * Bóveda criptográfica: la DEK vive aquí, en memoria, y en ningún otro sitio.
  *
  * Decisiones que conviene no revertir sin pensarlo:
  *
- *  - La DEK NO se guarda en localStorage, sessionStorage, cookies ni IndexedDB.
- *    Al recargar la página se pierde y hay que volver a desbloquear. Es el
- *    comportamiento correcto para E2EE: si la clave sobrevive a la recarga,
- *    sobrevive también a cualquier script que se cuele en la página.
+ *  - La DEK NO se guarda en localStorage, sessionStorage ni cookies. Al
+ *    recargar la página se pierde y hay que volver a desbloquear.
+ *    La única excepción es OPCIONAL: «Recordar en este dispositivo por 30
+ *    días» (8a). Entonces se guarda en IndexedDB CIFRADA con una llave del
+ *    navegador no extraíble (ver lib/recordar-clave.ts), y se borra al cerrar
+ *    sesión. Sin esa casilla, todo sigue como antes.
  *
  *  - Este contexto escucha `onAuthStateChanged` por su cuenta en vez de
  *    depender de AuthContext. Así no hay que ordenar providers ni crear una
@@ -33,7 +42,8 @@ type VaultContextProps = {
   pendingRecoveryCode: string | null;
   /** Crea la bóveda. Devuelve el código de recuperación, o null si falló. */
   registerVault: (password: string) => Promise<string | null>;
-  unlock: (password: string) => Promise<boolean>;
+  /** `recordar`: guardar la clave en este dispositivo 30 días (8a). */
+  unlock: (password: string, recordar?: boolean) => Promise<boolean>;
   unlockWithCode: (recoveryCode: string) => Promise<boolean>;
   changeVaultPassword: (current: string, next: string) => Promise<boolean>;
   /**
@@ -50,6 +60,10 @@ type VaultContextProps = {
   acknowledgeRecoveryCode: () => void;
   lock: () => void;
   clearError: () => void;
+  /** ¿Este navegador tiene la clave recordada para la cuenta actual? */
+  recordadaEnEsteDispositivo: boolean;
+  /** Borra la clave recordada en este navegador («Olvidar este dispositivo»). */
+  olvidarEsteDispositivo: () => Promise<void>;
 };
 
 export const VaultContext = createContext({} as VaultContextProps);
@@ -57,6 +71,7 @@ export const VaultContext = createContext({} as VaultContextProps);
 export const VaultProvider = ({ children }: any) => {
   const [state, dispatch] = useReducer(vaultReducer, vaultInitialState);
   const dekRef = useRef<Uint8Array | null>(null);
+  const [recordadaEnEsteDispositivo, setRecordada] = useState(false);
 
   // El módulo se carga solo en el navegador y solo cuando hace falta.
   const cripto = () => import("../lib/backupreader-crypto");
@@ -66,13 +81,28 @@ export const VaultProvider = ({ children }: any) => {
     const unsub = onAuthStateChanged(FirebaseAuth, async (user) => {
       if (!user) {
         await wipeDek();
+        /* Cerrar sesión olvida también la clave recordada: «recordar» es
+           para la sesión de este navegador, no para quien entre después. */
+        await olvidarTodo();
+        setRecordada(false);
         dispatch({ type: "noSession" });
         return;
       }
       dispatch({ type: "sessionStarted", payload: { uid: user.uid } });
       try {
         const record = await fetchVaultRecord(user.uid);
+        /* Clave recordada (8a): se intenta ANTES de anunciar el registro,
+           para que la pantalla de desbloqueo no se asome un instante y
+           desaparezca. Las dos acciones van en el mismo tick y React las
+           pinta juntas. */
+        const recordada = record ? await claveRecordada(user.uid) : null;
+        if (!record) await olvidarClave(user.uid);
         dispatch({ type: "recordLoaded", payload: { record } });
+        if (recordada) {
+          dekRef.current = recordada;
+          dispatch({ type: "unlocked", payload: { dek: recordada } });
+        }
+        setRecordada(!!recordada);
       } catch (err) {
         console.error("No se pudo leer el registro de la bóveda", err);
         dispatch({ type: "recordLoaded", payload: { record: null } });
@@ -136,7 +166,7 @@ export const VaultProvider = ({ children }: any) => {
     }
   };
 
-  const unlock = async (password: string): Promise<boolean> => {
+  const unlock = async (password: string, recordar = false): Promise<boolean> => {
     if (!state.record) return false;
     try {
       const { unlockWithPassword } = await cripto();
@@ -147,6 +177,10 @@ export const VaultProvider = ({ children }: any) => {
       }
       dekRef.current = dek;
       dispatch({ type: "unlocked", payload: { dek } });
+      if (recordar && state.uid) {
+        const ok = await recordarClave(state.uid, dek);
+        setRecordada(ok);
+      }
       return true;
     } catch (err) {
       console.error("Fallo al desbloquear", err);
@@ -274,6 +308,22 @@ export const VaultProvider = ({ children }: any) => {
     }
   };
 
+  const olvidarEsteDispositivo = async () => {
+    if (state.uid) await olvidarClave(state.uid);
+    setRecordada(false);
+  };
+
+  /* Si otra pestaña olvida el dispositivo, esta lo sabrá al volver a cargar;
+     aquí basta con reflejar el estado real al entrar. */
+  useEffect(() => {
+    if (!state.uid) return;
+    let vivo = true;
+    hayClaveRecordada(state.uid).then((hay) => vivo && setRecordada(hay));
+    return () => {
+      vivo = false;
+    };
+  }, [state.uid]);
+
   const acknowledgeRecoveryCode = () => dispatch({ type: "recoveryCodeSeen" });
   const clearError = () => dispatch({ type: "removeError" });
 
@@ -293,6 +343,8 @@ export const VaultProvider = ({ children }: any) => {
         acknowledgeRecoveryCode,
         lock,
         clearError,
+        recordadaEnEsteDispositivo,
+        olvidarEsteDispositivo,
       }}
     >
       {children}

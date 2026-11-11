@@ -1,6 +1,8 @@
-import { FC, ReactNode } from "react";
+import { FC, ReactNode, useContext } from "react";
 import { useTranslation } from "react-i18next";
 import { useRouter } from "next/router";
+import { AuthContext } from "../../context";
+import { Logo } from "../ui/BrandChrome";
 
 /**
  * La columna en tinta de los pasos de bóveda (7d, 7e y 8a).
@@ -20,6 +22,7 @@ export const ColumnaPasos: FC<{
 }> = ({ encabezado, titulo, children }) => {
   const { t } = useTranslation();
   const router = useRouter();
+  const { logOut } = useContext(AuthContext);
 
   const enlace: React.CSSProperties = {
     minHeight: 44,
@@ -34,11 +37,11 @@ export const ColumnaPasos: FC<{
 
   return (
     <aside className="br-paso-aside">
-      <span style={{ fontFamily: "var(--font-serif)", fontSize: 19, color: "var(--paper-50)" }}>
-        BackupReader
-      </span>
+      {/* El logo de verdad, en su versión sobre tinta (7c–8a). */}
+      <Logo oscuro />
 
-      <div style={{ flex: 1, display: "flex", flexDirection: "column", justifyContent: "center", maxWidth: 320 }}>
+      {/* Arriba, justo bajo el logo (7c–8a), no centrado en la columna. */}
+      <div style={{ flex: 1, display: "flex", flexDirection: "column", justifyContent: "flex-start", marginTop: 44, maxWidth: 320 }}>
         <span
           style={{
             fontFamily: "var(--font-mono)",
@@ -71,8 +74,11 @@ export const ColumnaPasos: FC<{
         <button type="button" style={enlace} onClick={() => router.push("/help")}>
           {t("Ayuda")}
         </button>
-        <button type="button" style={enlace} onClick={() => router.push("/account")}>
-          {t("Mi cuenta")}
+        {/* «Salir» (7c–7e, 8a): cierra la sesión. Durante el alta es la
+            única salida real; «Mi cuenta» llevaba a una página que pide tener
+            la clave creada. */}
+        <button type="button" style={enlace} onClick={() => logOut()}>
+          {t("Salir")}
         </button>
       </div>
     </aside>

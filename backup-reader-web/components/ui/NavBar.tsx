@@ -5,7 +5,6 @@ import { AuthContext, FirestoreContext } from "../../context";
 import { User } from "firebase/auth";
 import { onAuthStateChanged } from "firebase/auth";
 import { FirebaseAuth } from "../../config/firebase";
-import { ConversationDrawerBtn } from "../buttons";
 import LogoutIcon from "@mui/icons-material/Logout";
 import AccountCircleOutlinedIcon from "@mui/icons-material/AccountCircleOutlined";
 import { Logo, LangToggle } from "./BrandChrome";
@@ -140,6 +139,26 @@ export const NavBar: FC<NavBarProps> = ({ drawerButtonOnPress }) => {
         {/* maxWidth 1360: el mismo que usa BrandHeader en el dashboard, para
             que el logo caiga a la misma altura en las dos pantallas. */}
         <div className="br-header-inner" style={{ maxWidth: 1360 }}>
+          {/* Botón del panel de chats DENTRO de la cabecera (1a).
+              Antes era una píldora «< Chats» en una fila propia debajo de la
+              cabecera: ocupaba una línea entera encima de la conversación y
+              parecía un botón de «atrás». Ahora es el control de la izquierda
+              de la cabecera, en tinta, con 44px de área táctil. */}
+          <div style={{ display: "flex", alignItems: "center", gap: 8, minWidth: 0 }}>
+          {router.pathname === "/dashboard" && phone && (
+            <button
+              type="button"
+              className="br-boton-panel"
+              aria-label={t("Abrir el panel de chats") as string}
+              title={t("Tus chats") as string}
+              onClick={() => drawerButtonOnPress()}
+            >
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                <rect x="3" y="4" width="18" height="16" rx="2" />
+                <path d="M9 4v16" />
+              </svg>
+            </button>
+          )}
           <Logo
             compact={phone}
             onClick={() => {
@@ -151,6 +170,8 @@ export const NavBar: FC<NavBarProps> = ({ drawerButtonOnPress }) => {
               }
             }}
           />
+
+          </div>
 
           <nav
             style={{
@@ -284,17 +305,8 @@ export const NavBar: FC<NavBarProps> = ({ drawerButtonOnPress }) => {
       : null
       }
 
-      {
-        router.pathname == '/dashboard' && phone && (
-          <>
-            <Box marginBottom={2}>
-                <ConversationDrawerBtn
-                  drawerButtonOnPress={()=> drawerButtonOnPress()}
-                />
-              </Box>
-            <Spacer css={{ flex: 1 }} />
-          </>
-        )}
+      {/* El botón «< Chats» que iba aquí, en una fila aparte, ahora vive en
+          la cabecera (ver arriba). */}
 
     </>
   );

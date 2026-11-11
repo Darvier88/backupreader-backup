@@ -11,12 +11,12 @@ import {
 import { Grid, Loading } from "@nextui-org/react";
 import { ChatView } from "../chat";
 import { ManageFileCard } from "../cards";
-import { DividerLine } from "../ui/DividerLine";
 import { ConversationsDrawer } from "../drawers";
 import { BuscadorEnChat } from "../chat/BuscadorEnChat";
 import { ControlSegmentado } from "../ui/ControlSegmentado";
 import { cuantasVeces } from "../../lib/busqueda/resaltar";
 import { claveDeDia, etiquetaDeDia } from "../../lib/fechas-de-chat";
+import { nombreDelContacto } from "../../lib/nombres-de-chat";
 import { usePanelChats } from "../../context/PanelChatsContext";
 
 /** `t()` puede devolver null segun sus tipos; esto lo deja en string. */
@@ -71,7 +71,8 @@ const styles = {
     backgroundColor: "var(--paper-50)",
   },
   drawerContainer: {
-    height: "100%",
+    alignSelf: "stretch",
+    padding: 0,
     display: "flex",
     backgroundColor: "var(--paper-100)",
     borderRight: "1px solid var(--border)",
@@ -291,6 +292,10 @@ export const DashboardScreen: FC = () => {
     return () => window.removeEventListener("keydown", alPulsar);
   }, [chat]);
 
+  /* En el móvil, al enfocar la búsqueda toma la cabecera (1c). */
+  const [buscando, setBuscando] = useState(false);
+  const ocultarCabecera = phone && buscando;
+
   return (
     <Grid.Container style={{ minHeight: "100vh", background: "var(--paper-50)", maxWidth: 1360, margin: "0 auto", width: "100%" }}>
       
@@ -322,37 +327,47 @@ export const DashboardScreen: FC = () => {
             <ManageFileCard isFirstFile={ fileList && fileList.length > 0 ? false : true } chat={true} />
             <Container style={{ marginTop: 15 }}  key={new Date().getTime()}>
 
-              <Box
-                display={"flex"}
-                flexDirection={phone ? "column" : "row"}
-                alignItems={phone ? "flex-start" : "center"}
-                justifyContent={"space-between"}
-                marginBottom={phone ? 2 : 0}
-              >
-                <div style={{ minWidth: 0 }}>
-                  <Typography
-                    fontFamily={"var(--font-serif)"}
-                    fontSize={26}
-                    style={{ color: "var(--ink-900)", fontWeight: 500, letterSpacing: "-0.015em" }}
-                  >
-                    {chatName !== null && splitChatName(extractUsername(chatName)).name}
-                  </Typography>
-                  {chatName !== null && splitChatName(chatName).date && (
-                    <Typography
-                      fontFamily={"var(--font-mono)"}
-                      fontSize={11}
-                      marginTop={0.5}
-                      marginBottom={1.5}
-                      style={{ color: "var(--slate-500)", letterSpacing: "0.08em", textTransform: "uppercase" }}
-                    >
-                      {t("Guardado")} {splitChatName(chatName).date}
-                    </Typography>
-                  )}
-                </div>
-                {/* Control segmentado: Mensajes y Media son dos vistas de
-                    lo mismo, no dos acciones. */}
+              {/* Cabecera del chat (1a): inicial en tinta, nombre limpio y el
+                  archivo en mono; debajo el buscador a ancho completo y
+                  Mensajes/Media como control segmentado. */}
+              {!ocultarCabecera && (() => {
+                const archivo = chatName !== null ? splitChatName(extractUsername(chatName)).name : "";
+                const nombre = nombreDelContacto(archivo || "") || archivo;
+                const inicial = (nombre || "?").replace(/[^\p{L}\p{N}]/gu, "").slice(0, 2).toUpperCase() || "?";
+                return (
+                  <div style={{ display: "flex", alignItems: "center", gap: 12, minWidth: 0 }}>
+                    <div style={{ width: 40, height: 40, flexShrink: 0, borderRadius: 8, background: "var(--ink-900)", color: "var(--paper-50)", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "var(--font-serif)", fontSize: 17 }}>
+                      {inicial}
+                    </div>
+                    <div style={{ display: "flex", flexDirection: "column", gap: 3, minWidth: 0 }}>
+                      <div style={{ fontFamily: "var(--font-serif)", fontWeight: 500, fontSize: 21, letterSpacing: "-0.01em", color: "var(--ink-900)", lineHeight: 1.1 }}>
+                        {nombre}
+                      </div>
+                      <div style={{ fontFamily: "var(--font-mono)", fontSize: 11, color: "var(--slate-500)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                        {archivo}
+                      </div>
+                    </div>
+                  </div>
+                );
+              })()}
+
+              {/* Buscador del chat abierto, a ancho completo (1a/1c). No
+                  filtra: resalta y deja saltar entre coincidencias. */}
+              <Box marginTop={ocultarCabecera ? 0 : 1.5}>
+                <BuscadorEnChat
+                  onAbierto={setBuscando}
+                  consulta={chatSearch}
+                  onConsulta={setChatSearch}
+                  total={coincidencias.total}
+                  activa={activa}
+                  onActiva={setActiva}
+                />
+              </Box>
+
+              {/* Mensajes y Media son dos vistas de lo mismo, no dos acciones. */}
+              <Box marginTop={1.5} marginBottom={1.5} style={{ display: ocultarCabecera ? "none" : undefined }}>
                 <ControlSegmentado
-                  completo={phone}
+                  completo
                   valor={toShow}
                   onCambio={(v) => setToShow(v as "photos" | "message")}
                   opciones={[
@@ -362,20 +377,6 @@ export const DashboardScreen: FC = () => {
                 />
               </Box>
 
-              {/* Buscador del chat abierto, a ancho completo (1a/1c). No
-                  filtra: resalta y deja saltar entre coincidencias, para que
-                  no se pierda el hilo de la conversación. */}
-              <Box marginTop={1.5} marginBottom={1}>
-                <BuscadorEnChat
-                  consulta={chatSearch}
-                  onConsulta={setChatSearch}
-                  total={coincidencias.total}
-                  activa={activa}
-                  onActiva={setActiva}
-                />
-              </Box>
-
-              <DividerLine width={"100%"} />
             </Container>
             <Grid
               xs={12}
@@ -385,6 +386,10 @@ export const DashboardScreen: FC = () => {
                 overflowX: "hidden",
                 width: "100%",
                 minWidth: 0,
+                marginTop: 12,
+                padding: "4px 16px 24px",
+                background: "var(--paper-100)",
+                borderTop: "1px solid var(--border)",
               }}
             >
               {loading ? (
@@ -400,7 +405,7 @@ export const DashboardScreen: FC = () => {
                   }}
                 >
                   <Loading size="lg" />
-                  <span style={{ color: "#3C3C3C", fontFamily: "Open Sans", fontSize: 13 }}>
+                  <span style={{ color: "var(--slate-700)", fontFamily: "var(--font-sans)", fontSize: 13 }}>
                     {t("Obteniendo mensajes del backup...")}
                   </span>
                 </div>
@@ -450,31 +455,22 @@ export const DashboardScreen: FC = () => {
                             <div
                               role="separator"
                               style={{
-                                display: "flex",
-                                alignItems: "center",
-                                justifyContent: "center",
-                                margin: "22px 0 10px",
+                                alignSelf: "center",
+                                textAlign: "center",
+                                fontFamily: "var(--font-mono)",
+                                fontSize: 11,
+                                letterSpacing: "0.14em",
+                                textTransform: "uppercase",
+                                color: "var(--slate-500)",
+                                padding: "18px 0 4px",
                               }}
                             >
-                              <span
-                                style={{
-                                  padding: "4px 12px",
-                                  borderRadius: 999,
-                                  background: "var(--paper-100)",
-                                  border: "1px solid var(--border)",
-                                  fontFamily: "var(--font-mono)",
-                                  fontSize: 10.5,
-                                  letterSpacing: "0.12em",
-                                  textTransform: "uppercase",
-                                  color: "var(--slate-500)",
-                                }}
-                              >
-                                {etiquetaDeDia(dia, {
-                                  idioma: i18n.language,
-                                  hoy: (t("Hoy") as string) || "Hoy",
-                                  ayer: (t("Ayer") as string) || "Ayer",
-                                })}
-                              </span>
+                              {etiquetaDeDia(dia, {
+                                idioma: i18n.language,
+                                hoy: (t("Hoy") as string) || "Hoy",
+                                ayer: (t("Ayer") as string) || "Ayer",
+                                corta: true,
+                              })}
                             </div>
                           )}
                           <ChatView
@@ -486,6 +482,12 @@ export const DashboardScreen: FC = () => {
                             coincidenciaActiva={activa}
                             desplazamiento={coincidencias.desplazamientos[i] ?? 0}
                             isMine={!!myName && (item[1] || "").trim() === myName}
+                            /* El nombre solo en el primero de una racha del
+                               mismo remitente el mismo día (1a). */
+                            mostrarRemitente={
+                              cambiaDeDia ||
+                              (visibleMessages[i - 1]?.[1] || "").trim() !== (item[1] || "").trim()
+                            }
                           />
                         </Fragment>
                       );
@@ -509,9 +511,9 @@ export const DashboardScreen: FC = () => {
                           }
                         >
                           <Typography
-                            fontFamily={"Open Sans"}
+                            fontFamily={"var(--font-sans)"}
                             fontSize={12}
-                            style={{ color: "#3C3C3C" }}
+                            style={{ color: "var(--slate-700)" }}
                           >
                             {t("Cargar más mensajes")}
                           </Typography>

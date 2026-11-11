@@ -4,6 +4,8 @@ import { useTranslation } from "react-i18next";
 import { useVault } from "../../context/VaultContext";
 import { ColumnaPasos } from "./ColumnaPasos";
 import { MedidorDeClave } from "./MedidorDeClave";
+import { AvisoCaja, BarraProgreso, BotonAtras, CasillaCaja, IconoPaso, Trazo } from "../ui/Paso";
+import { Logo } from "../ui/BrandChrome";
 import { medirFuerza, coinciden, MIN_LARGO } from "../../lib/fuerza-de-clave";
 
 /**
@@ -107,7 +109,8 @@ const campoBase: React.CSSProperties = {
   background: paleta.campo,
   fontFamily: "var(--font-sans)",
   fontSize: 16,
-  color: paleta.texto,
+  /* El campo es blanco con texto en tinta también sobre fondo de tinta (5a). */
+  color: "var(--ink-900)",
 };
 
 const etiquetaBase: React.CSSProperties = {
@@ -204,7 +207,8 @@ export const PantallaCrearClave: FC<{ onListo?: () => void }> = ({ onListo }) =>
         background: "transparent",
         border: "none",
         cursor: "pointer",
-        color: paleta.apagado,
+        /* El campo es blanco en los dos tamaños: el ojo va en pizarra. */
+        color: "var(--slate-500)",
       }}
     >
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
@@ -223,270 +227,340 @@ export const PantallaCrearClave: FC<{ onListo?: () => void }> = ({ onListo }) =>
     </button>
   );
 
-  const pasos: Array<[string, string]> = [
-    [t("Crea tu clave de cifrado") as string, t("Solo tú la conoces.") as string],
-    [t("Confírmala") as string, t("Para asegurarnos de que la recuerdas.") as string],
-    [t("Guarda tu código") as string, t("Por si olvidas la clave.") as string],
+  /* Los pasos del alta son TRES y el plan es el primero (6a: «Paso 1 de 3»).
+     Crear la clave es el 2 y confirmarla el 3, como en 5a/5b y en la columna
+     de 7d/7e. El código de recuperación va después, fuera de la cuenta. */
+  const pasoGlobal = paso + 1;
+  const nombreFuerza: Record<string, string> = {
+    excelente: enTexto(t("excelente")),
+    buena: enTexto(t("buena")),
+    simple: enTexto(t("débil")),
+    corta: enTexto(t("débil")),
+  };
+  /* La columna de 7d/7e: lo hecho dice QUÉ se hizo (el plan, la clave con su
+     fuerza), no solo que el paso está tachado. */
+  const pasos: Array<{ titulo: string; pie: string; hecho: boolean; activo: boolean }> = [
+    { titulo: enTexto(t("Plan Personal")), pie: enTexto(t("$2.99/mes · recibo enviado")), hecho: true, activo: false },
+    paso >= 2
+      ? { titulo: enTexto(t("Clave creada")), pie: enTexto(t("Fuerza: {{fuerza}}", { fuerza: nombreFuerza[fuerza.nivel] })), hecho: true, activo: false }
+      : { titulo: enTexto(t("Crea tu clave de cifrado")), pie: enTexto(t("Solo tú la conoces.")), hecho: false, activo: true },
+    { titulo: enTexto(t("Confírmala")), pie: enTexto(t("Para asegurarnos de que la recuerdas.")), hecho: paso >= 3, activo: paso === 2 },
   ];
+  const columna =
+    paso === 1
+      ? { encabezado: t("Plan activo"), titulo: t("Ahora, tu clave.") }
+      : paso === 2
+      ? { encabezado: t("Último paso"), titulo: t("Una vez más.") }
+      : { encabezado: t("Clave creada"), titulo: t("Guarda tu código.") };
+
+  const etiquetaCampo: React.CSSProperties = {
+    display: "block",
+    fontFamily: "var(--font-sans)",
+    fontSize: 13,
+    fontWeight: 600,
+    color: paleta.texto,
+    marginBottom: 6,
+  };
 
   return (
     <div className="br-paso">
       {/* En escritorio, la tinta se queda en esta columna y el formulario va
           sobre papel (7d). En móvil el CSS la esconde y la pantalla entera es
-          de tinta, que es lo que marca el momento cuando no hay sitio para
-          dos columnas. */}
-      <ColumnaPasos encabezado={enTexto(t("Plan activo"))} titulo={enTexto(t("Ahora, tu clave."))}>
-        <ol style={{ listStyle: "none", margin: 0, padding: 0, display: "flex", flexDirection: "column", gap: 16 }}>
-          {pasos.map(([titulo, pie], i) => {
-            const hecho = i + 1 < paso;
-            const activo = i + 1 === paso;
-            return (
-              <li key={titulo} style={{ display: "flex", gap: 12, alignItems: "flex-start", opacity: activo || hecho ? 1 : 0.5 }}>
-                <span
-                  style={{
-                    flexShrink: 0,
-                    width: 26,
-                    height: 26,
-                    borderRadius: 999,
-                    display: "inline-flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    fontFamily: "var(--font-mono)",
-                    fontSize: 10.5,
-                    background: activo ? "var(--brass-500)" : "transparent",
-                    border: activo ? "none" : "1px solid rgba(255,255,255,0.3)",
-                    color: activo ? "var(--ink-950, #0B1220)" : "rgba(255,255,255,0.7)",
-                  }}
-                >
-                  {hecho ? "✓" : `0${i + 1}`}
+          de tinta (5a). */}
+      <ColumnaPasos encabezado={enTexto(columna.encabezado)} titulo={enTexto(columna.titulo)}>
+        <ol style={{ listStyle: "none", margin: 0, padding: 0 }}>
+          {pasos.map((p, i) => (
+            <li
+              key={i}
+              style={{
+                display: "flex",
+                gap: 12,
+                alignItems: "flex-start",
+                padding: "14px 0",
+                borderTop: "1px solid var(--border-on-ink)",
+                borderBottom: i === pasos.length - 1 ? "1px solid var(--border-on-ink)" : undefined,
+                opacity: p.activo || p.hecho ? 1 : 0.6,
+              }}
+            >
+              <span
+                style={{
+                  flexShrink: 0,
+                  width: 24,
+                  height: 24,
+                  borderRadius: 999,
+                  display: "inline-flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  fontFamily: "var(--font-mono)",
+                  fontSize: 10.5,
+                  background: p.activo ? "var(--brass-400)" : p.hecho ? "var(--ink-700)" : "transparent",
+                  border: p.activo || p.hecho ? "none" : "1px solid var(--border-on-ink)",
+                  color: p.activo ? "var(--ink-950)" : "var(--paper-50)",
+                }}
+              >
+                {p.hecho ? "✓" : `0${i + 1}`}
+              </span>
+              <span style={{ minWidth: 0 }}>
+                <span style={{ display: "block", fontFamily: "var(--font-sans)", fontSize: 14, fontWeight: 600, color: "var(--paper-50)" }}>
+                  {p.titulo}
                 </span>
-                <span style={{ minWidth: 0 }}>
-                  <span style={{ display: "block", fontFamily: "var(--font-sans)", fontSize: 14.5, fontWeight: 600, color: "var(--paper-50)" }}>
-                    {titulo}
-                  </span>
-                  <span style={{ display: "block", marginTop: 2, fontSize: 13, color: "rgba(255,255,255,0.6)" }}>
-                    {pie}
-                  </span>
-                </span>
-              </li>
-            );
-          })}
+                <span style={{ display: "block", marginTop: 2, fontSize: 12.5, color: "var(--ink-100)" }}>{p.pie}</span>
+              </span>
+            </li>
+          ))}
         </ol>
       </ColumnaPasos>
 
       <div className="br-paso-main">
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-        <span className="br-solo-movil" style={{ fontFamily: "var(--font-serif)", fontSize: 19, color: paleta.texto }}>
-          BackupReader
-        </span>
-        <span style={{ marginLeft: "auto", fontFamily: "var(--font-mono)", fontSize: 10.5, letterSpacing: "0.14em", textTransform: "uppercase", color: paleta.tenue }}>
-          {enTexto(t("Paso {{n}} de 3", { n: paso }))}
-        </span>
-      </div>
-
-      <div
-        style={{
-          flex: 1,
-          display: "flex",
-          flexDirection: "column",
-          justifyContent: "center",
-          maxWidth: 420,
-          width: "100%",
-          margin: "0 auto",
-        }}
-      >
-        <h1 style={{ fontFamily: "var(--font-serif)", fontSize: 28, fontWeight: 500, color: paleta.texto, margin: "0 0 10px" }}>
-          {paso === 1
-            ? t("Crea tu clave de cifrado")
-            : paso === 2
-            ? t("Escríbela otra vez")
-            : t("Guarda tu código de recuperación")}
-        </h1>
-
-        {paso === 1 && (
-          <>
-            <p style={{ fontFamily: "var(--font-sans)", fontSize: 15, lineHeight: 1.55, color: paleta.apagado, margin: "0 0 26px" }}>
-              {t("Con ella ciframos tus chats en tu teléfono antes de guardarlos. Nosotros no la conocemos.")}
-            </p>
-            <label style={etiquetaBase}>{t("Clave de cifrado")}</label>
-            <div style={{ position: "relative" }}>
-              <input
-                ref={campoRef}
-                type={verla ? "text" : "password"}
-                value={clave}
-                autoComplete="new-password"
-                onChange={(e) => { setClave(e.target.value); setAviso(""); }}
-                onKeyDown={(e) => { if (e.key === "Enter") continuar(); }}
-                style={{ ...campoBase, borderColor: aviso ? paleta.aviso : paleta.borde }}
-              />
-              {ojo}
-            </div>
-            <MedidorDeClave clave={clave} />
-            <p style={{ fontFamily: "var(--font-sans)", fontSize: 13, color: aviso ? paleta.aviso : paleta.tenue, margin: "8px 0 0" }}>
-              {aviso || t("Si la olvidas, no podremos abrir tus chats. Guárdala en un lugar seguro.")}
-            </p>
-            <button type="button" onClick={continuar} disabled={!clave} style={botonPrincipal(!!clave)}>
-              {t("Continuar")}
-            </button>
-          </>
-        )}
-
-        {paso === 2 && (
-          <>
-            <p style={{ fontFamily: "var(--font-sans)", fontSize: 15, lineHeight: 1.55, color: paleta.apagado, margin: "0 0 26px" }}>
-              {t("Así confirmamos que la recuerdas bien.")}
-            </p>
-            <label style={etiquetaBase}>{t("Confirma tu clave")}</label>
-            <div style={{ position: "relative" }}>
-              <input
-                ref={campoRef}
-                type={verla ? "text" : "password"}
-                value={repetida}
-                autoComplete="new-password"
-                onChange={(e) => { setRepetida(e.target.value); setAviso(""); }}
-                onKeyDown={(e) => { if (e.key === "Enter") crear(); }}
-                style={{ ...campoBase, borderColor: aviso ? paleta.aviso : paleta.borde }}
-              />
-              {ojo}
-            </div>
-
-            {/* En vivo: esperar al botón para decir que no coinciden obliga a
-                reescribir las dos. */}
-            {repetida.length > 0 && (
-              <span
-                style={{
-                  display: "block",
-                  marginTop: 8,
-                  fontFamily: "var(--font-mono)",
-                  fontSize: 10.5,
-                  letterSpacing: "0.12em",
-                  textTransform: "uppercase",
-                  color: igualan ? "var(--brass-300)" : paleta.aviso,
-                }}
-              >
-                {igualan ? t("Las claves coinciden") : t("Las claves no coinciden")}
-              </span>
-            )}
-
-            <label style={{ display: "flex", gap: 10, alignItems: "flex-start", marginTop: 18, cursor: "pointer" }}>
-              <input
-                type="checkbox"
-                checked={entiendo}
-                onChange={(e) => setEntiendo(e.target.checked)}
-                style={{ marginTop: 3, flexShrink: 0, width: 18, height: 18 }}
-              />
-              <span style={{ fontFamily: "var(--font-sans)", fontSize: 13.5, lineHeight: 1.5, color: paleta.apagado }}>
-                {t("Entiendo que, si pierdo esta clave, mis chats no se pueden recuperar.")}
-              </span>
-            </label>
-
-            {aviso && (
-              <p style={{ fontFamily: "var(--font-sans)", fontSize: 13, color: paleta.aviso, margin: "10px 0 0" }}>
-                {aviso}
-              </p>
-            )}
-
-            <button
-              type="button"
-              onClick={crear}
-              disabled={ocupado || !igualan || !entiendo}
-              style={botonPrincipal(!ocupado && igualan && entiendo)}
-            >
-              {ocupado ? t("Guardando…") : t("Guardar clave")}
-            </button>
-
-            {falloAlConfirmar && (
-              <button
-                type="button"
+        {/* Cabecera de móvil: logo y «Paso x de 3» (5a), o la flecha de atrás
+            en la confirmación (5b), con la barra de progreso debajo. */}
+        <div className="br-paso-solo-movil" style={{ margin: "-24px -20px 0" }}>
+          <div style={{ height: 56, display: "flex", alignItems: "center", justifyContent: "space-between", padding: "0 20px", borderBottom: "1px solid var(--border-on-ink)" }}>
+            {paso === 2 ? (
+              <BotonAtras
+                oscuro
+                etiqueta={enTexto(t("Volver a escribirla"))}
                 onClick={() => {
                   setPaso(1);
                   setRepetida("");
                   setAviso("");
                   setFalloAlConfirmar(false);
                 }}
+              />
+            ) : (
+              <Logo oscuro compact />
+            )}
+            <span style={{ fontFamily: "var(--font-mono)", fontSize: 11, letterSpacing: "0.14em", textTransform: "uppercase", color: "var(--ink-100)" }}>
+              {paso === 3 ? enTexto(t("Clave guardada")) : enTexto(t("Paso {{n}} de 3", { n: pasoGlobal }))}
+            </span>
+          </div>
+          <BarraProgreso continua oscuro hechos={Math.min(pasoGlobal, 3)} />
+        </div>
+
+        <div className="br-paso-cuerpo">
+          {paso === 1 && (
+            <>
+              <div className="br-paso-solo-movil"><IconoPaso tipo="llave" tono="sobreTinta" /></div>
+              <div className="br-paso-solo-escritorio"><IconoPaso tipo="llave" tono="tinta" tam={48} /></div>
+            </>
+          )}
+
+          <h1 style={{ fontFamily: "var(--font-serif)", fontSize: 28, fontWeight: 500, lineHeight: 1.15, color: paleta.texto, margin: paso === 1 ? "24px 0 10px" : "0 0 10px" }}>
+            {paso === 1
+              ? t("Crea tu clave de cifrado")
+              : paso === 2
+              ? t("Escríbela otra vez")
+              : t("Guarda tu código de recuperación")}
+          </h1>
+
+          {paso === 1 && (
+            <>
+              <p style={{ fontFamily: "var(--font-sans)", fontSize: 15, lineHeight: 1.5, color: paleta.apagado, margin: "0 0 24px" }}>
+                {/* «Teléfono» en móvil (5a), «dispositivo» en escritorio (7d). */}
+                <span className="br-solo-movil-inline">
+                  {t("Con ella ciframos tus chats en tu teléfono antes de guardarlos. Nosotros no la conocemos.")}
+                </span>
+                <span className="br-solo-escritorio-inline">
+                  {t("Con ella ciframos tus chats en tu dispositivo antes de guardarlos. Nosotros no la conocemos.")}
+                </span>
+              </p>
+              <label style={etiquetaCampo}>{t("Clave de cifrado")}</label>
+              <div style={{ position: "relative" }}>
+                <input
+                  ref={campoRef}
+                  type={verla ? "text" : "password"}
+                  value={clave}
+                  autoComplete="new-password"
+                  onChange={(e) => { setClave(e.target.value); setAviso(""); }}
+                  onKeyDown={(e) => { if (e.key === "Enter") continuar(); }}
+                  style={{ ...campoBase, borderColor: aviso ? paleta.aviso : paleta.borde }}
+                />
+                {ojo}
+              </div>
+              <MedidorDeClave clave={clave} />
+              {aviso && (
+                <p style={{ fontFamily: "var(--font-sans)", fontSize: 13, color: paleta.aviso, margin: "8px 0 0" }}>{aviso}</p>
+              )}
+              {/* Aviso en caja (5a sobre tinta, 7d en ocre sobre papel). */}
+              <div style={{ marginTop: 22 }}>
+                <div className="br-paso-solo-movil">
+                  <AvisoCaja tono="sobreTinta">{t("Si la olvidas, no podremos abrir tus chats. Guárdala en un lugar seguro.")}</AvisoCaja>
+                </div>
+                <div className="br-paso-solo-escritorio">
+                  <AvisoCaja tono="ocre">{t("Si la olvidas, no podremos abrir tus chats. Guárdala en un lugar seguro.")}</AvisoCaja>
+                </div>
+              </div>
+              <div className="br-paso-acciones">
+                <button type="button" onClick={continuar} disabled={!clave} style={{ ...botonPrincipal(!!clave), marginTop: 0 }}>
+                  {t("Continuar")}
+                </button>
+              </div>
+            </>
+          )}
+
+          {paso === 2 && (
+            <>
+              <p style={{ fontFamily: "var(--font-sans)", fontSize: 15, lineHeight: 1.5, color: paleta.apagado, margin: "0 0 24px" }}>
+                {t("Así confirmamos que la recuerdas bien.")}
+              </p>
+              <label style={etiquetaCampo}>{t("Confirma tu clave")}</label>
+              <div style={{ position: "relative" }}>
+                <input
+                  ref={campoRef}
+                  type={verla ? "text" : "password"}
+                  value={repetida}
+                  autoComplete="new-password"
+                  onChange={(e) => { setRepetida(e.target.value); setAviso(""); }}
+                  onKeyDown={(e) => { if (e.key === "Enter") crear(); }}
+                  style={{
+                    ...campoBase,
+                    borderColor: aviso ? paleta.aviso : repetida && igualan ? "var(--pine-600)" : paleta.borde,
+                  }}
+                />
+                {/* Con las dos iguales, la marca de verificación ocupa el sitio
+                    del ojo (5b): ya no hace falta ver la clave. */}
+                {repetida && igualan ? (
+                  <span style={{ position: "absolute", right: 14, top: 15, color: "var(--pine-600)" }}>
+                    <Trazo tipo="check" tam={20} />
+                  </span>
+                ) : (
+                  ojo
+                )}
+              </div>
+
+              {/* En vivo: esperar al botón para decir que no coinciden obliga a
+                  reescribir las dos. */}
+              {repetida.length > 0 && (
+                <span
+                  style={{
+                    display: "block",
+                    marginTop: 8,
+                    fontFamily: "var(--font-mono)",
+                    fontSize: 10.5,
+                    letterSpacing: "0.12em",
+                    textTransform: "uppercase",
+                    color: igualan ? "var(--paso-ok)" : paleta.aviso,
+                  }}
+                >
+                  {igualan ? t("Las claves coinciden") : t("Las claves no coinciden")}
+                </span>
+              )}
+
+              <div style={{ marginTop: 20 }}>
+                <CasillaCaja marcada={entiendo} onCambio={setEntiendo} oscuro>
+                  {t("Entiendo que, si pierdo esta clave, mis chats no se pueden recuperar.")}
+                </CasillaCaja>
+              </div>
+
+              {aviso && (
+                <p style={{ fontFamily: "var(--font-sans)", fontSize: 13, color: paleta.aviso, margin: "10px 0 0" }}>{aviso}</p>
+              )}
+
+              <div className="br-paso-acciones">
+                <button
+                  type="button"
+                  onClick={crear}
+                  disabled={ocupado || !igualan || !entiendo}
+                  style={{ ...botonPrincipal(!ocupado && igualan && entiendo), marginTop: 0 }}
+                >
+                  {ocupado ? (
+                    t("Guardando…")
+                  ) : (
+                    <>
+                      <span className="br-paso-solo-movil-inline">{t("Guardar clave")}</span>
+                      <span className="br-paso-solo-escritorio-inline">{t("Guardar clave y empezar")}</span>
+                    </>
+                  )}
+                </button>
+
+                {falloAlConfirmar && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setPaso(1);
+                      setRepetida("");
+                      setAviso("");
+                      setFalloAlConfirmar(false);
+                    }}
+                    style={{
+                      minHeight: 44,
+                      background: "transparent",
+                      border: "none",
+                      cursor: "pointer",
+                      fontFamily: "var(--font-sans)",
+                      fontSize: 14.5,
+                      color: paleta.apagado,
+                      textDecoration: "underline",
+                    }}
+                  >
+                    {t("Volver a escribirla")}
+                  </button>
+                )}
+              </div>
+            </>
+          )}
+
+          {paso === 3 && codigo && (
+            <>
+              <p style={{ fontFamily: "var(--font-sans)", fontSize: 15, lineHeight: 1.5, color: paleta.apagado, margin: "0 0 20px" }}>
+                {t("Es lo único que abre tus chats si olvidas la clave. Solo se enseña ahora.")}
+              </p>
+
+              <div
                 style={{
-                  marginTop: 16,
-                  minHeight: 44,
-                  background: "transparent",
-                  border: "none",
-                  cursor: "pointer",
-                  fontFamily: "var(--font-sans)",
-                  fontSize: 14.5,
-                  color: paleta.apagado,
-                  textDecoration: "underline",
+                  padding: "18px 16px",
+                  borderRadius: 10,
+                  border: `1px solid ${paleta.borde}`,
+                  background: "var(--paso-codigo)",
+                  fontFamily: "var(--font-mono)",
+                  fontSize: 17,
+                  letterSpacing: "0.16em",
+                  wordBreak: "break-all",
+                  color: paleta.texto,
+                  textAlign: "center",
                 }}
               >
-                {t("Volver a escribirla")}
+                {codigo}
+              </div>
+
+              <button
+                type="button"
+                onClick={() => { navigator.clipboard?.writeText(codigo); }}
+                style={{
+                  marginTop: 12,
+                  minHeight: 44,
+                  width: "100%",
+                  borderRadius: 10,
+                  border: `1px solid ${paleta.borde}`,
+                  background: "transparent",
+                  cursor: "pointer",
+                  fontFamily: "var(--font-sans)",
+                  fontSize: 15,
+                  color: paleta.texto,
+                }}
+              >
+                {t("Copiar código")}
               </button>
-            )}
-          </>
-        )}
 
-        {paso === 3 && codigo && (
-          <>
-            <p style={{ fontFamily: "var(--font-sans)", fontSize: 15, lineHeight: 1.55, color: paleta.apagado, margin: "0 0 20px" }}>
-              {t("Es lo único que abre tus chats si olvidas la clave. Solo se enseña ahora.")}
-            </p>
+              <div style={{ marginTop: 20 }}>
+                <CasillaCaja marcada={guardado} onCambio={setGuardado} oscuro>
+                  {t("Lo he guardado en un lugar seguro.")}
+                </CasillaCaja>
+              </div>
 
-            <div
-              style={{
-                padding: "18px 16px",
-                borderRadius: 10,
-                border: `1px solid ${paleta.borde}`,
-                background: paleta.campo,
-                fontFamily: "var(--font-mono)",
-                fontSize: 17,
-                letterSpacing: "0.16em",
-                wordBreak: "break-all",
-                color: paleta.texto,
-                textAlign: "center",
-              }}
-            >
-              {codigo}
-            </div>
-
-            <button
-              type="button"
-              onClick={() => { navigator.clipboard?.writeText(codigo); }}
-              style={{
-                marginTop: 12,
-                minHeight: 44,
-                width: "100%",
-                borderRadius: 10,
-                border: `1px solid ${paleta.borde}`,
-                background: "transparent",
-                cursor: "pointer",
-                fontFamily: "var(--font-sans)",
-                fontSize: 15,
-                color: paleta.texto,
-              }}
-            >
-              {t("Copiar código")}
-            </button>
-
-            <label style={{ display: "flex", gap: 10, alignItems: "flex-start", marginTop: 20, cursor: "pointer" }}>
-              <input
-                type="checkbox"
-                checked={guardado}
-                onChange={(e) => setGuardado(e.target.checked)}
-                style={{ marginTop: 3, flexShrink: 0, width: 18, height: 18 }}
-              />
-              <span style={{ fontFamily: "var(--font-sans)", fontSize: 13.5, lineHeight: 1.5, color: paleta.apagado }}>
-                {t("Lo he guardado en un lugar seguro.")}
-              </span>
-            </label>
-
-            <button
-              type="button"
-              onClick={() => { marcarClaveRecienCreada(); terminarCreacion(); onListo?.(); }}
-              disabled={!guardado}
-              style={botonPrincipal(guardado)}
-            >
-              {t("Entrar a mis chats")}
-            </button>
-          </>
-        )}
-      </div>
+              <div className="br-paso-acciones">
+                <button
+                  type="button"
+                  onClick={() => { marcarClaveRecienCreada(); terminarCreacion(); onListo?.(); }}
+                  disabled={!guardado}
+                  style={{ ...botonPrincipal(guardado), marginTop: 0 }}
+                >
+                  {t("Entrar a mis chats")}
+                </button>
+              </div>
+            </>
+          )}
+        </div>
       </div>
     </div>
   );

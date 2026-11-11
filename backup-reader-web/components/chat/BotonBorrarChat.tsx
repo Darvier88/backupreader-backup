@@ -1,6 +1,8 @@
 import { useContext, useState } from "react";
+import { AvisoCaja, IconoPaso } from "../ui/Paso";
+import { nombreDelContacto } from "../../lib/nombres-de-chat";
 import { useTranslation } from "react-i18next";
-import { Button, Modal } from "@nextui-org/react";
+import { Modal } from "@nextui-org/react";
 
 import { StorageContext } from "../../context/StorageContext";
 import type { ClaveAviso } from "../../lib/borrar-chat";
@@ -51,10 +53,10 @@ export const BotonBorrarChat = ({
   /* El nombre del archivo tal cual ("WhatsApp Chat - Yuli.zip") no se lee
      bien dentro de una pregunta. Se quita la extension y el prefijo que pone
      WhatsApp al exportar, que no aportan nada aqui y alargan el titulo. */
-  const nombreLimpio = (name || "")
-    .replace(/\.zip$/i, "")
-    .replace(/^(WhatsApp |Chat de WhatsApp con |WhatsApp Chat - )/i, "")
-    .trim() || name;
+  /* Con nombreDelContacto, el mismo que usan el panel y los resultados. La
+     limpieza propia probaba «WhatsApp » antes que «WhatsApp Chat - » y dejaba
+     «¿Eliminar el chat con Chat - TG?». */
+  const nombreLimpio = nombreDelContacto(name || "") || name;
 
   const esteBorrando = borrandoChat === fullPath;
   const otroBorrando = !!borrandoChat && !esteBorrando;
@@ -185,109 +187,87 @@ export const BotonBorrarChat = ({
       </button>
 
       <Modal
-        closeButton={!esteBorrando}
+        /* Sin la X (9b, 9c): Cancelar ya está y es el botón con el foco.
+           Esc y el clic fuera siguen cerrando, salvo a mitad del borrado. */
+        closeButton={false}
         preventClose={esteBorrando}
         open={abierto}
         onClose={cerrar}
         width="420px"
         className="br-hoja-borrado"
       >
-        <Modal.Header>
-          <span
+        <Modal.Body css={{ padding: "22px 20px 6px", gap: 0 }}>
+          <IconoPaso tipo="papelera" tono="arcilla" tam={44} />
+          {/* Se nombra el chat exacto en el título: lo que evita borrar el
+              equivocado es leer su nombre en la pregunta. */}
+          <h2
             style={{
+              margin: "16px 0 8px",
               fontFamily: "var(--font-serif)",
-              fontSize: 20,
+              fontWeight: 500,
+              fontSize: 22,
+              lineHeight: 1.2,
               color: "var(--ink-900)",
             }}
           >
-            {/* Se nombra el chat exacto en el titulo, no en una linea aparte:
-                lo que evita borrar el equivocado es leer su nombre en la
-                pregunta, no debajo de ella. */}
             {enTexto(t("¿Eliminar el chat con {{nombre}}?", { nombre: nombreLimpio }))}
-          </span>
-        </Modal.Header>
-
-        <Modal.Body>
-          <p
-            style={{
-              fontSize: 13.5,
-              color: "var(--slate-500)",
-              marginTop: 10,
-              marginBottom: 0,
-              lineHeight: 1.5,
-            }}
-          >
+          </h2>
+          <p style={{ fontSize: 14.5, color: "var(--slate-700)", margin: "0 0 16px", lineHeight: 1.5 }}>
             {t("Borraremos sus mensajes, fotos, videos y audios de BackupReader.")}
           </p>
-          <p
-            style={{
-              fontSize: 13.5,
-              color: "var(--slate-500)",
-              marginTop: 10,
-              marginBottom: 0,
-              lineHeight: 1.5,
-            }}
-          >
-            {/* Que no se puede deshacer Y que hacer si se arrepiente. Decir
-                solo lo primero deja al usuario con el susto y sin salida; la
-                segunda frase convierte un aviso en una instruccion. */}
+
+          {/* Que no se puede deshacer Y qué hacer si se arrepiente, en la caja
+              de arcilla (9b). */}
+          <AvisoCaja tono="arcilla">
             <strong style={{ fontWeight: 600 }}>{t("Esta acción no se puede deshacer.")}</strong>{" "}
             {t("Para recuperarlo tendrías que volver a subir el .zip.")}
-          </p>
+          </AvisoCaja>
 
           <p
             style={{
               fontFamily: "var(--font-mono)",
               fontSize: 11,
-              letterSpacing: "0.12em",
+              letterSpacing: "0.06em",
               textTransform: "uppercase",
-              color: "var(--brass-600)",
-              marginTop: 14,
-              marginBottom: 0,
+              color: "var(--slate-500)",
+              margin: "14px 0 0",
             }}
           >
             {t("Tu chat en WhatsApp no cambia")}
           </p>
 
           {aviso && (
-            <p
-              style={{
-                fontSize: 13.5,
-                color: "var(--aviso-texto)",
-                marginTop: 12,
-                marginBottom: 0,
-                lineHeight: 1.5,
-              }}
-            >
+            <p style={{ fontSize: 13.5, color: "var(--aviso-texto)", margin: "12px 0 0", lineHeight: 1.5 }}>
               {aviso}
             </p>
           )}
         </Modal.Body>
 
-        <Modal.Footer>
-          <Button auto light autoFocus onPress={cerrar} disabled={esteBorrando}>
-            {t("Cancelar")}
-          </Button>
-          {/* Arcilla, no el rojo de NextUI.
-              `color="error"` pinta un rojo de alarma, el de "algo ha fallado".
-              Aqui no ha fallado nada: el usuario ha pedido borrar y esto es la
-              confirmacion de lo que pidio. El rojo de error en un boton que
-              funciona bien gasta el unico color que deberia significar
-              problema, y ademas asusta en un sitio donde solo hace falta que
-              el usuario se detenga un segundo. El diseno pide arcilla. */}
-          <Button
-            auto
-            onPress={alConfirmar}
+        {/* En móvil, «Eliminar chat» arriba y a todo lo ancho, con «Cancelar»
+            debajo (9b, al alcance del pulgar). En escritorio, Cancelar
+            primero y a la derecha el de arcilla (9c). El orden del DOM es el
+            de escritorio, así el foco cae primero en Cancelar en los dos. */}
+        <div className="br-borrado-acciones">
+          <button
+            type="button"
+            className="br-btn br-btn-ghost br-btn-md"
+            autoFocus
+            onClick={cerrar}
             disabled={esteBorrando}
-            css={{
-              bg: "var(--clay-600)",
-              color: "var(--paper-50)",
-              "&:hover": { bg: "var(--clay-600)", filter: "brightness(0.92)" },
-            }}
+            style={{ border: "none" }}
           >
-            {esteBorrando ? t("Borrando…") : t("Borrar")}
-          </Button>
-        </Modal.Footer>
+            {t("Cancelar")}
+          </button>
+          <button
+            type="button"
+            className="br-btn br-btn-md"
+            onClick={alConfirmar}
+            disabled={esteBorrando}
+            style={{ background: "var(--clay-600)", color: "var(--paper-50)", borderColor: "transparent" }}
+          >
+            {esteBorrando ? t("Eliminando…") : t("Eliminar chat")}
+          </button>
+        </div>
       </Modal>
     </>
   );

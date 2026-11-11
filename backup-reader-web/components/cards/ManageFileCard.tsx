@@ -380,6 +380,12 @@ export const ManageFileCard: FC<ManageFileCardProps> = ({ isFirstFile, chat }) =
 
   return (
     <>
+      {/* El input de archivos tiene que existir TAMBIÉN con un chat abierto.
+          «Agregar chat → Archivos» en el panel manda el evento br:subir-chat,
+          que hace clic en este input. Antes solo se pintaba en la pantalla
+          sin chat, así que con un chat abierto el clic caía en null y no
+          pasaba nada, sin ningún aviso. */}
+      {inputArchivos}
       {/* Subir desde, SOLO sin chat abierto.
           Con un chat abierto esta barra se quedaba encima de la conversacion:
           lo primero que se veia al abrir un chat no era el chat, sino dos

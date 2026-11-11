@@ -17,9 +17,10 @@ const mono = "var(--font-mono)";
 /* Exportados para que `NavBar` —la cabecera de las rutas de app en móvil— use
    exactamente el mismo logo y el mismo selector de idioma que esta, y no dos
    marcas distintas según el ancho de pantalla. */
-export const Logo: FC<{ onClick?: () => void; compact?: boolean }> = ({
+export const Logo: FC<{ onClick?: () => void; compact?: boolean; oscuro?: boolean }> = ({
   onClick,
   compact,
+  oscuro,
 }) => {
   /* `compact` solo encoge; no cambia el dibujo ni los colores. Es para la
      cabecera de móvil, donde el logo a tamaño completo junto al resto de
@@ -27,12 +28,13 @@ export const Logo: FC<{ onClick?: () => void; compact?: boolean }> = ({
   const lado = compact ? 24 : 28;
   return (
     <span onClick={onClick} style={{ display: "inline-flex", alignItems: "center", gap: compact ? 8 : 10, cursor: "pointer", flexShrink: 0 }}>
-      <svg width={lado} height={lado} viewBox="0 0 24 24" fill="none" stroke="var(--brass-500)" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
+      <svg width={lado} height={lado} viewBox="0 0 24 24" fill="none" stroke={oscuro ? "var(--paper-50)" : "var(--brass-500)"} strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
         <circle cx="12" cy="12" r="9.5" />
         <path d="M8 12.3l2.6 2.6L16 9.5" />
       </svg>
-      <span style={{ fontFamily: serif, fontWeight: 600, fontSize: compact ? 17 : 20, letterSpacing: "-0.01em", color: "var(--ink-900)", whiteSpace: "nowrap" }}>
-        Backup<span style={{ color: "var(--ink-500)", fontWeight: 500 }}>Reader</span>
+      <span style={{ fontFamily: serif, fontWeight: 600, fontSize: compact ? 17 : 20, letterSpacing: "-0.01em", color: oscuro ? "var(--paper-50)" : "var(--ink-900)", whiteSpace: "nowrap" }}>
+        {/* `oscuro`: sobre tinta (4c, 5a, 7c–7e, 8a), como en el diseño. */}
+        Backup<span style={{ color: oscuro ? "rgba(199,210,223,0.7)" : "var(--ink-500)", fontWeight: 500 }}>Reader</span>
       </span>
     </span>
   );

@@ -123,6 +123,8 @@ export function etiquetaDeDia(
     hoy: string;
     ayer: string;
     ahora?: Date;
+    /** «28 AGO 2026»: el formato corto del separador del chat (1a). */
+    corta?: boolean;
   }
 ): string {
   const diaPrimero = idiomaConDiaPrimero(opciones.idioma);
@@ -140,6 +142,14 @@ export function etiquetaDeDia(
   if (mismoDia(d, ayer)) return opciones.ayer;
 
   try {
+    if (opciones.corta) {
+      const dia = d.getDate();
+      const mes = d
+        .toLocaleDateString(opciones.idioma || undefined, { month: "short" })
+        .replace(/\./g, "")
+        .slice(0, 3);
+      return `${dia} ${mes} ${d.getFullYear()}`.toUpperCase();
+    }
     return d.toLocaleDateString(opciones.idioma || undefined, {
       weekday: "long",
       day: "numeric",

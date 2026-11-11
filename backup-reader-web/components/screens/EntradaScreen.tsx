@@ -3,6 +3,8 @@ import { useRouter } from "next/router";
 import { useTranslation } from "react-i18next";
 
 import { CarruselIlustraciones } from "../ui/CarruselIlustraciones";
+import { BotonAtras, Trazo } from "../ui/Paso";
+import { Logo } from "../ui/BrandChrome";
 
 import { AuthContext } from "../../context";
 import { checkIfRegistered } from "../../config/providersAuth";
@@ -102,10 +104,18 @@ export const EntradaScreen: FC = () => {
     props: React.InputHTMLAttributes<HTMLInputElement>,
     error: string,
     ayuda?: string,
-    extra?: JSX.Element
+    extra?: JSX.Element,
+    junto?: JSX.Element
   ) => (
     <div style={{ marginBottom: 16 }}>
-      <label className="br-label">{etiqueta}</label>
+      {junto ? (
+        <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 12 }}>
+          <label className="br-label">{etiqueta}</label>
+          {junto}
+        </div>
+      ) : (
+        <label className="br-label">{etiqueta}</label>
+      )}
       <div style={{ position: "relative" }}>
         <input
           {...props}
@@ -203,21 +213,40 @@ export const EntradaScreen: FC = () => {
 
   return (
     <div className="br-root br-split">
-      <div className="br-split-main">
+      {/* Columna de ilustraciones (7a), a la IZQUIERDA: el contexto a un lado y
+          la tarea a la derecha, igual que en el plan, la clave y recuperar. Las mismas tres laminas que en movil
+          rotan, aqui quietas y a la vez: hay sitio y tres cosas quietas se
+          comparan de un vistazo, mientras que tres que giran hay que
+          esperarlas. */}
+      <aside className="br-aside br-solo-escritorio" style={{ borderLeft: "none", borderRight: "1px solid var(--border)" }}>
+        {/* Logo arriba, lámina en el centro y la frase abajo (7a). */}
+        <div style={{ display: "flex", flexDirection: "column", height: "100%", maxWidth: 400, margin: "0 auto" }}>
+          <Logo onClick={() => router.push("/")} />
+          <div style={{ flex: 1, marginTop: 24 }}>
+            <CarruselIlustraciones pie={enTexto(t("Revisa fotos, textos y audios de cada conversación."))} />
+          </div>
+        </div>
+      </aside>
+      <div className="br-split-main br-movil-alto">
         <div className="br-split-inner" style={{ maxWidth: 420 }}>
           {paso === "inicio" && (
             <>
-              <h1 className="br-page-title">{t("Guarda tus chats. Léelos cuando quieras.")}</h1>
-              <p style={{ margin: "0 0 26px", fontSize: 15.5, color: "var(--slate-700)" }}>
-                {t("Revisa fotos, textos y audios de cada conversación.")}
-              </p>
-
-              {/* En movil, donde no hay columna al lado, las laminas van aqui
-                  de una en una (4a). En escritorio esta misma informacion la
-                  pinta la columna de la derecha (7a), asi que aqui estorbaria. */}
-              <div className="br-solo-movil">
+              {/* En escritorio (7a) la etiqueta y la frase de «entra en
+                  segundos» van aquí, y «Revisa fotos…» pasa a la columna de
+                  las láminas. En móvil (4a) se queda como estaba. */}
+              {/* En móvil las láminas van ARRIBA, antes del título (4a). En
+                  escritorio las pinta la columna de la izquierda (7a). */}
+              <div className="br-solo-movil" style={{ marginBottom: 20 }}>
                 <CarruselIlustraciones compacto />
               </div>
+              <div className="br-solo-escritorio"><span className="br-eyebrow">{t("Tus chats, cifrados")}</span></div>
+              <h1 className="br-page-title">{t("Guarda tus chats. Léelos cuando quieras.")}</h1>
+              <p className="br-solo-movil" style={{ margin: "0 0 26px", fontSize: 15.5, color: "var(--slate-700)" }}>
+                {t("Revisa fotos, textos y audios de cada conversación.")}
+              </p>
+              <p className="br-solo-escritorio" style={{ margin: "0 0 26px", fontSize: 15.5, color: "var(--slate-700)" }}>
+                {t("Entra en segundos. Si es tu primera vez, creamos tu cuenta.")}
+              </p>
 
               {/* Apple y Google van en sus estilos oficiales porque las dos
                   marcas lo exigen en sus condiciones de uso. */}
@@ -265,32 +294,47 @@ export const EntradaScreen: FC = () => {
                   primera pantalla empuja los botones de Apple y Google fuera
                   del alcance del pulgar, que es donde el diseno los quiere.
                   (7a frente a 4a.) */}
+              {/* Escritorio (7a): separador «O con tu correo» y el campo con
+                  «Continuar» en la MISMA fila: un clic menos que en móvil. */}
               <div className="br-solo-escritorio" style={{ marginTop: 18 }}>
-                {campo(
-                  enTexto(t("O con tu correo")),
-                  {
-                    type: "email",
-                    value: correo,
-                    placeholder: enTexto(t("tucorreo@email.com")),
-                    onChange: (e) => {
-                      setCorreo(e.target.value);
-                      setErrorCorreo("");
-                    },
-                    onKeyDown: (e) => {
-                      if (e.key === "Enter") seguirConCorreo();
-                    },
-                  },
-                  errorCorreo
-                )}
-                <button
-                  type="button"
-                  onClick={seguirConCorreo}
-                  disabled={comprobando}
-                  className="br-btn br-btn-primary br-btn-lg"
-                  style={{ width: "100%", minHeight: 52, cursor: comprobando ? "default" : "pointer", opacity: comprobando ? 0.6 : 1 }}
-                >
-                  {comprobando ? t("Comprobando…") : t("Continuar")}
-                </button>
+                <div style={{ display: "flex", alignItems: "center", gap: 12, margin: "0 0 14px" }}>
+                  <span style={{ flex: 1, height: 1, background: "var(--border)" }} />
+                  <span style={{ fontFamily: "var(--font-mono)", fontSize: 10.5, letterSpacing: "0.14em", textTransform: "uppercase", color: "var(--slate-500)" }}>
+                    {t("O con tu correo")}
+                  </span>
+                  <span style={{ flex: 1, height: 1, background: "var(--border)" }} />
+                </div>
+                <div style={{ display: "flex", gap: 8, alignItems: "flex-start" }}>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <input
+                      type="email"
+                      aria-label={enTexto(t("Correo electrónico"))}
+                      className="br-input"
+                      value={correo}
+                      placeholder={enTexto(t("tucorreo@ejemplo.com"))}
+                      onChange={(e) => {
+                        setCorreo(e.target.value);
+                        setErrorCorreo("");
+                      }}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") seguirConCorreo();
+                      }}
+                      style={{ width: "100%", height: 48, borderColor: errorCorreo ? "var(--aviso-borde)" : undefined }}
+                    />
+                    {errorCorreo && (
+                      <span style={{ display: "block", marginTop: 6, fontSize: 13, color: "var(--aviso-texto)" }}>{errorCorreo}</span>
+                    )}
+                  </div>
+                  <button
+                    type="button"
+                    onClick={seguirConCorreo}
+                    disabled={comprobando}
+                    className="br-btn br-btn-ghost"
+                    style={{ height: 48, padding: "0 18px", borderColor: "var(--ink-900)", cursor: comprobando ? "default" : "pointer", opacity: comprobando ? 0.6 : 1 }}
+                  >
+                    {comprobando ? t("Comprobando…") : t("Continuar")}
+                  </button>
+                </div>
               </div>
 
               <div className="br-solo-movil">
@@ -298,8 +342,11 @@ export const EntradaScreen: FC = () => {
                   type="button"
                   onClick={() => setPaso("correo")}
                   className="br-btn br-btn-ghost"
-                  style={{ width: "100%", minHeight: 52, borderRadius: 10, cursor: "pointer" }}
+                  /* Tercera opción, sin borde y con el sobre (4a): Apple y
+                     Google son las principales. */
+                  style={{ width: "100%", minHeight: 52, borderRadius: 10, cursor: "pointer", border: "none", gap: 10 }}
                 >
+                  <Trazo tipo="sobre" tam={18} />
                   {t("Continuar con correo")}
                 </button>
               </div>
@@ -308,7 +355,10 @@ export const EntradaScreen: FC = () => {
 
           {paso === "correo" && (
             <>
-              <span className="br-eyebrow">{t("Paso 1 de 2")}</span>
+              <div className="br-cabecera-paso br-solo-movil-flex">
+                <BotonAtras etiqueta={enTexto(t("Atrás"))} onClick={() => setPaso("inicio")} />
+                <span className="br-paso-etiqueta">{t("Paso 1 de 2")}</span>
+              </div>
               <h1 className="br-page-title">{t("Tu correo")}</h1>
               {campo(
                 enTexto(t("Correo electrónico")),
@@ -316,7 +366,7 @@ export const EntradaScreen: FC = () => {
                   type: "email",
                   value: correo,
                   autoFocus: true,
-                  placeholder: enTexto(t("tucorreo@email.com")),
+                  placeholder: enTexto(t("tucorreo@ejemplo.com")),
                   onChange: (e) => {
                     setCorreo(e.target.value);
                     setErrorCorreo("");
@@ -327,6 +377,8 @@ export const EntradaScreen: FC = () => {
                 },
                 errorCorreo
               )}
+              {/* Abajo, al alcance del pulgar (4b). */}
+              <div className="br-movil-abajo">
               <button
                 type="button"
                 onClick={seguirConCorreo}
@@ -336,12 +388,23 @@ export const EntradaScreen: FC = () => {
               >
                 {comprobando ? t("Comprobando…") : t("Continuar")}
               </button>
+              </div>
             </>
           )}
 
           {paso === "clave" && (
             <>
-              <span className="br-eyebrow">{t("Paso 2 de 2")}</span>
+              <div className="br-cabecera-paso br-solo-movil-flex">
+                <BotonAtras
+                  etiqueta={enTexto(t("Atrás"))}
+                  onClick={() => {
+                    setPaso("correo");
+                    setClave("");
+                    setErrorClave("");
+                  }}
+                />
+                <span className="br-paso-etiqueta">{t("Paso 2 de 2")}</span>
+              </div>
               <h1 className="br-page-title">
                 {/* "Hola de nuevo" y no "Escribe tu contraseña" (7b).
                     Quien vuelve ya sabe que toca la contraseña, la tiene
@@ -371,6 +434,7 @@ export const EntradaScreen: FC = () => {
                   {
                     value: nombre,
                     autoFocus: true,
+                    placeholder: enTexto(t("Tu nombre")),
                     onChange: (e) => setNombre(e.target.value),
                   },
                   ""
@@ -383,6 +447,7 @@ export const EntradaScreen: FC = () => {
                   value: clave,
                   autoFocus: !esNueva,
                   autoComplete: esNueva ? "new-password" : "current-password",
+                  placeholder: esNueva ? enTexto(t("Mínimo 8 caracteres")) : undefined,
                   onChange: (e) => {
                     setClave(e.target.value);
                     setErrorClave("");
@@ -395,12 +460,26 @@ export const EntradaScreen: FC = () => {
                 esNueva
                   ? enTexto(t("Toca el ojo para verla. No hace falta repetirla."))
                   : undefined,
-                ojo
+                ojo,
+                /* «¿La olvidaste?» junto al campo (7b), no debajo del botón:
+                    se busca justo cuando se está mirando el campo vacío. */
+                esNueva ? undefined : (
+                  <button
+                    type="button"
+                    onClick={() => router.push("/recuperar")}
+                    className="br-link"
+                    style={{ background: "transparent", border: "none", padding: "8px 0", minHeight: 32, cursor: "pointer", fontSize: 14 }}
+                  >
+                    {t("¿La olvidaste?")}
+                  </button>
+                )
               )}
 
               {/* El botón se queda siempre activo. Uno gris no dice qué falta,
                   y obliga a adivinar; al pulsarlo, el error aparece bajo el
                   campo que lo causa. */}
+              {/* Abajo, al alcance del pulgar (4b). */}
+              <div className="br-movil-abajo">
               <button
                 type="button"
                 onClick={enviar}
@@ -409,26 +488,8 @@ export const EntradaScreen: FC = () => {
               >
                 {esNueva ? t("Crear cuenta") : t("Entrar")}
               </button>
+              </div>
 
-              {!esNueva && (
-                <button
-                  type="button"
-                  onClick={() => router.push("/recuperar")}
-                  style={{
-                    marginTop: 14,
-                    minHeight: 44,
-                    width: "100%",
-                    background: "transparent",
-                    border: "none",
-                    cursor: "pointer",
-                    fontFamily: "var(--font-sans)",
-                    fontSize: 14.5,
-                    color: "var(--brass-600)",
-                  }}
-                >
-                  {t("¿Olvidaste tu contraseña?")}
-                </button>
-              )}
             </>
           )}
 
@@ -446,13 +507,6 @@ export const EntradaScreen: FC = () => {
         </div>
       </div>
 
-      {/* Columna de ilustraciones (7a). Las mismas tres laminas que en movil
-          rotan, aqui quietas y a la vez: hay sitio y tres cosas quietas se
-          comparan de un vistazo, mientras que tres que giran hay que
-          esperarlas. */}
-      <aside className="br-aside br-solo-escritorio">
-        <CarruselIlustraciones />
-      </aside>
     </div>
   );
 };

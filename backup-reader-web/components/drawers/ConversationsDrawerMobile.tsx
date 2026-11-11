@@ -7,8 +7,8 @@ import { StorageContext } from "../../context/StorageContext";
 import { AuthContext } from "../../context";
 import { BotonCifrar } from "../vault/BotonCifrar";
 import { BotonBorrarChat } from "../chat/BotonBorrarChat";
-import { ResultadosGlobales } from "../chat/ResultadosGlobales";
-import { nombreDelContacto, partirTitulo, iniciales } from "../../lib/nombres-de-chat";
+import { Logo } from "../ui/BrandChrome";
+import { nombreDelContacto, iniciales } from "../../lib/nombres-de-chat";
 import { Box, Container, Drawer, Typography } from "@mui/material";
 import { storage } from "../../config/firebase";
 import {
@@ -17,6 +17,39 @@ import {
   ListResult
 } from "firebase/storage";
 
+
+/* Botón con borde en tinta, la mitad del ancho (1b: «Google Drive · Archivos»). */
+const botonBorde: CSSProperties = {
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  width: "100%",
+  minHeight: 36,
+  padding: "8px 14px",
+  background: "transparent",
+  color: "var(--ink-900)",
+  border: "1.5px solid var(--ink-900)",
+  borderRadius: "var(--radius-md, 8px)",
+  fontFamily: "var(--font-sans)",
+  fontWeight: 600,
+  fontSize: 13,
+  cursor: "pointer",
+};
+
+const tileInicial = (activo: boolean): CSSProperties => ({
+  width: 38,
+  height: 38,
+  flexShrink: 0,
+  borderRadius: 8,
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  fontFamily: "var(--font-serif)",
+  fontSize: 15,
+  background: activo ? "var(--ink-900)" : "var(--paper-100)",
+  border: activo ? "none" : "1px solid var(--border)",
+  color: activo ? "var(--paper-50)" : "var(--ink-900)",
+});
 
 const styles = {
   drawerTitle: {
@@ -41,10 +74,12 @@ const enTextoM = (traducido: unknown): string =>
    izquierda como la lista, y sin aspecto de boton, porque son navegacion y
    no acciones destacadas. */
 const enlacePanel: CSSProperties = {
-  display: "block",
+  display: "flex",
+  alignItems: "center",
+  gap: 12,
   width: "100%",
-  minHeight: 44,
-  padding: "0 12px",
+  height: 48,
+  padding: "0 8px",
   textAlign: "left",
   background: "transparent",
   border: "none",
@@ -75,8 +110,6 @@ export const ConversationsDrawerMobile: FC<ConversationsDrawerMobileProps> = ({
   };
 
   const [instagramConversations, setInstagramConversations] = useState<JSX.Element[] | null>(null);
-  /* Lo buscado en TODOS los chats. */
-  const [consulta, setConsulta] = useState("");
 
   function extractUsername(instagramString: string): string {
     if (!instagramString.includes('_')) {
@@ -160,21 +193,18 @@ export const ConversationsDrawerMobile: FC<ConversationsDrawerMobileProps> = ({
       slotProps={{ backdrop: { style: { backgroundColor: "rgba(15,24,38,0.55)" } } }}
       PaperProps={{ style: { width: 322, background: "var(--paper-50)" } }}
     >
-      <Container style={{ width: 322, padding: 0 }}>
+      <Container style={{ width: 322, padding: 0, minHeight: "100%", display: "flex", flexDirection: "column" }}>
         <Box
-          marginTop={3}
-          marginBottom={2}
-          paddingX={"10px"}
+          paddingLeft={"16px"}
+          paddingRight={"8px"}
+          height={60}
+          flexShrink={0}
           display={"flex"}
           alignItems={"center"}
           justifyContent={"space-between"}
+          borderBottom={"1px solid var(--border)"}
         >
-          <Typography
-            fontFamily={"var(--font-serif)"}
-            style={{ fontSize: 22, fontWeight: 500, color: "var(--ink-900)" }}
-          >
-            BackupReader
-          </Typography>
+          <Logo compact onClick={() => { setOpenState(false); router.push("/dashboard"); }} />
           {/* Cerrar el panel desde dentro: en un telefono grande el borde
               derecho de la pantalla no siempre llega con el pulgar. */}
           <button
@@ -190,46 +220,28 @@ export const ConversationsDrawerMobile: FC<ConversationsDrawerMobileProps> = ({
               background: "transparent",
               border: "none",
               cursor: "pointer",
-              color: "var(--slate-500)",
+              color: "var(--ink-900)",
             }}
           >
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round">
               <path d="M18 6L6 18M6 6l12 12" />
             </svg>
           </button>
         </Box>
 
-        {/* Buscar en todos los chats, igual que en escritorio: tiene que estar
-            disponible sin abrir ninguno. Al pulsar un resultado se abre ese
-            chat y el cajón se cierra, que es lo que ya hace onHandleGetFile. */}
-        <input
-          value={consulta}
-          onChange={(e) => setConsulta(e.target.value)}
-          placeholder={enTextoM(t("Buscar en todos los chats"))}
-          style={{
-            width: "calc(100% - 20px)",
-            margin: "0 10px 10px",
-            padding: "8px 10px",
-            borderRadius: 8,
-            border: "1px solid var(--border)",
-            background: "var(--surface)",
-            fontFamily: "var(--font-sans)",
-            fontSize: 14,
-            color: "var(--ink-900)",
-          }}
-        />
-        <div style={{ width: "calc(100% - 20px)", margin: "0 10px" }}>
-          <ResultadosGlobales consulta={consulta} alAbrirChat={onHandleGetFile} />
-        </div>
+        {/* Sin buscador aquí (1b). El buscador general vive en el inicio
+            (3a), que es donde hay ancho para leer los resultados; en un panel
+            de 322px los mensajes encontrados se cortaban a dos palabras. */}
 
         {/* Cuantos chats hay (1b). Sin el contador, una lista larga no dice
             si estan todos: el usuario que subio diez y ve seis en pantalla no
             sabe si faltan cuatro o si hay que desplazarse. */}
         <p
           style={{
-            margin: "6px 12px 4px",
+            margin: 0,
+            padding: "20px 16px 8px",
             fontFamily: "var(--font-mono)",
-            fontSize: 10.5,
+            fontSize: 11,
             letterSpacing: "0.14em",
             textTransform: "uppercase",
             color: "var(--slate-500)",
@@ -238,6 +250,7 @@ export const ConversationsDrawerMobile: FC<ConversationsDrawerMobileProps> = ({
           {enTextoM(t("Tus chats · {{n}}", { n: fileList?.length ?? 0 }))}
         </p>
 
+        <div style={{ display: "flex", flexDirection: "column", gap: 2, padding: "0 8px" }}>
         {fileList?.map((item, i) =>{
 
           const isInstagram = item.name.includes("instagram-");
@@ -271,8 +284,34 @@ export const ConversationsDrawerMobile: FC<ConversationsDrawerMobileProps> = ({
              se lee de un vistazo y, con varios chats, todos empiezan igual, asi
              que hay que leer hasta el final de cada uno para distinguirlos.
              Ahora: iniciales, nombre del contacto y la fecha debajo. */
+          /* Bóveda cerrada (4d): el chat existe pero su nombre vive dentro
+             del manifiesto cifrado. Llegaba con name "" y salía como una fila
+             vacía, sin iniciales, que se podía tocar para abrir (y fallar) y
+             que tenía papelera. Ahora se pinta con candado y no se abre, igual
+             que en el panel de escritorio. */
+          if (item.bloqueado) {
+            return (
+              <div
+                key={i}
+                style={{ display: "flex", alignItems: "center", gap: 12, padding: "10px 8px", minHeight: 58, borderRadius: 8 }}
+              >
+                <span aria-hidden style={{ ...tileInicial(false), color: "var(--slate-500)" }}>
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
+                    <rect x="3" y="11" width="18" height="11" rx="2" />
+                    <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+                  </svg>
+                </span>
+                <span style={{ flex: 1, minWidth: 0, fontFamily: "var(--font-sans)", fontSize: 15, color: "var(--slate-500)" }}>
+                  {t("Chat cifrado")}
+                </span>
+                <span style={{ fontFamily: "var(--font-mono)", fontSize: 10, letterSpacing: "0.12em", textTransform: "uppercase", color: "var(--slate-500)" }}>
+                  {t("Bloqueado")}
+                </span>
+              </div>
+            );
+          }
+
           const nombre = nombreDelContacto(item.name);
-          const { fecha } = partirTitulo(item.name);
           const activo = chatName === item.name;
 
           return  (
@@ -283,40 +322,24 @@ export const ConversationsDrawerMobile: FC<ConversationsDrawerMobileProps> = ({
               style={{
                 display: "flex",
                 alignItems: "center",
-                gap: 10,
-                padding: "10px 12px",
+                gap: 12,
+                padding: "8px 0 8px 8px",
+                minHeight: 58,
+                borderRadius: 8,
                 cursor: "pointer",
-                borderLeft: activo ? "3px solid var(--brass-500)" : "3px solid transparent",
-                background: activo ? "var(--paper-100)" : "transparent",
+                background: activo ? "var(--brass-100)" : "transparent",
               }}
             >
-              <span
-                aria-hidden
-                style={{
-                  flexShrink: 0,
-                  width: 36,
-                  height: 36,
-                  borderRadius: 999,
-                  display: "inline-flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  background: "var(--paper-200)",
-                  color: "var(--slate-700)",
-                  fontFamily: "var(--font-mono)",
-                  fontSize: 12,
-                  letterSpacing: "0.04em",
-                }}
-              >
+              <span aria-hidden style={tileInicial(activo)}>
                 {iniciales(nombre)}
               </span>
 
-              <span style={{ flex: 1, minWidth: 0 }}>
+              <span style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", gap: 3 }}>
                 <span
                   style={{
-                    display: "block",
                     fontFamily: "var(--font-sans)",
                     fontSize: 15,
-                    fontWeight: activo ? 600 : 500,
+                    fontWeight: 600,
                     color: "var(--ink-900)",
                     overflow: "hidden",
                     textOverflow: "ellipsis",
@@ -325,20 +348,18 @@ export const ConversationsDrawerMobile: FC<ConversationsDrawerMobileProps> = ({
                 >
                   {nombre}
                 </span>
-                {fecha && (
-                  <span
-                    style={{
-                      display: "block",
-                      marginTop: 2,
-                      fontFamily: "var(--font-mono)",
-                      fontSize: 10.5,
-                      letterSpacing: "0.06em",
-                      color: "var(--slate-500)",
-                    }}
-                  >
-                    {fecha}
-                  </span>
-                )}
+                <span
+                  style={{
+                    fontFamily: "var(--font-mono)",
+                    fontSize: 10.5,
+                    color: "var(--slate-500)",
+                    overflow: "hidden",
+                    textOverflow: "ellipsis",
+                    whiteSpace: "nowrap",
+                  }}
+                >
+                  {item.name}
+                </span>
               </span>
 
               {!item.cifrado && (
@@ -348,18 +369,19 @@ export const ConversationsDrawerMobile: FC<ConversationsDrawerMobileProps> = ({
             </div>
           )
         })}
+        </div>
 
 
         {/* Lo que el panel tenia que ofrecer ademas de la lista (1b).
             Estaba todo en la cabecera de la aplicacion, que en movil se
             queda detras del panel: con el panel abierto no habia forma de
             agregar un chat ni de llegar a la cuenta sin cerrarlo antes. */}
-        <div style={{ marginTop: 22, borderTop: "1px solid var(--border)", paddingTop: 14 }}>
+        <div style={{ display: "flex", flexDirection: "column", gap: 10, padding: "24px 16px 0" }}>
           <p
             style={{
-              margin: "0 12px 8px",
+              margin: 0,
               fontFamily: "var(--font-mono)",
-              fontSize: 10.5,
+              fontSize: 11,
               letterSpacing: "0.14em",
               textTransform: "uppercase",
               color: "var(--slate-500)",
@@ -367,34 +389,43 @@ export const ConversationsDrawerMobile: FC<ConversationsDrawerMobileProps> = ({
           >
             {t("Agregar chat")}
           </p>
-          <button
-            type="button"
-            onClick={() => {
-              setOpenState(false);
-              window.dispatchEvent(new CustomEvent("br:subir-chat", { detail: "archivos" }));
-            }}
-            style={enlacePanel}
-          >
-            {t("Desde Archivos")}
-          </button>
-          <button
-            type="button"
-            onClick={() => {
-              setOpenState(false);
-              window.dispatchEvent(new CustomEvent("br:subir-chat", { detail: "drive" }));
-            }}
-            style={enlacePanel}
-          >
-            {t("Desde Google Drive")}
-          </button>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
+            <button
+              type="button"
+              onClick={() => {
+                setOpenState(false);
+                window.dispatchEvent(new CustomEvent("br:subir-chat", { detail: "drive" }));
+              }}
+              style={botonBorde}
+            >
+              {t("Google Drive")}
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setOpenState(false);
+                window.dispatchEvent(new CustomEvent("br:subir-chat", { detail: "archivos" }));
+              }}
+              style={botonBorde}
+            >
+              {t("Archivos")}
+            </button>
+          </div>
         </div>
 
-        <div style={{ marginTop: 14, borderTop: "1px solid var(--border)", paddingTop: 14, paddingBottom: 20 }}>
+        <div style={{ flex: 1, minHeight: 24 }} />
+
+        <div style={{ display: "flex", flexDirection: "column", borderTop: "1px solid var(--border)", padding: "8px 8px 28px" }}>
           <button
             type="button"
             onClick={() => { setOpenState(false); router.push("/account"); }}
             style={enlacePanel}
           >
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <circle cx="12" cy="12" r="9.5" />
+              <circle cx="12" cy="10" r="3" />
+              <path d="M6.2 18.4a6.5 6.5 0 0 1 11.6 0" />
+            </svg>
             {t("Mi cuenta")}
           </button>
           <button
@@ -402,6 +433,11 @@ export const ConversationsDrawerMobile: FC<ConversationsDrawerMobileProps> = ({
             onClick={() => { setOpenState(false); logOut(); }}
             style={{ ...enlacePanel, color: "var(--slate-700)" }}
           >
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+              <path d="M16 17l5-5-5-5" />
+              <path d="M21 12H9" />
+            </svg>
             {t("Cerrar sesión")}
           </button>
         </div>

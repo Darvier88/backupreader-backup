@@ -1,4 +1,6 @@
 import { FC, useContext, useEffect, useState } from "react";
+import { BotonAtras, IconoPaso } from "../ui/Paso";
+import { Logo } from "../ui/BrandChrome";
 import { useRouter } from "next/router";
 import { useTranslation } from "react-i18next";
 
@@ -50,6 +52,16 @@ export const RecuperarScreen: FC = () => {
   const [error, setError] = useState("");
   const [enviado, setEnviado] = useState(false);
   const [restan, setRestan] = useState(0);
+  /* «Abrir app de correo» solo en iPhone/iPad: `message:` abre Mail en iOS y
+     en el resto (Android, escritorio) el navegador no hace nada con él. Un
+     botón principal que no responde es peor que no tenerlo. Se calcula tras
+     montar para que servidor y cliente pinten lo mismo. */
+  const [esIOS, setEsIOS] = useState(false);
+  useEffect(() => {
+    const ua = navigator.userAgent || "";
+    const iPadComoMac = /Macintosh/.test(ua) && navigator.maxTouchPoints > 1;
+    setEsIOS(/iPhone|iPad|iPod/.test(ua) || iPadComoMac);
+  }, []);
 
   useEffect(() => {
     if (restan <= 0) return;
@@ -71,25 +83,32 @@ export const RecuperarScreen: FC = () => {
 
   const reloj = `${Math.floor(restan / 60)}:${String(restan % 60).padStart(2, "0")}`;
 
+  const volver = () => router.push("/login");
+
   return (
     <div className="br-root br-split">
-      {/* Columna izquierda (7f).
-          Una sola frase, y la que hace falta: quien no puede entrar en una
-          aplicación donde guarda sus conversaciones teme, antes que nada,
-          haberlas perdido. Decirlo aquí quita ese miedo mientras rellena el
-          formulario, no después. */}
+      {/* Columna izquierda (7f): logo, la lámina y una sola frase abajo.
+          Quien no puede entrar teme antes que nada haber perdido sus chats;
+          decirlo aquí quita ese miedo mientras rellena el formulario. */}
       <aside className="br-aside br-solo-escritorio" style={{ borderLeft: "none", borderRight: "1px solid var(--border)" }}>
-        <div className="br-aside-inner">
-          <div className="br-aside-item">
-            <img src="/redesign/information-will-always-be-yours.svg" alt="" />
-            <h2>{t("Tus chats siguen a salvo mientras recuperas el acceso.")}</h2>
-            <p>{t("Esta contraseña es la de tu cuenta. Tus chats están cifrados con otra, que no cambia aquí.")}</p>
+        <div style={{ display: "flex", flexDirection: "column", height: "100%", maxWidth: 400, margin: "0 auto" }}>
+          <Logo onClick={() => router.push("/")} />
+          <div style={{ flex: 1, display: "flex", alignItems: "center" }}>
+            <img src="/redesign/multiple-versions-of-a-chat.svg" alt="" style={{ width: "70%", maxHeight: 280, objectFit: "contain", display: "block", margin: "0 auto" }} />
           </div>
+          <p style={{ margin: 0, fontFamily: "var(--font-serif)", fontWeight: 500, fontSize: 22, lineHeight: 1.3, color: "var(--ink-900)" }}>
+            {t("Tus chats siguen a salvo mientras recuperas el acceso.")}
+          </p>
         </div>
       </aside>
 
-      <div className="br-split-main">
+      <div className="br-split-main br-movil-alto">
         <div className="br-split-inner" style={{ maxWidth: 420 }}>
+          {/* Flecha de atrás en móvil (5d, 5e). */}
+          <div className="br-cabecera-paso br-solo-movil-flex">
+            <BotonAtras etiqueta={enTexto(t("Atrás"))} onClick={() => (enviado ? setEnviado(false) : volver())} />
+          </div>
+
           {!enviado ? (
             <>
               <h1 className="br-page-title">{t("¿Olvidaste tu contraseña?")}</h1>
@@ -97,14 +116,14 @@ export const RecuperarScreen: FC = () => {
                 {t("Escribe tu correo y te enviamos un enlace para crear una nueva.")}
               </p>
 
-              <div style={{ marginBottom: 16 }}>
-                <label className="br-label">{t("Correo electrónico")}</label>
+              <div style={{ marginBottom: 14 }}>
+                <label className="br-label">{t("Correo")}</label>
                 <input
                   className="br-input"
                   type="email"
                   autoFocus
                   value={correo}
-                  placeholder={enTexto(t("tucorreo@email.com"))}
+                  placeholder={enTexto(t("tucorreo@ejemplo.com"))}
                   onChange={(e) => {
                     setCorreo(e.target.value);
                     setError("");
@@ -112,7 +131,7 @@ export const RecuperarScreen: FC = () => {
                   onKeyDown={(e) => {
                     if (e.key === "Enter") enviar();
                   }}
-                  style={{ width: "100%", height: 52, borderColor: error ? "var(--aviso-borde)" : undefined }}
+                  style={{ width: "100%", height: 48, borderColor: error ? "var(--aviso-borde)" : undefined }}
                 />
                 {error && (
                   <span style={{ display: "block", marginTop: 6, fontSize: 13, color: "var(--aviso-texto)" }}>
@@ -121,104 +140,72 @@ export const RecuperarScreen: FC = () => {
                 )}
               </div>
 
-              <div
-                style={{
-                  padding: "12px 14px",
-                  marginBottom: 20,
-                  borderRadius: 8,
-                  background: "var(--paper-100)",
-                  border: "1px solid var(--border)",
-                }}
-              >
-                <span style={{ fontSize: 13.5, color: "var(--slate-700)", lineHeight: 1.5 }}>
-                  {t("¿Entraste con Apple o Google? No tienes contraseña aquí; vuelve y usa ese botón.")}
+              {/* Texto suelto y pequeño, no una caja (5d): es una aclaración. */}
+              <p style={{ margin: 0, fontSize: 13, color: "var(--slate-500)", lineHeight: 1.5 }}>
+                {t("¿Entraste con Apple o Google? No tienes contraseña aquí; vuelve y usa ese botón.")}{" "}
+                <span className="br-link br-solo-escritorio-inline" style={{ cursor: "pointer" }} onClick={volver}>
+                  {t("Volver")}
                 </span>
-              </div>
+              </p>
 
-              <button
-                type="button"
-                onClick={enviar}
-                className="br-btn br-btn-primary br-btn-lg"
-                style={{ width: "100%", minHeight: 52, cursor: "pointer" }}
-              >
-                {t("Enviar enlace")}
-              </button>
+              <div className="br-movil-abajo">
+                <button
+                  type="button"
+                  onClick={enviar}
+                  className="br-btn br-btn-primary br-btn-lg"
+                  style={{ width: "100%", minHeight: 52, cursor: "pointer" }}
+                >
+                  {t("Enviar enlace")}
+                </button>
+              </div>
             </>
           ) : (
             <>
-              <h1 className="br-page-title">{t("Revisa tu correo")}</h1>
-              <p style={{ margin: "0 0 22px", fontSize: 15.5, color: "var(--slate-700)", lineHeight: 1.55 }}>
+              <IconoPaso tipo="sobre" tono="suave" />
+              <h1 className="br-page-title" style={{ marginTop: 24 }}>{t("Revisa tu correo")}</h1>
+              <p style={{ margin: 0, fontSize: 15.5, color: "var(--slate-700)", lineHeight: 1.55 }}>
                 {enTexto(
                   t(
-                    "Si {{correo}} tiene una cuenta, te llegará un enlace en unos minutos. Vence en 30 minutos.",
+                    "Si {{correo}} tiene una cuenta, te llegará un enlace en unos minutos. Vence en una hora.",
                     { correo: correo.trim() }
                   )
                 )}
               </p>
 
-              {/* Abrir el correo, sin salir a buscarlo (5e).
-                  En un teléfono, "revisa tu correo" significa salir de aquí,
-                  encontrar el icono del correo entre las demás aplicaciones y
-                  abrirlo. `message:` lo abre en iOS; en lo demás, el
-                  navegador no hace nada con el enlace, así que debajo queda
-                  el reenvío, que es la otra cosa que se puede necesitar. */}
-              <a
-                href="message:"
-                className="br-btn br-btn-primary br-btn-lg"
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  width: "100%",
-                  minHeight: 52,
-                  marginBottom: 12,
-                  textDecoration: "none",
-                }}
-              >
-                {t("Abrir app de correo")}
-              </a>
+              <div className="br-movil-abajo" style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+                {/* Abrir el correo (5e), con borde: es una ayuda, no la
+                    acción principal. Solo en iPhone/iPad, donde `message:`
+                    abre Mail; en el resto no haría nada. */}
+                {esIOS && (
+                  <a
+                    href="message:"
+                    className="br-btn br-btn-ghost br-btn-lg"
+                    style={{ display: "flex", alignItems: "center", justifyContent: "center", width: "100%", minHeight: 52, textDecoration: "none", borderColor: "var(--ink-900)" }}
+                  >
+                    {t("Abrir app de correo")}
+                  </a>
+                )}
 
-              <button
-                type="button"
-                onClick={() => {
-                  /* Reenviar tiene que REENVIAR. Antes solo reiniciaba la
-                     cuenta atras, asi que quien no recibia el correo podia
-                     pulsar el boton una y otra vez sin que saliera ninguno. */
-                  resetPassword(correo.trim());
-                  setRestan(ESPERA);
-                }}
-                disabled={restan > 0}
-                className="br-btn br-btn-ghost"
-                style={{
-                  width: "100%",
-                  minHeight: 52,
-                  borderRadius: 10,
-                  cursor: restan > 0 ? "default" : "pointer",
-                  opacity: restan > 0 ? 0.5 : 1,
-                }}
-              >
-                {restan > 0
-                  ? enTexto(t("Reenviar en {{reloj}}", { reloj }))
-                  : t("Reenviar enlace")}
-              </button>
-
-              <button
-                type="button"
-                onClick={() => router.push("/login")}
-                style={{
-                  marginTop: 14,
-                  width: "100%",
-                  minHeight: 44,
-                  background: "transparent",
-                  border: "none",
-                  cursor: "pointer",
-                  fontFamily: "var(--font-sans)",
-                  fontSize: 14.5,
-                  color: "var(--brass-600)",
-                }}
-              >
-                {t("Volver a entrar")}
-              </button>
+                {/* «Reenviar en 0:42» como texto mientras corre la espera, y
+                    enlace cuando ya se puede (5e). Reenviar REENVÍA. */}
+                {restan > 0 ? (
+                  <div style={{ minHeight: 44, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14, color: "var(--slate-500)" }}>
+                    {t("Reenviar en")}
+                    <span style={{ fontFamily: "var(--font-mono)", color: "var(--ink-900)", paddingLeft: 6 }}>{reloj}</span>
+                  </div>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      resetPassword(correo.trim());
+                      setRestan(ESPERA);
+                    }}
+                    style={{ minHeight: 44, background: "transparent", border: "none", cursor: "pointer", fontFamily: "var(--font-sans)", fontSize: 14.5, color: "var(--brass-600)" }}
+                  >
+                    {t("Reenviar enlace")}
+                  </button>
+                )}
+              </div>
             </>
           )}
         </div>

@@ -26,6 +26,21 @@ class MyDocument extends Document {
     return (
       <Html lang="es">
         <Head>
+          {/* Google Tag Manager. Va lo más arriba posible del <head> para que
+              cargue antes que el resto y no se pierdan las primeras visitas.
+              El script en línea usa dangerouslySetInnerHTML porque JSX no
+              admite código como hijo de <script>. */}
+          <script async src="https://www.googletagmanager.com/gtm.js?id=GTM-PKCTCNJC"></script>
+          <script
+            dangerouslySetInnerHTML={{
+              __html: `
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+`,
+            }}
+          />
+
           {CssBaseline.flush()}
 
           {/*

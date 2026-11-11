@@ -22,52 +22,54 @@ import { useTranslation } from "react-i18next";
 export const BarraBloqueada: FC<{ onDesbloquear: () => void }> = ({ onDesbloquear }) => {
   const { t } = useTranslation();
 
+  /* Franja ocre a todo el ancho bajo la cabecera, con candado y botón con
+     borde en tinta (4d). */
   return (
     <div
+      role="status"
       style={{
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "space-between",
-        gap: 12,
-        padding: "10px 14px",
-        marginBottom: 14,
-        borderRadius: 8,
-        background: "var(--paper-100)",
-        border: "1px solid var(--border)",
-        borderLeft: "3px solid var(--brass-400)",
+        background: "var(--ochre-100)",
+        borderBottom: "1px solid rgba(184,132,43,0.25)",
       }}
     >
-      <span
+      <div
         style={{
-          fontFamily: "var(--font-sans)",
-          fontSize: 14,
-          color: "var(--slate-700)",
-          minWidth: 0,
+          maxWidth: 1360,
+          margin: "0 auto",
+          display: "flex",
+          alignItems: "center",
+          gap: 12,
+          padding: "12px clamp(12px, 4vw, 24px) 12px clamp(16px, 4vw, 24px)",
         }}
       >
-        {t("Tus chats están bloqueados.")}
-      </span>
-
-      <button
-        type="button"
-        onClick={onDesbloquear}
-        style={{
-          flexShrink: 0,
-          minHeight: 36,
-          padding: "0 14px",
-          borderRadius: 8,
-          border: "1px solid var(--ink-900)",
-          background: "var(--ink-900)",
-          color: "var(--paper-50)",
-          cursor: "pointer",
-          fontFamily: "var(--font-sans)",
-          fontSize: 13.5,
-          fontWeight: 600,
-          whiteSpace: "nowrap",
-        }}
-      >
-        {t("Desbloquear")}
-      </button>
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--ochre-600)" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" style={{ flexShrink: 0 }}>
+          <rect x="4" y="11" width="16" height="10" rx="2" />
+          <path d="M8 11V7a4 4 0 0 1 8 0v4" />
+        </svg>
+        <span style={{ flex: 1, minWidth: 0, fontFamily: "var(--font-sans)", fontSize: 14, lineHeight: 1.4, color: "var(--ink-900)" }}>
+          {t("Tus chats están bloqueados.")}
+        </span>
+        <button
+          type="button"
+          onClick={onDesbloquear}
+          style={{
+            flexShrink: 0,
+            padding: "8px 14px",
+            borderRadius: "var(--radius-md, 8px)",
+            border: "1.5px solid var(--ink-900)",
+            background: "transparent",
+            color: "var(--ink-900)",
+            cursor: "pointer",
+            fontFamily: "var(--font-sans)",
+            fontSize: 13,
+            fontWeight: 600,
+            lineHeight: 1,
+            whiteSpace: "nowrap",
+          }}
+        >
+          {t("Desbloquear")}
+        </button>
+      </div>
     </div>
   );
 };

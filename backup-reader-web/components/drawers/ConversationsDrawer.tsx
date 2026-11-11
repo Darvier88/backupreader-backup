@@ -2,7 +2,7 @@ import { FC, useContext, useEffect, useRef, useState, ReactElement } from "react
 
 import { useTranslation } from "react-i18next";
 import { Box, Typography } from "@mui/material";
-import { Text, Container, Collapse } from "@nextui-org/react";
+import { Text, Collapse } from "@nextui-org/react";
 
 import { FileList } from "../../models/Files";
 import { AlertModal } from "../modals/AlertModal";
@@ -19,6 +19,9 @@ import { iniciales, nombreDelContacto } from "../../lib/nombres-de-chat";
 const enTexto = (traducido: unknown): string =>
   (traducido as string | null | undefined) ?? "";
 import { FirebaseAuth } from "../../config/firebase";
+import { useRouter } from "next/router";
+import { AuthContext } from "../../context";
+import { Logo, LangToggle } from "../ui/BrandChrome";
 import { storage } from "../../config/firebase";
 
 import {
@@ -98,12 +101,20 @@ export const ConversationsDrawer: FC<ConversationsDrawerProps> = ({
   const { t } = useTranslation();
   /* Cuántas coincidencias tiene cada chat en la búsqueda en curso (8c).
      Lo escribe la lista de resultados del centro. */
-  const { porChat } = usePanelChats();
+  const { porChat, chatFiltro, setChatFiltro } = usePanelChats();
+  /* Hay una búsqueda con resultados en curso: el panel filtra en vez de abrir. */
+  const buscando = Object.keys(porChat).length > 0;
   const { show } = useContext(ModalContext);
   const { fileList, fetchBucketSize } = useContext(StorageContext);
   const [state, setState] = useState<FileList[] | null>();
   const [bucketSize, setBucketSize] = useState<number>(0);
   const [userEmail,setUserEmail] = useState<string | null>();
+  const [userName, setUserName] = useState<string>("");
+  /* «Agregar chat» abre aquí mismo las dos opciones, en vez de llevarlas
+     siempre a la vista al fondo del panel (8b). */
+  const [agregando, setAgregando] = useState(false);
+  const router = useRouter();
+  const { logOut } = useContext(AuthContext);
   const [instagramConversations, setInstagramConversations] = useState<JSX.Element[] | null>(null);
   /* Lo que se busca en TODOS los chats. Es estado de la barra lateral y no del
      dashboard porque el buscador tiene que funcionar sin ningún chat abierto. */
@@ -216,6 +227,7 @@ export const ConversationsDrawer: FC<ConversationsDrawerProps> = ({
     if(FirebaseAuth.currentUser){
       const email = FirebaseAuth.currentUser.email;
       setUserEmail(email);
+      setUserName(FirebaseAuth.currentUser.displayName?.trim() || "");
     }
   },[]);
 
@@ -230,23 +242,52 @@ export const ConversationsDrawer: FC<ConversationsDrawerProps> = ({
   });
   */
   
+  /* Panel a toda la altura (8b): logo y «Agregar chat» arriba, la lista en
+     medio con su propio scroll y la cuenta fija abajo. */
   return (
-    <>
-      <Container
-        style={{
-          ...styles.container,
-          flexDirection: "column",
-        }}
-      >
-        <Typography
-          fontSize={26}
-          fontFamily={"var(--font-serif)"}
-          style={styles.drawerTitle}
+    <div style={{ position: "sticky", top: 0, height: "100vh", width: "100%", display: "flex", flexDirection: "column", padding: "20px 12px 16px", gap: 20, background: "var(--paper-100)" }}>
+      <div style={{ display: "flex", flexDirection: "column", width: "100%" }}>
+        {/* Panel lateral fijo (8b): en escritorio no hay cabecera arriba,
+            así que el logo, «Agregar chat» y la cuenta viven aquí. */}
+        <div style={{ padding: "0 8px", marginBottom: 20 }}>
+          <Logo compact />
+        </div>
+
+        <button
+          type="button"
+          className="br-btn br-btn-ghost br-btn-md"
+          aria-expanded={agregando}
+          onClick={() => setAgregando((v) => !v)}
+          style={{ margin: "0 8px", width: "calc(100% - 16px)", border: "1.5px solid var(--ink-900)", color: "var(--ink-900)" }}
         >
-          {t("Chats")}
-        </Typography>
-        { /* bucketSize === 0 ? <p style={{ fontSize: '11px', color: '#999999', marginLeft: '10px' }}> </p>  : <p style={{ fontSize: '11px', color: '#999999', marginLeft: '10px' }}>Conversaciones: { bucketSize } MB</p>  */ }
-        <p style={{ fontFamily: 'var(--font-mono)', fontSize: '11.5px', letterSpacing: '0.06em', color: 'var(--slate-500)', marginLeft: '10px' }}>{ userEmail }</p>
+          {t("Agregar chat")}
+        </button>
+        {agregando && (
+          <div style={{ display: "flex", gap: 8, margin: "10px 8px 0" }}>
+            <button
+              type="button"
+              className="br-btn br-btn-ghost br-btn-sm"
+              style={{ flex: 1 }}
+              onClick={() => {
+                setAgregando(false);
+                window.dispatchEvent(new CustomEvent("br:subir-chat", { detail: "drive" }));
+              }}
+            >
+              {t("Google Drive")}
+            </button>
+            <button
+              type="button"
+              className="br-btn br-btn-ghost br-btn-sm"
+              style={{ flex: 1 }}
+              onClick={() => {
+                setAgregando(false);
+                window.dispatchEvent(new CustomEvent("br:subir-chat", { detail: "archivos" }));
+              }}
+            >
+              {t("Archivos")}
+            </button>
+          </div>
+        )}
 
         {/* El buscador general ya no vive aquí (8b).
             Estaba en esta columna, y con él los resultados: una lista de
@@ -255,14 +296,12 @@ export const ConversationsDrawer: FC<ConversationsDrawerProps> = ({
             que encuentra. Lo que sí se queda aquí es cuántas coincidencias
             tiene cada chat, junto a su nombre (8c).
             ⌘K sigue funcionando: cierra el chat abierto y lleva allí. */}
-        <p style={{ fontFamily: "var(--font-mono)", fontSize: "10.5px", letterSpacing: "0.14em", textTransform: "uppercase", color: "var(--slate-500)", margin: "14px 10px 0" }}>
+      </div>
+
+      <div style={{ flex: 1, minHeight: 0, overflowY: "auto", display: "flex", flexDirection: "column", gap: 2 }}>
+        <p style={{ fontFamily: "var(--font-mono)", fontSize: 11, letterSpacing: "0.14em", textTransform: "uppercase", color: "var(--slate-500)", margin: 0, padding: "0 8px 6px" }}>
           {enTexto(t("Tus chats · {{n}}", { n: state?.length ?? 0 }))}
         </p>
-
-      </Container>
-      
-
-      <div style={{ ...styles.drawerItemCtn }}>
         {state?.map((item, i) => {
 
           // Check if the item is an Instagram conversation based on the name
@@ -288,7 +327,10 @@ export const ConversationsDrawer: FC<ConversationsDrawerProps> = ({
           }
 
           // For non-Instagram items (e.g., WhatsApp), keep the original rendering logic
-          const isSelected = selected === item.name;
+          /* También se marca el chat al que se están limitando los resultados. */
+          const isSelected =
+            selected === item.name ||
+            (buscando && !!chatFiltro && chatFiltro === (backupIdDeHandle(item.fullPath) ?? ""));
           const parts = splitNameDate(item.name);
           const coincidencias = porChat[backupIdDeHandle(item.fullPath) ?? ""];
           /* Boveda bloqueada: el chat existe pero su nombre vive dentro del
@@ -304,18 +346,19 @@ export const ConversationsDrawer: FC<ConversationsDrawerProps> = ({
                   alignItems: "center",
                   justifyContent: "space-between",
                   gap: 12,
-                  padding: "14px 14px",
-                  borderBottom: "1px solid var(--border)",
-                  borderLeft: "3px solid transparent",
+                  padding: 8,
+                  borderRadius: 8,
                   cursor: "default",
                 }}
               >
-                <div style={{ display: "flex", alignItems: "center", gap: 10, minWidth: 0 }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 12, minWidth: 0 }}>
+                  <span aria-hidden style={{ width: 34, height: 34, flexShrink: 0, borderRadius: 8, background: "#fff", border: "1px solid var(--border)", display: "flex", alignItems: "center", justifyContent: "center" }}>
                   <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--slate-500)" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
                     <rect x="3" y="11" width="18" height="11" rx="2" />
                     <path d="M7 11V7a5 5 0 0 1 10 0v4" />
                   </svg>
-                  <span style={{ fontFamily: "var(--font-sans)", fontSize: 15, color: "var(--slate-500)" }}>
+                  </span>
+                  <span style={{ fontFamily: "var(--font-sans)", fontSize: 14, fontWeight: 600, color: "var(--slate-500)" }}>
                     {t("Chat cifrado")}
                   </span>
                 </div>
@@ -329,19 +372,26 @@ export const ConversationsDrawer: FC<ConversationsDrawerProps> = ({
             <div
               key={i}
               data-fila-chat
-              onClick={() => onPress(item.fullPath, item.name)}
+              onClick={() => {
+                /* Durante una búsqueda, pulsar un chat con coincidencias
+                   limita los resultados a ese chat (8c); pulsarlo otra vez
+                   vuelve a todos. Sin búsqueda, abre el chat como siempre. */
+                const id = backupIdDeHandle(item.fullPath) ?? "";
+                if (buscando && coincidencias) {
+                  setChatFiltro(chatFiltro === id ? null : id);
+                  return;
+                }
+                onPress(item.fullPath, item.name);
+              }}
               style={{
                 cursor: "pointer",
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "space-between",
                 gap: 12,
-                padding: "14px 14px",
-                borderRadius: isSelected ? 10 : 0,
-                borderBottom: isSelected ? "none" : "1px solid var(--border)",
-                borderLeft: isSelected ? "3px solid var(--brass-500)" : "3px solid transparent",
-                background: isSelected ? "var(--surface-raised)" : "transparent",
-                boxShadow: isSelected ? "var(--shadow-card)" : "none",
+                padding: 8,
+                borderRadius: 8,
+                background: isSelected ? "var(--brass-100)" : "transparent",
               }}
             >
               {/* Iniciales y nombre del contacto, no el nombre del archivo
@@ -354,46 +404,44 @@ export const ConversationsDrawer: FC<ConversationsDrawerProps> = ({
                   flexShrink: 0,
                   width: 34,
                   height: 34,
-                  borderRadius: 999,
+                  borderRadius: 8,
                   display: "inline-flex",
                   alignItems: "center",
                   justifyContent: "center",
-                  background: "var(--paper-200)",
-                  color: "var(--slate-700)",
-                  fontFamily: "var(--font-mono)",
-                  fontSize: 11.5,
-                  letterSpacing: "0.04em",
+                  /* El primero (o el abierto) en tinta, el resto en blanco (8b). */
+                  background: isSelected || (!selected && i === 0) ? "var(--ink-900)" : "#fff",
+                  border: isSelected || (!selected && i === 0) ? "none" : "1px solid var(--border)",
+                  color: isSelected || (!selected && i === 0) ? "var(--paper-50)" : "var(--ink-900)",
+                  fontFamily: "var(--font-serif)",
+                  fontSize: 13,
                 }}
               >
                 {iniciales(item.name)}
               </span>
               <div style={{ display: "flex", flexDirection: "column", gap: 3, minWidth: 0, flex: 1 }}>
-                <span style={{ fontFamily: "var(--font-sans)", fontSize: 15, fontWeight: 600, color: "var(--ink-900)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                <span style={{ fontFamily: "var(--font-sans)", fontSize: 14, fontWeight: 600, color: "var(--ink-900)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                   {nombreDelContacto(item.name) || parts.name}
                 </span>
                 {/* Con una búsqueda en curso, el número manda sobre la fecha:
                     lo que se quiere saber en ese momento es dónde está lo
                     buscado, no cuándo se guardó el chat. */}
                 {coincidencias !== undefined ? (
-                  <span style={{ fontFamily: "var(--font-mono)", fontSize: 10.5, letterSpacing: "0.12em", textTransform: "uppercase", color: "var(--brass-600)" }}>
+                  <span style={{ fontFamily: "var(--font-mono)", fontSize: 10.5, textTransform: "uppercase", color: "var(--slate-500)" }}>
                     {coincidencias === 1
                       ? enTexto(t("1 coincidencia"))
                       : enTexto(t("{{total}} coincidencias", { total: coincidencias }))}
                   </span>
-                ) : parts.date ? (
-                  <span style={{ fontFamily: "var(--font-mono)", fontSize: 11, letterSpacing: "0.04em", color: "var(--slate-500)" }}>
-                    {parts.date}
+                ) : (
+                  /* El archivo en mono debajo del nombre (8b). */
+                  <span style={{ fontFamily: "var(--font-mono)", fontSize: 10.5, color: "var(--slate-500)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                    {item.name}
                   </span>
-                ) : null}
+                )}
               </div>
               <div style={{ display: "flex", alignItems: "center", gap: 2, flexShrink: 0 }}>
                 {/* Un backup todavía en texto plano ofrece cifrarse en vez de
                     la flecha. Cuando no queden v1, esto vuelve a ser solo el svg. */}
-                {item.cifrado ? (
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--brass-600)" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
-                    <path d="M9 6l6 6-6 6" />
-                  </svg>
-                ) : (
+                {!item.cifrado && (
                   <BotonCifrar fullPath={item.fullPath} name={item.name} />
                 )}
                 <BotonBorrarChat fullPath={item.fullPath} name={item.name} />
@@ -403,45 +451,46 @@ export const ConversationsDrawer: FC<ConversationsDrawerProps> = ({
         })}
       </div>
 
-      {/* Agregar chat, dentro del panel.
-          Antes esto era una barra "Subir desde: Google Drive · Archivos"
-          flotando encima del chat abierto, es decir, encima de lo que el
-          usuario estaba leyendo. Subir es algo que se hace junto a la lista
-          de chats, no sobre la conversacion; aqui queda al lado de lo que
-          modifica. Las dos opciones las ejecuta ManageFileCard, que es quien
-          tiene el selector de Drive y el input oculto. */}
-      <div style={{ borderTop: "1px solid var(--border)", margin: "14px 10px 0", paddingTop: 14 }}>
-        <p
-          style={{
-            margin: "0 4px 8px",
-            fontFamily: "var(--font-mono)",
-            fontSize: 10.5,
-            letterSpacing: "0.14em",
-            textTransform: "uppercase",
-            color: "var(--slate-500)",
-          }}
-        >
-          {t("Agregar chat")}
-        </p>
-        <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-          <button
-            className="br-btn br-btn-ghost br-btn-sm"
-            onClick={() =>
-              window.dispatchEvent(new CustomEvent("br:subir-chat", { detail: "drive" }))
-            }
+      {/* Cuenta, abajo del panel (8b). Sustituye a la cabecera que había
+          encima del dashboard en escritorio: Mi cuenta, Ayuda, Cerrar sesión
+          y el idioma, en el sitio donde el diseño los pone. */}
+      <div style={{ borderTop: "1px solid var(--border)", padding: "10px 8px 0" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+          <span
+            aria-hidden
+            style={{
+              flexShrink: 0, width: 30, height: 30, borderRadius: 999,
+              display: "inline-flex", alignItems: "center", justifyContent: "center",
+              background: "var(--brass-100)", color: "var(--brass-700)",
+              fontFamily: "var(--font-sans)", fontSize: 12, fontWeight: 600,
+            }}
           >
-            {t("Google Drive")}
+            {(userName || userEmail || "?").trim().charAt(0).toUpperCase()}
+          </span>
+          <span style={{ minWidth: 0, flex: 1 }}>
+            <span style={{ display: "block", fontFamily: "var(--font-sans)", fontSize: 13.5, fontWeight: 600, color: "var(--ink-900)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+              {userName || userEmail}
+            </span>
+            {userName && userEmail && (
+              <span style={{ display: "block", fontFamily: "var(--font-mono)", fontSize: 10.5, letterSpacing: "0.04em", color: "var(--slate-500)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                {userEmail}
+              </span>
+            )}
+          </span>
+          <LangToggle />
+        </div>
+        <div style={{ display: "flex", flexWrap: "wrap", gap: 2, marginTop: 6, marginLeft: -8 }}>
+          <button type="button" className="br-enlace-panel" onClick={() => router.push("/account")}>
+            {t("Mi cuenta")}
           </button>
-          <button
-            className="br-btn br-btn-ghost br-btn-sm"
-            onClick={() =>
-              window.dispatchEvent(new CustomEvent("br:subir-chat", { detail: "archivos" }))
-            }
-          >
-            {t("Archivos")}
+          <button type="button" className="br-enlace-panel" onClick={() => router.push("/help")}>
+            {t("Ayuda")}
+          </button>
+          <button type="button" className="br-enlace-panel" onClick={() => logOut()}>
+            {t("Cerrar sesión")}
           </button>
         </div>
       </div>
-    </>
+    </div>
   );
 };

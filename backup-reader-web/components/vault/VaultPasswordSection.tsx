@@ -20,8 +20,15 @@ const MIN_LARGO = 10;
 export const VaultPasswordSection: React.FC = () => {
   const { t } = useTranslation();
   const { show } = useContext(ModalContext);
-  const { status, changeVaultPassword, resetVaultPassword, regenerateRecovery, lock } =
-    useVault();
+  const {
+    status,
+    changeVaultPassword,
+    resetVaultPassword,
+    regenerateRecovery,
+    lock,
+    recordadaEnEsteDispositivo,
+    olvidarEsteDispositivo,
+  } = useVault();
 
   const [actual, setActual] = useState("");
   const [nueva, setNueva] = useState("");
@@ -144,6 +151,38 @@ export const VaultPasswordSection: React.FC = () => {
           ? t("La bóveda está bloqueada en esta sesión.")
           : t("La bóveda está desbloqueada en esta sesión.")}
       </Typography>
+
+      {/* «Olvidar este dispositivo»: la salida de «Recordar 30 días» (8a).
+          Quien marcó la casilla tiene que poder deshacerlo sin esperar a que
+          venza ni cerrar sesión. */}
+      {recordadaEnEsteDispositivo && (
+        <div
+          style={{
+            display: "flex",
+            flexWrap: "wrap",
+            alignItems: "center",
+            gap: 12,
+            padding: "12px 14px",
+            margin: "0 0 16px",
+            borderRadius: 10,
+            border: "1px solid var(--border)",
+            background: "var(--paper-100)",
+          }}
+        >
+          <span style={{ flex: "1 1 220px", fontFamily: "var(--font-sans)", fontSize: 14, color: "var(--slate-700)" }}>
+            {t("Este dispositivo recuerda tu clave de cifrado hasta 30 días.")}
+          </span>
+          <button
+            type="button"
+            className="br-btn br-btn-ghost br-btn-sm"
+            onClick={() => {
+              void olvidarEsteDispositivo();
+            }}
+          >
+            {t("Olvidar este dispositivo")}
+          </button>
+        </div>
+      )}
 
       <Typography fontFamily={"Open Sans"} fontSize={15} style={{ color: "#3C3C3C" }}>
         {t("Cambiar la contraseña de cifrado")}
@@ -275,8 +314,10 @@ export const VaultPasswordSection: React.FC = () => {
         <Button auto bordered onPress={onRegenerar} disabled={ocupado || bloqueada}>
           {t("Generar código nuevo")}
         </Button>
+        {/* Bloquear a mano también olvida la clave recordada: si no, al
+            recargar se volvería a abrir sola y el botón no serviría. */}
         {!bloqueada && (
-          <Button auto light onPress={lock}>
+          <Button auto light onPress={() => { void olvidarEsteDispositivo(); lock(); }}>
             {t("Bloquear ahora")}
           </Button>
         )}

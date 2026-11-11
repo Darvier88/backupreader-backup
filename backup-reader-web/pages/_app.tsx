@@ -61,7 +61,13 @@ function MyApp({ Component, pageProps }: AppPropsWithLayout) {
     aplicarIdiomaDetectado();
   }, []);
 
-  ReactGA.initialize("G-Y2JN17C4KK");
+  /* GA4 se inicia UNA vez, al montar la aplicación. Antes la llamada estaba en
+     el cuerpo del componente y se repetía en cada render de MyApp, y cada
+     llamada a `initialize` vuelve a mandar la configuración (y con ella un
+     page_view). Flujo de datos de backupreader.com: G-PV00WX4FM0. */
+  useEffect(() => {
+    ReactGA.initialize("G-PV00WX4FM0");
+  }, []);
 
   return (
     <Appstate>

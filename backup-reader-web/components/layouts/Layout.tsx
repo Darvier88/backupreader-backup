@@ -90,7 +90,11 @@ export const Layout: FC<LayoutProps> = ({ children }) => {
         ) : ["/plans", "/payment"].includes(router.pathname) ? (
           <BrandHeader app />
         ) : router.pathname === "/dashboard" && !phone ? (
-          <BrandHeader app wide />
+          /* Sin cabecera en el dashboard de escritorio (8b): el panel
+             lateral lleva el logo, «Agregar chat», la cuenta y el idioma.
+             Una barra arriba repetía esos mismos enlaces y le quitaba alto
+             a la lectura. */
+          null
         ) : (
           <NavBar drawerButtonOnPress={alternar} />
         )}

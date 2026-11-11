@@ -1,8 +1,9 @@
-import { FC, useRef, useState } from "react";
+import { FC, useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 
-import { iniciales, nombreDelContacto, partirTitulo } from "../../lib/nombres-de-chat";
+import { iniciales, nombreDelContacto } from "../../lib/nombres-de-chat";
 import { useAtajoDeBusqueda } from "../../hooks/useAtajoDeBusqueda";
+import { etiquetaApertura, ultimaApertura } from "../../lib/aperturas";
 
 /**
  * La pantalla de inicio (2a con chats, 2b sin ninguno).
@@ -32,23 +33,22 @@ const mono = "var(--font-mono)";
 const serif = "var(--font-serif)";
 
 const tarjetaAccion: React.CSSProperties = {
-  flex: 1,
   minWidth: 0,
   display: "flex",
   flexDirection: "column",
   alignItems: "flex-start",
-  minHeight: 64,
-  padding: "12px 14px",
+  gap: 12,
+  padding: 14,
   borderRadius: 12,
   border: "1px solid var(--border)",
-  background: "var(--surface-raised)",
+  background: "#fff",
   cursor: "pointer",
   textAlign: "left",
 };
 
 const tituloAccion: React.CSSProperties = {
   fontFamily: "var(--font-sans)",
-  fontSize: 14.5,
+  fontSize: 15,
   fontWeight: 600,
   color: "var(--ink-900)",
 };
@@ -91,7 +91,13 @@ export const InicioChats: FC<{
   /** Abre el paso de desbloqueo. Solo se usa si `bloqueada`. */
   onDesbloquear?: () => void;
 }> = ({ chats, onVerMisChats, onSubir, onAbrirChat, consulta, onConsulta, resultados, maxRecientes = 4, reciénCreada = false, bloqueada = false, onDesbloquear, ancho = false, onSoltarArchivos }) => {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
+  /* «⌘ K» en Mac, «Ctrl K» en el resto (8b). Tras montar, para que servidor
+     y cliente pinten lo mismo. */
+  const [atajo, setAtajo] = useState("Ctrl K");
+  useEffect(() => {
+    if (/Mac|iPhone|iPad/.test(navigator.platform || navigator.userAgent)) setAtajo("⌘ K");
+  }, []);
   const hayChats = chats.length > 0;
   const [encima, setEncima] = useState(false);
   /* ⌘K trae el cursor aquí. El atajo ya existía cuando el buscador vivía en
@@ -99,172 +105,336 @@ export const InicioChats: FC<{
   const campo = useRef<HTMLInputElement>(null);
   useAtajoDeBusqueda(campo);
 
+  /* Al enfocar o escribir, el buscador toma la cabecera (3b/8c): se va el
+     título y aparece «Cancelar» (móvil) o la pista ESC (escritorio). */
+  const [enfocado, setEnfocado] = useState(false);
+  const buscando = !bloqueada && (enfocado || consulta.length > 0);
+  const salirDeBusqueda = () => {
+    onConsulta("");
+    setEnfocado(false);
+    campo.current?.blur();
+  };
+
+  const lupa = (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" aria-hidden="true" style={{ flexShrink: 0 }}>
+      <circle cx="11" cy="11" r="7" />
+      <path d="m20 20-3.5-3.5" />
+    </svg>
+  );
+  const candado = (tam: number) => (
+    <svg width={tam} height={tam} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <rect x="4" y="11" width="16" height="10" rx="2" />
+      <path d="M8 11V7a4 4 0 0 1 8 0v4" />
+    </svg>
+  );
+  /* Inicial en un cuadro: el primero de la lista en tinta, el resto en papel
+     (3a/8b), igual que en el panel. */
+  const tile = (texto: React.ReactNode, primero: boolean, lado = 36) => (
+    <span
+      aria-hidden
+      style={{
+        width: lado,
+        height: lado,
+        flexShrink: 0,
+        borderRadius: 8,
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        fontFamily: serif,
+        fontSize: 14,
+        background: primero ? "var(--ink-900)" : "var(--paper-100)",
+        border: primero ? "none" : "1px solid var(--border)",
+        color: primero ? "var(--paper-50)" : bloqueada ? "var(--slate-500)" : "var(--ink-900)",
+      }}
+    >
+      {texto}
+    </span>
+  );
+
+  const recientes = chats
+    .map((c, i) => ({ c, i, abierto: ultimaApertura(c.fullPath) }))
+    .sort((a, b) => (b.abierto ?? -1) - (a.abierto ?? -1) || a.i - b.i);
+
+  const cuandoAbierto = (abierto: number | null) => {
+    if (!abierto) return t("Guardado");
+    const cuando = etiquetaApertura(abierto, i18n.language || "es");
+    return cuando === "hoy"
+      ? t("Abierto hoy")
+      : cuando === "ayer"
+      ? t("Abierto ayer")
+      : enTexto(t("Abierto {{fecha}}", { fecha: cuando }));
+  };
+
   return (
     <div
       style={{
         width: "100%",
-        maxWidth: ancho ? 760 : 520,
+        maxWidth: ancho ? (buscando ? 1040 : 688) : 520,
         margin: "0 auto",
-        padding: ancho ? "40px 24px 56px" : "28px 18px 40px",
+        padding: ancho ? (buscando ? "24px 24px 56px" : "96px 24px 48px") : buscando ? "12px 16px 40px" : "24px 20px 40px",
+        minHeight: ancho && !buscando ? "100vh" : undefined,
+        display: "flex",
+        flexDirection: "column",
       }}
     >
-      {/* Bóveda cerrada (4d).
-          Se dice arriba y una sola vez, en vez de repetir un candado en cada
-          sitio donde algo no funciona. Lo importante es que el usuario sepa
-          que sus chats SIGUEN AHÍ: sin esta frase, una lista con candados se
-          lee como «se han perdido». */}
-      {bloqueada && (
-        <div
-          style={{
-            display: "flex",
-            flexWrap: "wrap",
-            alignItems: "center",
-            gap: 10,
-            padding: "12px 14px",
-            marginBottom: 20,
-            borderRadius: 10,
-            border: "1px solid var(--border)",
-            background: "var(--paper-100)",
-          }}
-        >
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--brass-600)" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
-            <rect x="3" y="11" width="18" height="11" rx="2" />
-            <path d="M7 11V7a5 5 0 0 1 10 0v4" />
-          </svg>
-          <span style={{ flex: 1, minWidth: 140, fontSize: 14, lineHeight: 1.5, color: "var(--slate-700)" }}>
-            {t("Tus chats están aquí, cerrados. Escribe tu contraseña de cifrado para leerlos.")}
-          </span>
-          {onDesbloquear && (
-            <button type="button" className="br-btn br-btn-primary br-btn-sm" onClick={onDesbloquear}>
-              {t("Desbloquear")}
-            </button>
-          )}
-        </div>
-      )}
+      {/* Con la bóveda cerrada el aviso es la franja ocre de arriba (4d);
+          aquí ya no se repite. */}
 
-      {/* El buscador es lo primero cuando ya hay chats (3a): con dos o tres
-          respaldos se entra a leer, pero en cuanto hay unos cuantos lo que se
-          quiere es encontrar algo concreto, y tenerlo que buscar entre las
-          acciones es lo que hace que nadie lo use. */}
+      {/* El buscador es lo primero cuando ya hay chats (3a/8b). */}
       {hayChats && (
-        <div style={{ marginBottom: 24 }}>
-          <h2
-            style={{
-              margin: "0 0 10px",
-              fontFamily: serif,
-              fontWeight: 500,
-              fontSize: 22,
-              color: "var(--ink-900)",
-            }}
-          >
-            {t("¿Qué estás buscando?")}
-          </h2>
+        <div style={{ display: "flex", flexDirection: "column", gap: ancho ? 18 : 14 }}>
+          {!buscando && !bloqueada && (
+            <h2
+              style={{
+                margin: 0,
+                fontFamily: serif,
+                fontWeight: 500,
+                fontSize: ancho ? 38 : 28,
+                lineHeight: ancho ? 1.1 : 1.15,
+                letterSpacing: ancho ? "-0.02em" : "-0.015em",
+                color: "var(--ink-900)",
+              }}
+            >
+              {t("¿Qué estás buscando?")}
+            </h2>
+          )}
           {/* Con la bóveda cerrada el buscador no puede buscar: el índice
-              está cifrado con la misma clave que los chats. Se desactiva en
-              vez de dejarlo escribir y contestar «sin resultados», que haría
-              creer que esos mensajes no existen. */}
-          <input
-            ref={campo}
-            value={consulta}
-            disabled={bloqueada}
-            onChange={(e) => onConsulta(e.target.value)}
-            onKeyDown={(e) => {
-              /* Escape vacía el campo antes de soltarlo: dejarlo con texto y
-                 sin foco deja los resultados tapando el inicio, que es lo
-                 contrario de lo que pide Escape. */
-              if (e.key === "Escape" && consulta) {
-                e.preventDefault();
-                onConsulta("");
-              }
-            }}
-            placeholder={enTexto(
-              bloqueada ? t("Desbloquea para buscar") : t("Personas o mensajes")
+              está cifrado con la misma clave que los chats. Se apaga en vez
+              de contestar «sin resultados», que haría creer que esos
+              mensajes no existen. */}
+          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            <label
+              style={{
+                flex: 1,
+                minWidth: 0,
+                height: ancho ? (buscando ? 48 : 56) : buscando ? 44 : 52,
+                display: "flex",
+                alignItems: "center",
+                gap: 12,
+                padding: ancho ? "0 12px 0 18px" : "0 8px 0 16px",
+                background: "#fff",
+                border: `1.5px solid ${buscando ? "var(--brass-500)" : "var(--border)"}`,
+                boxShadow: buscando ? "var(--focus-ring)" : ancho ? "0 2px 8px rgba(22,35,59,0.06)" : "0 1px 3px rgba(22,35,59,0.06)",
+                borderRadius: buscando && !ancho ? 8 : 10,
+                color: "var(--slate-400)",
+                opacity: bloqueada ? 0.5 : 1,
+                cursor: bloqueada ? "default" : "text",
+              }}
+            >
+              {lupa}
+              <input
+                ref={campo}
+                value={consulta}
+                disabled={bloqueada}
+                onFocus={() => setEnfocado(true)}
+                onBlur={() => { if (!consulta) setEnfocado(false); }}
+                onChange={(e) => onConsulta(e.target.value)}
+                onKeyDown={(e) => {
+                  /* Escape vacía el campo y lo suelta. */
+                  if (e.key === "Escape") {
+                    e.preventDefault();
+                    salirDeBusqueda();
+                  }
+                }}
+                placeholder={enTexto(
+                  bloqueada
+                    ? t("Personas o mensajes")
+                    : ancho
+                    ? t("Personas o mensajes en tus {{n}} chats", { n: chats.length })
+                    : t("Personas o mensajes")
+                )}
+                style={{
+                  flex: 1,
+                  minWidth: 0,
+                  height: "100%",
+                  padding: 0,
+                  border: "none",
+                  outline: "none",
+                  background: "transparent",
+                  fontFamily: "var(--font-sans)",
+                  fontSize: 16,
+                  color: "var(--ink-900)",
+                  cursor: "inherit",
+                }}
+              />
+              {/* En el móvil, una ✕ para vaciar sin salir (3b). */}
+              {!ancho && consulta && (
+                <button
+                  type="button"
+                  aria-label={enTexto(t("Borrar búsqueda"))}
+                  onClick={() => { onConsulta(""); campo.current?.focus(); }}
+                  style={{ width: 32, height: 32, flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center", background: "transparent", border: "none", cursor: "pointer", color: "var(--slate-500)" }}
+                >
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
+                    <path d="M18 6 6 18M6 6l12 12" />
+                  </svg>
+                </button>
+              )}
+              {/* La pista del atajo dentro del campo (8b); al buscar, ESC (8c). */}
+              {ancho && !bloqueada && (
+                <kbd
+                  aria-hidden
+                  style={{
+                    flexShrink: 0,
+                    padding: "3px 7px",
+                    borderRadius: 4,
+                    border: "1px solid var(--border)",
+                    background: "var(--paper-50)",
+                    fontFamily: mono,
+                    fontSize: 11,
+                    color: "var(--slate-500)",
+                  }}
+                >
+                  {buscando ? "ESC" : atajo}
+                </kbd>
+              )}
+            </label>
+            {!ancho && buscando && (
+              <button
+                type="button"
+                onClick={salirDeBusqueda}
+                style={{ height: 44, padding: "0 6px", background: "transparent", border: "none", cursor: "pointer", fontFamily: "var(--font-sans)", fontSize: 15, fontWeight: 600, color: "var(--ink-800)", whiteSpace: "nowrap" }}
+              >
+                {t("Cancelar")}
+              </button>
             )}
-            style={{
-              cursor: bloqueada ? "default" : "text",
-              opacity: bloqueada ? 0.55 : 1,
-              width: "100%",
-              height: 46,
-              padding: "0 14px",
-              borderRadius: 10,
-              border: "1px solid var(--border)",
-              background: "var(--surface)",
-              fontFamily: "var(--font-sans)",
-              fontSize: 15,
-              color: "var(--ink-900)",
-            }}
-          />
-          <p style={{ ...etiqueta, marginTop: 8 }}>
-            {bloqueada
-              ? t("Bloqueado")
-              : enTexto(t("Busca en tus {{total}} chats", { total: chats.length }))}
-          </p>
+          </div>
+          {!buscando && !bloqueada && !ancho && (
+            <p style={{ ...etiqueta, margin: 0, fontSize: 11, letterSpacing: "0.08em" }}>
+              {enTexto(t("Busca en tus {{total}} chats", { total: chats.length }))}
+            </p>
+          )}
           {resultados}
         </div>
       )}
 
-      {/* La ronda 3 sustituye al bloque grande de la 2a por dos tarjetas
-          compactas: con el buscador arriba, un titular de dos lineas y un
-          boton a todo ancho empujan los recientes fuera de la pantalla, y los
-          recientes son lo que de verdad se pulsa. */}
-      {/* Las dos tarjetas son de móvil.
-          En escritorio el panel de chats está siempre a la vista, así que
-          "Ver mis chats" no lleva a ninguna parte, y subir ya tiene la zona
-          de arrastre de abajo y el "Agregar chat" del panel. Tres sitios para
-          lo mismo en la misma pantalla no es tenerlo a mano, es ruido. */}
-      {hayChats && !consulta.trim() && !ancho && (
-        <div style={{ display: "flex", gap: 10 }}>
-          <button onClick={onVerMisChats} style={tarjetaAccion}>
-            <span style={tituloAccion}>{t("Ver mis chats")}</span>
-            <span style={{ ...etiqueta, marginTop: 4 }}>
-              {enTexto(t("{{total}} guardados", { total: chats.length }))}
-            </span>
+      {/* Dos tarjetas compactas en el móvil (3a): «Ver mis chats» en tinta,
+          «Subir un chat» en blanco. En escritorio el panel ya está a la vista
+          y la zona de arrastre está abajo. */}
+      {hayChats && !buscando && !bloqueada && !ancho && (
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginTop: 24 }}>
+          <button type="button" onClick={onVerMisChats} style={{ ...tarjetaAccion, background: "var(--ink-900)", border: "1px solid var(--ink-900)", color: "var(--paper-50)" }}>
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <path d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.6A8 8 0 1 1 21 12z" />
+            </svg>
+            <span style={{ ...tituloAccion, color: "inherit" }}>{t("Ver mis chats")}</span>
           </button>
-          <button onClick={onSubir} style={tarjetaAccion}>
+          <button type="button" onClick={onSubir} style={tarjetaAccion}>
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--brass-600)" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <path d="M12 15V4M7 9l5-5 5 5" />
+              <path d="M5 15v4a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-4" />
+            </svg>
             <span style={tituloAccion}>{t("Subir un chat")}</span>
-            <span style={{ ...etiqueta, marginTop: 4 }}>{t("Archivo .zip")}</span>
           </button>
         </div>
       )}
 
-      {/* Soltar el .zip (8b).
-          En escritorio arrastrar es lo más corto que hay: el archivo ya está
-          en una carpeta abierta al lado. El botón sigue, porque no todo el
-          mundo arrastra y porque sin él no habría forma de subir con el
-          teclado. */}
-      {ancho && hayChats && !consulta.trim() && onSoltarArchivos && (
-        <div
-          onDragOver={(e) => { e.preventDefault(); setEncima(true); }}
-          onDragLeave={() => setEncima(false)}
-          onDrop={(e) => {
-            e.preventDefault();
-            setEncima(false);
-            if (e.dataTransfer?.files?.length) onSoltarArchivos(e.dataTransfer.files);
-          }}
-          style={{
-            marginTop: 30,
-            padding: "26px 22px",
-            borderRadius: 14,
-            border: `1px dashed ${encima ? "var(--brass-500)" : "var(--border)"}`,
-            background: encima ? "var(--paper-100)" : "transparent",
-            display: "flex",
-            alignItems: "center",
-            gap: 20,
-          }}
-        >
-          <img src="/redesign/upload-a-chat.svg" alt="" style={{ width: 120, height: 84, objectFit: "contain", flexShrink: 0 }} />
-          <div style={{ minWidth: 0, flex: 1 }}>
-            <span style={{ display: "block", fontFamily: serif, fontSize: 20, fontWeight: 500, color: "var(--ink-900)" }}>
-              {encima ? t("Suelta el archivo para subirlo") : t("Sube otro chat")}
-            </span>
-            <span style={{ display: "block", marginTop: 4, fontSize: 14.5, lineHeight: 1.5, color: "var(--slate-700)" }}>
-              {t("Arrastra un .zip aquí o elige desde Google Drive o Archivos.")}
-            </span>
+      {/* Recientes.
+          Móvil: lista plana con el archivo en mono (3a). Con la bóveda cerrada
+          se listan todos como «Chat cifrado · Bloqueado» (4d).
+          Escritorio: dos tarjetas con cuándo se abrieron (8b). */}
+      {hayChats && !buscando && (
+        ancho && !bloqueada ? (
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginTop: 40 }}>
+            {recientes.slice(0, 2).map(({ c, abierto }, n) => {
+              const nombre = nombreDelContacto(c.name) || c.name;
+              return (
+                <button
+                  key={c.fullPath}
+                  type="button"
+                  onClick={() => onAbrirChat(c.fullPath, c.name)}
+                  style={{ display: "flex", alignItems: "center", gap: 14, padding: 16, background: "#fff", border: "1px solid var(--border)", borderRadius: 12, cursor: "pointer", textAlign: "left", minWidth: 0 }}
+                >
+                  {tile(iniciales(c.name), n === 0, 38)}
+                  <span style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", gap: 3 }}>
+                    <span style={{ fontSize: 15, fontWeight: 600, color: "var(--ink-900)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{nombre}</span>
+                    <span style={{ fontFamily: mono, fontSize: 10.5, textTransform: "uppercase", color: "var(--slate-500)" }}>{cuandoAbierto(abierto)}</span>
+                  </span>
+                </button>
+              );
+            })}
           </div>
-          <button type="button" className="br-btn br-btn-primary br-btn-md" onClick={onSubir} style={{ flexShrink: 0 }}>
-            {t("Subir")}
-          </button>
-        </div>
+        ) : (
+          <div style={{ display: "flex", flexDirection: "column", gap: 2, marginTop: 24 }}>
+            <span style={{ ...etiqueta, fontSize: 11, paddingBottom: 6 }}>
+              {bloqueada ? enTexto(t("Tus chats · {{n}}", { n: chats.length })) : t("Recientes")}
+            </span>
+            {(bloqueada ? recientes : recientes.slice(0, maxRecientes)).map(({ c }, n, lista) => {
+              const nombre = bloqueada ? t("Chat cifrado") : nombreDelContacto(c.name) || c.name;
+              return (
+                <button
+                  key={c.fullPath}
+                  type="button"
+                  disabled={bloqueada}
+                  onClick={() => { if (!bloqueada) onAbrirChat(c.fullPath, c.name); }}
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 12,
+                    width: "100%",
+                    padding: "10px 0",
+                    background: "transparent",
+                    border: "none",
+                    borderBottom: n < lista.length - 1 ? "1px solid var(--border)" : "none",
+                    cursor: bloqueada ? "default" : "pointer",
+                    textAlign: "left",
+                  }}
+                >
+                  {/* Candado en lugar de las iniciales con la bóveda cerrada:
+                      el nombre vive dentro del manifiesto cifrado. */}
+                  {tile(bloqueada ? candado(16) : iniciales(c.name), !bloqueada && n === 0)}
+                  <span style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", gap: 2 }}>
+                    <span style={{ fontSize: 15, fontWeight: 600, color: bloqueada ? "var(--slate-500)" : "var(--ink-900)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                      {nombre}
+                    </span>
+                    <span style={{ fontFamily: mono, fontSize: 10.5, color: bloqueada ? "var(--slate-400)" : "var(--slate-500)", textTransform: bloqueada ? "uppercase" : undefined, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                      {bloqueada ? t("Bloqueado") : c.name}
+                    </span>
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+        )
+      )}
+
+      {/* Soltar el .zip (8b), al pie. El botón sigue, porque no todo el
+          mundo arrastra y sin él no habría forma de subir con el teclado. */}
+      {ancho && hayChats && !buscando && !bloqueada && onSoltarArchivos && (
+        <>
+          <div style={{ flex: 1, minHeight: 40 }} />
+          <div
+            onDragOver={(e) => { e.preventDefault(); setEncima(true); }}
+            onDragLeave={() => setEncima(false)}
+            onDrop={(e) => {
+              e.preventDefault();
+              setEncima(false);
+              if (e.dataTransfer?.files?.length) onSoltarArchivos(e.dataTransfer.files);
+            }}
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 20,
+              padding: "16px 20px",
+              borderRadius: 12,
+              border: `1px ${encima ? "dashed var(--brass-500)" : "solid var(--border)"}`,
+              background: "var(--paper-100)",
+            }}
+          >
+            <img src="/redesign/upload-a-chat.svg" alt="" style={{ width: 92, height: "auto", flexShrink: 0 }} />
+            <div style={{ minWidth: 0, flex: 1, display: "flex", flexDirection: "column", gap: 4 }}>
+              <span style={{ fontSize: 15, fontWeight: 600, color: "var(--ink-900)" }}>
+                {encima ? t("Suelta el archivo para subirlo") : t("Sube otro chat")}
+              </span>
+              <span style={{ fontSize: 13.5, color: "var(--slate-700)" }}>
+                {t("Arrastra un .zip aquí o elige desde Google Drive o Archivos.")}
+              </span>
+            </div>
+            <button type="button" className="br-btn br-btn-primary br-btn-md" onClick={onSubir} style={{ flexShrink: 0 }}>
+              {t("Subir")}
+            </button>
+          </div>
+        </>
       )}
 
       {!hayChats && (
@@ -288,6 +458,15 @@ export const InicioChats: FC<{
             </p>
           )}
 
+          {/* Ilustración de subir y «Empieza aquí» (5c). La lámina dice lo
+              que hay que hacer antes de leer nada; la etiqueta marca que esta
+              es la única acción de la pantalla. */}
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: 140, borderRadius: 12, background: "var(--paper-100)", margin: "0 0 20px" }}>
+            <img src="/redesign/upload-a-chat.svg" alt="" style={{ display: "block", width: 160, height: "auto" }} />
+          </div>
+          <p style={{ ...etiqueta, color: "var(--brass-600)", margin: "0 0 8px" }}>
+            {t("Empieza aquí")}
+          </p>
           <h2
             style={{
               fontFamily: "var(--font-serif)",
@@ -311,7 +490,7 @@ export const InicioChats: FC<{
             {t("Primero expórtalo desde WhatsApp. Toma menos de un minuto.")}
           </p>
 
-          <ol style={{ listStyle: "none", margin: "0 0 24px", padding: 0 }}>
+          <ol style={{ listStyle: "none", margin: "0 0 24px", padding: 0, background: "#fff", border: "1px solid var(--border)", borderRadius: 10, overflow: "hidden" }}>
             {[
               t("Abre el chat en WhatsApp."),
               t("Toca el nombre → Exportar chat → Adjuntar archivos."),
@@ -319,7 +498,7 @@ export const InicioChats: FC<{
             ].map((paso, i) => (
               <li
                 key={i}
-                style={{ display: "flex", gap: 12, marginBottom: 12, alignItems: "flex-start" }}
+                style={{ display: "flex", gap: 12, padding: "12px 14px", alignItems: "flex-start", borderTop: i > 0 ? "1px solid var(--border)" : "none" }}
               >
                 <span
                   style={{
@@ -333,119 +512,24 @@ export const InicioChats: FC<{
                 >
                   {String(i + 1).padStart(2, "0")}
                 </span>
-                <span style={{ fontFamily: "var(--font-sans)", fontSize: 15, color: "var(--slate-700)", lineHeight: 1.45 }}>
+                <span style={{ fontFamily: "var(--font-sans)", fontSize: 14, color: "var(--ink-900)", lineHeight: 1.45 }}>
                   {paso}
                 </span>
               </li>
             ))}
           </ol>
 
-          <button className="br-btn br-btn-primary br-btn-lg br-btn-block" onClick={onSubir}>
-            {t("Subir un chat")}
-          </button>
-          <p style={{ ...etiqueta, margin: "10px 0 0", textAlign: "center" }}>
-            {t("Archivo .zip · Google Drive o Archivos")}
-          </p>
-        </div>
-      )}
-
-      {hayChats && !consulta.trim() && (
-        <div style={{ marginTop: 30 }}>
-          <span style={etiqueta}>{t("Recientes")}</span>
-          <div style={{ marginTop: 10, display: "flex", flexDirection: "column", gap: 8 }}>
-            {chats.slice(0, maxRecientes).map((c) => {
-              const nombre = nombreDelContacto(c.name) || c.name;
-              return (
-                <button
-                  key={c.fullPath}
-                  type="button"
-                  disabled={bloqueada}
-                  onClick={() => { if (!bloqueada) onAbrirChat(c.fullPath, c.name); }}
-                  style={{
-                    opacity: bloqueada ? 0.6 : 1,
-                    display: "flex",
-                    alignItems: "center",
-                    gap: 12,
-                    width: "100%",
-                    minHeight: 58,
-                    padding: "0 14px",
-                    borderRadius: 10,
-                    border: "1px solid var(--border)",
-                    background: "var(--surface-raised)",
-                    cursor: "pointer",
-                    textAlign: "left",
-                  }}
-                >
-                  <span
-                    style={{
-                      flexShrink: 0,
-                      width: 36,
-                      height: 36,
-                      display: "inline-flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      borderRadius: 999,
-                      background: "var(--paper-100)",
-                      border: "1px solid var(--border)",
-                      fontFamily: mono,
-                      fontSize: 12,
-                      letterSpacing: "0.04em",
-                      color: "var(--brass-600)",
-                    }}
-                  >
-                    {bloqueada ? (
-                      /* Candado en lugar de las iniciales: con la bóveda
-                         cerrada el nombre del contacto vive dentro del
-                         manifiesto cifrado, así que unas iniciales aquí
-                         serían inventadas. */
-                      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
-                        <rect x="3" y="11" width="18" height="11" rx="2" />
-                        <path d="M7 11V7a5 5 0 0 1 10 0v4" />
-                      </svg>
-                    ) : (
-                      iniciales(c.name)
-                    )}
-                  </span>
-                  <span style={{ minWidth: 0, flex: 1 }}>
-                    <span
-                      style={{
-                        display: "block",
-                        fontFamily: "var(--font-sans)",
-                        fontSize: 15,
-                        fontWeight: 600,
-                        color: "var(--ink-900)",
-                        overflow: "hidden",
-                        textOverflow: "ellipsis",
-                        whiteSpace: "nowrap",
-                      }}
-                    >
-                      {nombre}
-                    </span>
-                    {/* La fecha de guardado, no el nombre del archivo: el .zip
-                        se llama igual en todos y no distingue una fila de otra. */}
-                    <span
-                      style={{
-                        display: "block",
-                        fontFamily: mono,
-                        fontSize: 11,
-                        color: "var(--slate-500)",
-                        overflow: "hidden",
-                        textOverflow: "ellipsis",
-                        whiteSpace: "nowrap",
-                      }}
-                    >
-                      {partirTitulo(c.name).fecha || t("Guardado")}
-                    </span>
-                  </span>
-                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--brass-600)" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
-                    <path d="M9 6l6 6-6 6" />
-                  </svg>
-                </button>
-              );
-            })}
+          <div className="br-movil-abajo">
+            <button className="br-btn br-btn-primary br-btn-lg br-btn-block" onClick={onSubir}>
+              {t("Subir un chat")}
+            </button>
+            <p style={{ ...etiqueta, margin: "10px 0 0", textAlign: "center" }}>
+              {t("Archivo .zip · Google Drive o Archivos")}
+            </p>
           </div>
         </div>
       )}
+
     </div>
   );
 };

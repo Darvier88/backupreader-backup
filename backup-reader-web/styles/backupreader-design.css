@@ -547,15 +547,16 @@ body {
 .br-paso {
   position: fixed; inset: 0; z-index: 1200; overflow-y: auto;
   display: flex; flex-direction: column;
-  background: var(--ink-950, #0B1220);
+  background: var(--ink-900);
   --paso-texto: var(--paper-50);
   --paso-apagado: rgba(255,255,255,0.72);
   --paso-tenue: rgba(255,255,255,0.55);
   --paso-borde: rgba(255,255,255,0.22);
-  --paso-campo: rgba(255,255,255,0.06);
+  --paso-campo: #fff;
+  --paso-codigo: rgba(255,255,255,0.06);
   --paso-aviso: var(--aviso-sobre-oscuro);
-  --paso-accion: var(--brass-400);
-  --paso-accion-texto: var(--ink-950, #0B1220);
+  --paso-accion: var(--brass-500);
+  --paso-accion-texto: var(--paper-50);
 }
 .br-paso-aside { display: none; }
 .br-paso-main { flex: 1; display: flex; flex-direction: column; padding: 24px 20px; }
@@ -575,8 +576,149 @@ body {
     --paso-tenue: var(--slate-500);
     --paso-borde: var(--border);
     --paso-campo: var(--surface);
+    --paso-codigo: var(--paper-100);
     --paso-aviso: var(--aviso-texto);
-    --paso-accion: var(--ink-900);
+    --paso-accion: var(--brass-500);
     --paso-accion-texto: var(--paper-50);
   }
 }
+
+
+/* ---------------------------------------------------------------------------
+   Botón del panel de chats en la cabecera móvil (1a).
+   Sustituye a la píldora «< Chats» que iba en una fila aparte. En tinta, y
+   con 44px de área táctil aunque el dibujo sea de 20.
+   --------------------------------------------------------------------------- */
+.br-boton-panel {
+  width: 44px; height: 44px; flex-shrink: 0;
+  display: inline-flex; align-items: center; justify-content: center;
+  margin-left: -10px;
+  border: none; border-radius: var(--radius-md);
+  background: transparent; color: var(--ink-900); cursor: pointer;
+}
+.br-boton-panel:hover { background: var(--paper-100); }
+.br-boton-panel:focus-visible { outline: 2px solid var(--brass-500); outline-offset: 2px; }
+
+/* Enlaces de texto al pie del panel lateral de escritorio (8b). */
+.br-enlace-panel {
+  min-height: 36px; padding: 0 8px;
+  background: transparent; border: none; border-radius: var(--radius-sm);
+  cursor: pointer;
+  font-family: var(--font-sans); font-size: 13.5px; color: var(--slate-700);
+}
+.br-enlace-panel:hover { background: var(--paper-100); color: var(--ink-900); }
+
+/* Versiones en línea de br-solo-movil / br-solo-escritorio, para cambiar una
+   palabra dentro de un párrafo (5a «teléfono» / 7d «dispositivo»). */
+.br-solo-escritorio-inline { display: inline; }
+.br-solo-movil-inline { display: none; }
+@media (max-width: 720px) {
+  .br-solo-escritorio-inline { display: none; }
+  .br-solo-movil-inline { display: inline; }
+}
+
+
+/* ---------------------------------------------------------------------------
+   Pantallas de pasos (4–9), segunda pasada contra el diseño.
+   --------------------------------------------------------------------------- */
+
+/* Color de «Las claves coinciden»: brass-300 sobre tinta, pine-600 sobre
+   papel. Antes era brass-300 también en escritorio y casi no se veía. */
+.br-paso { --paso-ok: var(--brass-300); }
+@media (min-width: 900px) {
+  .br-paso-main { --paso-ok: var(--pine-600); }
+}
+
+/* Casilla con la marca en verde, 20px (5b, 7e, 8a). La casilla azul del
+   navegador no aparece en el diseño. */
+.br-casilla {
+  width: 20px; height: 20px; margin: 1px 0 0; flex-shrink: 0;
+  accent-color: var(--brass-500); cursor: pointer;
+}
+
+/* Acción abajo, al alcance del pulgar (4b, 4c, 5a, 5b, 5d, 5e, 6a, 6b).
+   En móvil la columna ocupa todo el alto y el bloque de acciones baja al
+   fondo con margin-top:auto. En escritorio queda pegado al contenido. */
+.br-paso-cuerpo { flex: 1; display: flex; flex-direction: column; width: 100%; max-width: 420px; margin: 0 auto; }
+.br-paso-acciones { display: flex; flex-direction: column; gap: 12px; }
+@media (max-width: 899px) {
+  .br-paso-cuerpo { justify-content: flex-start; padding-top: 32px; }
+  .br-paso-acciones { margin-top: auto; padding-top: 24px; }
+}
+@media (min-width: 900px) {
+  .br-paso-cuerpo { justify-content: center; }
+}
+
+/* Lo mismo para las pantallas de papel (entrar, recuperar, plan). */
+@media (max-width: 720px) {
+  .br-movil-alto {
+    min-height: calc(100dvh - 64px);
+    display: flex; flex-direction: column;
+  }
+  .br-movil-alto .br-split-inner { flex: 1; display: flex; flex-direction: column; width: 100%; }
+  .br-movil-abajo { margin-top: auto; padding-top: 24px; }
+}
+
+/* Cabecera de paso en móvil: flecha y «Paso x de y» (4b, 5b, 5d, 5e). */
+.br-cabecera-paso {
+  display: flex; align-items: center; justify-content: space-between;
+  min-height: 44px; margin-bottom: 8px;
+}
+.br-cabecera-paso .br-paso-etiqueta {
+  font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.14em;
+  text-transform: uppercase; color: var(--slate-500);
+}
+@media (min-width: 721px) {
+  .br-movil-abajo { margin-top: 28px; }
+}
+
+/* Botones del diálogo de borrar (9b móvil, 9c escritorio). */
+.br-borrado-acciones {
+  display: flex; justify-content: flex-end; gap: 10px;
+  padding: 18px 20px 20px;
+}
+@media (max-width: 720px) {
+  .br-borrado-acciones { flex-direction: column-reverse; gap: 6px; padding-bottom: 28px; }
+  .br-borrado-acciones .br-btn { width: 100%; min-height: 50px; }
+}
+
+/* Mostrar solo en un tamaño, con el corte de las pantallas de paso (900px),
+   que es donde .br-paso pasa a dos columnas. */
+.br-paso-solo-escritorio, .br-paso-solo-escritorio-inline { display: none; }
+@media (min-width: 900px) {
+  .br-paso-solo-movil, .br-paso-solo-movil-inline { display: none !important; }
+  .br-paso-solo-escritorio { display: block; }
+  .br-paso-solo-escritorio-inline { display: inline; }
+}
+
+@media (min-width: 900px) {
+  .br-paso-main { --paso-caja: var(--surface-raised); }
+  .br-paso-acciones { margin-top: 22px; }
+}
+
+@media (min-width: 900px) {
+  .br-olvide { margin-right: 0 !important; margin-left: auto !important; }
+}
+
+/* Campo con foco en las pantallas de paso: borde verde y anillo (5a, 8a). */
+.br-paso input[type="password"]:focus,
+.br-paso input[type="text"]:focus {
+  outline: none; border-color: var(--brass-400) !important; box-shadow: var(--focus-ring);
+}
+
+.br-solo-movil-flex { display: none; }
+@media (max-width: 720px) {
+  .br-solo-movil-flex { display: flex; }
+}
+
+/* Etiqueta en mono sobre el título (7a «Tus chats, cifrados»). */
+.br-eyebrow {
+  display: block; margin: 0 0 10px;
+  font-family: var(--font-mono); font-size: 10.5px; letter-spacing: 0.14em;
+  text-transform: uppercase; color: var(--brass-600);
+}
+
+/* Fundido de 360ms al cambiar de lámina (7a). */
+.br-lamina { animation: br-fundido 360ms ease; }
+@keyframes br-fundido { from { opacity: 0; } to { opacity: 1; } }
+@media (prefers-reduced-motion: reduce) { .br-lamina { animation: none; } }

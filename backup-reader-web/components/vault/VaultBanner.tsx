@@ -74,7 +74,7 @@ export const VaultBanner: React.FC = () => {
         ),
         boton: t("Activar cifrado"),
         modal: <VaultRegisterModal />,
-        fondo: "#F4F6FA",
+        fondo: "var(--paper-100)",
         borde: "var(--ink-900)",
       }
     : {
@@ -84,8 +84,8 @@ export const VaultBanner: React.FC = () => {
         ),
         boton: t("Desbloquear"),
         modal: <VaultUnlockModal />,
-        fondo: "#FFF6E5",
-        borde: "#D98B00",
+        fondo: "var(--paper-100)",
+        borde: "var(--brass-500)",
       };
 
   return (
@@ -105,13 +105,13 @@ export const VaultBanner: React.FC = () => {
     >
       <Box sx={{ minWidth: 0, flex: "1 1 260px" }}>
         <Typography
-          fontFamily={"PT Serif"}
+          fontFamily={"var(--font-serif)"}
           fontSize={17}
-          style={{ color: "#1F2933", marginBottom: 4 }}
+          style={{ color: "var(--ink-900)", marginBottom: 4 }}
         >
           {contenido.titulo}
         </Typography>
-        <Typography fontFamily={"Open Sans"} fontSize={14.5} style={{ color: "#3B4652" }}>
+        <Typography fontFamily={"var(--font-sans)"} fontSize={14.5} style={{ color: "var(--slate-700)" }}>
           {contenido.texto}
         </Typography>
       </Box>

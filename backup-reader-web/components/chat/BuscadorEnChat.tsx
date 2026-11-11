@@ -31,12 +31,18 @@ export const BuscadorEnChat: FC<{
   /** En cuál está el usuario, empezando en 0. */
   activa: number;
   onActiva: (indice: number) => void;
-}> = ({ consulta, onConsulta, total, activa, onActiva }) => {
+  /** Avisa cuando la búsqueda toma la cabecera (1c), para ocultar el resto. */
+  onAbierto?: (abierto: boolean) => void;
+}> = ({ consulta, onConsulta, total, activa, onActiva, onAbierto }) => {
   const { t } = useTranslation();
   const [enfocado, setEnfocado] = useState(false);
   const campoRef = useRef<HTMLInputElement>(null);
 
   const abierto = enfocado || consulta.length > 0;
+  useEffect(() => {
+    onAbierto?.(abierto);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [abierto]);
 
   const saltar = (paso: number) => {
     if (total === 0) return;
@@ -90,34 +96,70 @@ export const BuscadorEnChat: FC<{
   return (
     <div style={{ width: "100%" }}>
       <div style={{ display: "flex", alignItems: "center", gap: 8, width: "100%" }}>
-        <input
-          ref={campoRef}
-          value={consulta}
-          onChange={(e) => onConsulta(e.target.value)}
-          onFocus={() => setEnfocado(true)}
-          onKeyDown={(e) => {
-            if (e.key === "Escape") cancelar();
-            /* Enter salta a la siguiente, como en el buscador del navegador.
-               Sin esto, Enter en un formulario puede enviar o no hacer nada. */
-            if (e.key === "Enter") {
-              e.preventDefault();
-              saltar(e.shiftKey ? -1 : 1);
-            }
-          }}
-          placeholder={enTexto(t("Buscar en este chat"))}
+        {/* Campo con lupa y, al escribir, una ✕ para vaciar (1a/1c). */}
+        <div
           style={{
             flex: 1,
             minWidth: 0,
             height: 44,
-            padding: "0 12px",
-            borderRadius: 10,
-            border: "1px solid var(--border)",
-            background: "var(--surface)",
-            fontFamily: "var(--font-sans)",
-            fontSize: 15,
-            color: "var(--ink-900)",
+            display: "flex",
+            alignItems: "center",
+            gap: 10,
+            padding: "0 6px 0 14px",
+            background: "#fff",
+            border: abierto ? "1.5px solid var(--brass-500)" : "1.5px solid var(--border)",
+            boxShadow: abierto ? "var(--focus-ring)" : "none",
+            borderRadius: 8,
+            color: "var(--slate-400)",
           }}
-        />
+        >
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" aria-hidden="true" style={{ flexShrink: 0 }}>
+            <circle cx="11" cy="11" r="7" />
+            <path d="m20 20-3.5-3.5" />
+          </svg>
+          <input
+            ref={campoRef}
+            value={consulta}
+            onChange={(e) => onConsulta(e.target.value)}
+            onFocus={() => setEnfocado(true)}
+            onKeyDown={(e) => {
+              if (e.key === "Escape") cancelar();
+              /* Enter salta a la siguiente, como en el buscador del navegador. */
+              if (e.key === "Enter") {
+                e.preventDefault();
+                saltar(e.shiftKey ? -1 : 1);
+              }
+            }}
+            placeholder={enTexto(t("Buscar en este chat"))}
+            style={{
+              flex: 1,
+              minWidth: 0,
+              height: "100%",
+              padding: 0,
+              border: "none",
+              outline: "none",
+              background: "transparent",
+              fontFamily: "var(--font-sans)",
+              fontSize: 15,
+              color: "var(--ink-900)",
+            }}
+          />
+          {consulta.length > 0 && (
+            <button
+              type="button"
+              aria-label={enTexto(t("Borrar búsqueda"))}
+              onClick={() => {
+                onConsulta("");
+                campoRef.current?.focus();
+              }}
+              style={{ width: 32, height: 32, flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center", background: "transparent", border: "none", cursor: "pointer", color: "var(--slate-500)" }}
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
+                <path d="M18 6 6 18M6 6l12 12" />
+              </svg>
+            </button>
+          )}
+        </div>
 
         {abierto && (
           <button
@@ -125,13 +167,14 @@ export const BuscadorEnChat: FC<{
             onClick={cancelar}
             style={{
               height: 44,
-              padding: "0 4px",
+              padding: "0 6px",
               background: "transparent",
               border: "none",
               cursor: "pointer",
               fontFamily: "var(--font-sans)",
               fontSize: 15,
-              color: "var(--brass-600)",
+              fontWeight: 600,
+              color: "var(--ink-800)",
               whiteSpace: "nowrap",
             }}
           >
@@ -146,16 +189,21 @@ export const BuscadorEnChat: FC<{
             display: "flex",
             alignItems: "center",
             justifyContent: "space-between",
-            marginTop: 4,
+            height: 48,
+            marginTop: 8,
+            padding: "0 4px 0 12px",
+            background: "var(--paper-100)",
+            border: "1px solid var(--border)",
+            borderRadius: 8,
           }}
         >
           <span
             style={{
               fontFamily: "var(--font-mono)",
-              fontSize: 11,
-              letterSpacing: "0.12em",
+              fontSize: 12,
+              letterSpacing: "0.06em",
               textTransform: "uppercase",
-              color: "var(--slate-500)",
+              color: "var(--slate-700)",
             }}
           >
             {total === 0
@@ -170,7 +218,7 @@ export const BuscadorEnChat: FC<{
                 )}
           </span>
 
-          <div style={{ display: "flex", alignItems: "center" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 2 }}>
             {flecha(-1, enTexto(t("Resultado anterior")), "M18 15l-6-6-6 6")}
             {flecha(1, enTexto(t("Resultado siguiente")), "M6 9l6 6 6-6")}
           </div>
