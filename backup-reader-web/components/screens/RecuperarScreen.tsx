@@ -73,6 +73,21 @@ export const RecuperarScreen: FC = () => {
 
   return (
     <div className="br-root br-split">
+      {/* Columna izquierda (7f).
+          Una sola frase, y la que hace falta: quien no puede entrar en una
+          aplicación donde guarda sus conversaciones teme, antes que nada,
+          haberlas perdido. Decirlo aquí quita ese miedo mientras rellena el
+          formulario, no después. */}
+      <aside className="br-aside br-solo-escritorio" style={{ borderLeft: "none", borderRight: "1px solid var(--border)" }}>
+        <div className="br-aside-inner">
+          <div className="br-aside-item">
+            <img src="/redesign/information-will-always-be-yours.svg" alt="" />
+            <h2>{t("Tus chats siguen a salvo mientras recuperas el acceso.")}</h2>
+            <p>{t("Esta contraseña es la de tu cuenta. Tus chats están cifrados con otra, que no cambia aquí.")}</p>
+          </div>
+        </div>
+      </aside>
+
       <div className="br-split-main">
         <div className="br-split-inner" style={{ maxWidth: 420 }}>
           {!enviado ? (

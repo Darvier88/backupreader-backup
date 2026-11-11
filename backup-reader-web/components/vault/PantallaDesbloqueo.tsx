@@ -1,7 +1,9 @@
 import { FC, useContext, useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 
+import { StorageContext } from "../../context/StorageContext";
 import { VaultContext } from "../../context/VaultContext";
+import { ColumnaPasos } from "./ColumnaPasos";
 
 /**
  * Desbloquear los chats, como un paso de la entrada (pantalla 4c).
@@ -56,6 +58,11 @@ export function marcarOmitido(): void {
 export const PantallaDesbloqueo: FC<{ onOmitir: () => void }> = ({ onOmitir }) => {
   const { t } = useTranslation();
   const { unlock, unlockWithCode, errorMessage } = useContext(VaultContext);
+  /* Cuántos chats esperan cerrados. En la columna de tinta se enseñan como
+     filas con candado (8a): lo que tranquiliza no es la frase "tus chats
+     están cifrados", es verlos ahí. */
+  const { fileList } = useContext(StorageContext);
+  const cuantos = Math.min(fileList?.length ?? 0, 3);
 
   /* "Olvide mi contrasena" cambia ESTE campo a codigo de recuperacion, en vez
      de abrir otro formulario encima. Es el mismo gesto que ya hacia el modal
@@ -101,24 +108,45 @@ export const PantallaDesbloqueo: FC<{ onOmitir: () => void }> = ({ onOmitir }) =
   };
 
   return (
-    <div
-      style={{
-        position: "fixed",
-        inset: 0,
-        zIndex: 1200,
-        background: "var(--ink-950, #0B1220)",
-        display: "flex",
-        flexDirection: "column",
-        padding: "24px 20px",
-        overflowY: "auto",
-      }}
-    >
+    <div className="br-paso">
+      <ColumnaPasos
+        encabezado={enTexto(t("Hola de nuevo"))}
+        titulo={enTexto(t("Tus chats están cifrados en este dispositivo."))}
+      >
+        <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+          {Array.from({ length: cuantos }).map((_, i) => (
+            <div
+              key={i}
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 10,
+                padding: "12px 14px",
+                borderRadius: 10,
+                border: "1px solid rgba(255,255,255,0.18)",
+                background: "rgba(255,255,255,0.05)",
+              }}
+            >
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.6)" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
+                <rect x="3" y="11" width="18" height="11" rx="2" />
+                <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+              </svg>
+              <span style={{ fontFamily: "var(--font-sans)", fontSize: 14, color: "rgba(255,255,255,0.72)" }}>
+                {t("Chat cifrado")}
+              </span>
+            </div>
+          ))}
+        </div>
+      </ColumnaPasos>
+
+      <div className="br-paso-main">
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-        <span style={{ fontFamily: "var(--font-serif)", fontSize: 19, color: "var(--paper-50)" }}>
+        <span className="br-solo-movil" style={{ fontFamily: "var(--font-serif)", fontSize: 19, color: "var(--paso-texto)" }}>
           BackupReader
         </span>
-        {/* "Salir" y no una X: deja claro que se sale del paso, no que se
-            cierra una ventana por encima de algo. */}
+        {/* "Ahora no" y no una X (8a): deja claro que se sale del paso, no
+            que se cierra una ventana por encima de algo, y dice en qué queda
+            —no ahora, pero sigue pendiente—. Lleva al inicio bloqueado (4d). */}
         <button
           type="button"
           onClick={() => {
@@ -133,10 +161,11 @@ export const PantallaDesbloqueo: FC<{ onOmitir: () => void }> = ({ onOmitir }) =
             cursor: "pointer",
             fontFamily: "var(--font-sans)",
             fontSize: 15,
-            color: "rgba(255,255,255,0.7)",
+            marginLeft: "auto",
+            color: "var(--paso-tenue)",
           }}
         >
-          {t("Salir")}
+          {t("Ahora no")}
         </button>
       </div>
 
@@ -156,7 +185,7 @@ export const PantallaDesbloqueo: FC<{ onOmitir: () => void }> = ({ onOmitir }) =
             fontFamily: "var(--font-serif)",
             fontSize: 28,
             fontWeight: 500,
-            color: "var(--paper-50)",
+            color: "var(--paso-texto)",
             margin: "0 0 10px",
           }}
         >
@@ -167,7 +196,7 @@ export const PantallaDesbloqueo: FC<{ onOmitir: () => void }> = ({ onOmitir }) =
             fontFamily: "var(--font-sans)",
             fontSize: 15,
             lineHeight: 1.55,
-            color: "rgba(255,255,255,0.72)",
+            color: "var(--paso-apagado)",
             margin: "0 0 26px",
           }}
         >
@@ -183,7 +212,7 @@ export const PantallaDesbloqueo: FC<{ onOmitir: () => void }> = ({ onOmitir }) =
             fontSize: 11,
             letterSpacing: "0.12em",
             textTransform: "uppercase",
-            color: "rgba(255,255,255,0.6)",
+            color: "var(--paso-tenue)",
             marginBottom: 8,
           }}
         >
@@ -208,11 +237,11 @@ export const PantallaDesbloqueo: FC<{ onOmitir: () => void }> = ({ onOmitir }) =
               height: 52,
               padding: "0 52px 0 14px",
               borderRadius: 10,
-              border: fallo ? "1px solid var(--aviso-sobre-oscuro)" : "1px solid rgba(255,255,255,0.22)",
-              background: "rgba(255,255,255,0.06)",
+              border: `1px solid ${fallo ? "var(--paso-aviso)" : "var(--paso-borde)"}`,
+              background: "var(--paso-campo)",
               fontFamily: "var(--font-sans)",
               fontSize: 16,
-              color: "var(--paper-50)",
+              color: "var(--paso-texto)",
             }}
           />
           {/* Ver la contraseña en vez de pedir que se repita: repetirla a
@@ -231,7 +260,7 @@ export const PantallaDesbloqueo: FC<{ onOmitir: () => void }> = ({ onOmitir }) =
               background: "transparent",
               border: "none",
               cursor: "pointer",
-              color: "rgba(255,255,255,0.7)",
+              color: "var(--paso-apagado)",
             }}
           >
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
@@ -254,7 +283,7 @@ export const PantallaDesbloqueo: FC<{ onOmitir: () => void }> = ({ onOmitir }) =
           style={{
             fontFamily: "var(--font-sans)",
             fontSize: 13,
-            color: fallo ? "var(--aviso-sobre-oscuro)" : "rgba(255,255,255,0.55)",
+            color: fallo ? "var(--paso-aviso)" : "var(--paso-tenue)",
             margin: "8px 0 0",
           }}
         >
@@ -279,8 +308,8 @@ export const PantallaDesbloqueo: FC<{ onOmitir: () => void }> = ({ onOmitir }) =
             border: "none",
             cursor: !clave || probando ? "default" : "pointer",
             opacity: !clave || probando ? 0.5 : 1,
-            background: "var(--brass-400)",
-            color: "var(--ink-950, #0B1220)",
+            background: "var(--paso-accion)",
+            color: "var(--paso-accion-texto)",
             fontFamily: "var(--font-sans)",
             fontSize: 16,
             fontWeight: 600,
@@ -305,7 +334,7 @@ export const PantallaDesbloqueo: FC<{ onOmitir: () => void }> = ({ onOmitir }) =
             cursor: "pointer",
             fontFamily: "var(--font-sans)",
             fontSize: 14.5,
-            color: "rgba(255,255,255,0.75)",
+            color: "var(--paso-apagado)",
             textDecoration: "underline",
           }}
         >
@@ -313,6 +342,7 @@ export const PantallaDesbloqueo: FC<{ onOmitir: () => void }> = ({ onOmitir }) =
             ? t("Olvidé mi contraseña de cifrado")
             : t("Usar mi contraseña")}
         </button>
+      </div>
       </div>
     </div>
   );

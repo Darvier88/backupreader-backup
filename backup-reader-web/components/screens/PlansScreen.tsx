@@ -38,6 +38,31 @@ export const PlansScreen: FC = () => {
 
   return (
     <div className="br-root br-split">
+      {/* La columna de pasos va a la IZQUIERDA (7c).
+          El orden importa: primero cuántos pasos quedan y luego lo que hay
+          que hacer ahora. Al revés, se decide el plan sin saber que después
+          vienen dos pantallas más, que es justo donde la gente abandona.
+          En móvil se apila debajo, que es donde estorba menos. */}
+      <aside className="br-aside" style={{ borderLeft: "none", borderRight: "1px solid var(--border)" }}>
+        <div className="br-aside-inner">
+          {/* La columna de los tres pasos, la misma en 7c, 7d y 7e. En
+              escritorio sobra el sitio, y los nombres de cada paso anticipan
+              lo que va a pedirse despues de pagar. */}
+          {/* Solo escritorio. En movil ya esta la linea "Paso 1 de 3" sobre
+              el titulo, y `br-aside` se apila debajo en vez de desaparecer,
+              asi que sin esto se veian los dos indicadores a la vez. */}
+          <div className="br-solo-escritorio" style={{ marginBottom: 26 }}>
+            <PasosOnboarding actual={1} />
+          </div>
+          {asideItems(t).map((it, i) => (
+            <div key={i} className="br-aside-item">
+              <img src={it.img} alt="" />
+              <h2>{it.title}</h2>
+              <p>{it.text}</p>
+            </div>
+          ))}
+        </div>
+      </aside>
       {/* Columna del plan */}
       <div className="br-split-main">
         <div className="br-split-inner">
@@ -66,7 +91,7 @@ export const PlansScreen: FC = () => {
                 </div>
                 <div style={{ marginTop: 14, display: "flex", alignItems: "baseline", gap: 8 }}>
                   <span style={{ fontFamily: serif, fontWeight: 500, fontSize: 42, letterSpacing: "-0.02em", color: "var(--ink-900)" }}>${plan.details.price}</span>
-                  <span style={{ fontSize: 15, color: "var(--text-muted)" }}>/ {t("mes")}</span>
+                  <span style={{ fontSize: 15, color: "var(--text-muted)" }}>USD / {t("mes")}</span>
                 </div>
               </div>
               <ul style={{ margin: 0, padding: "22px 26px", listStyle: "none", display: "flex", flexDirection: "column", gap: 14 }}>
@@ -79,8 +104,12 @@ export const PlansScreen: FC = () => {
                 <li style={{ display: "flex", gap: 12, alignItems: "flex-start" }}><Check /><span style={{ fontSize: 15.5, lineHeight: 1.55, color: "var(--slate-700)" }}>{t("Cifrado con una clave que solo tú conoces")}</span></li>
               </ul>
               <div style={{ padding: "0 26px 26px" }}>
+                {/* El precio, en el botón.
+                    Está escrito arriba, pero el botón es lo que se pulsa, y
+                    repetir ahí lo que se va a cobrar es lo que evita el "no
+                    sabía que me cobraban". */}
                 <button className="br-btn br-btn-primary br-btn-lg br-btn-block" onClick={() => onHandlePlanSelected(plan.id)}>
-                  {t("Suscribirme")}
+                  {(t("Suscribirme · ${{precio}}/mes", { precio: plan.details.price }) as string) || "Suscribirme"}
                 </button>
               </div>
             </div>
@@ -89,32 +118,12 @@ export const PlansScreen: FC = () => {
           )}
 
           <p className="br-fineprint" style={{ marginTop: 24 }}>
-            {t("La facturación empieza hoy. Cancela desde tu cuenta cuando quieras; tus backups siguen siendo legibles hasta que termine el periodo.")}
+            {t("La facturación empieza hoy. Cancela desde tu cuenta cuando quieras; tus backups siguen siendo legibles hasta que termine el periodo.")}{" "}
+            {t("Pago seguro con tarjeta, Apple Pay o Google Pay.")}
           </p>
         </div>
       </div>
 
-      {/* Aside ilustrado */}
-      <aside className="br-aside">
-        <div className="br-aside-inner">
-          {/* La columna de los tres pasos, la misma en 7c, 7d y 7e. En
-              escritorio sobra el sitio, y los nombres de cada paso anticipan
-              lo que va a pedirse despues de pagar. */}
-          {/* Solo escritorio. En movil ya esta la linea "Paso 1 de 3" sobre
-              el titulo, y `br-aside` se apila debajo en vez de desaparecer,
-              asi que sin esto se veian los dos indicadores a la vez. */}
-          <div className="br-solo-escritorio" style={{ marginBottom: 26 }}>
-            <PasosOnboarding actual={1} />
-          </div>
-          {asideItems(t).map((it, i) => (
-            <div key={i} className="br-aside-item">
-              <img src={it.img} alt="" />
-              <h2>{it.title}</h2>
-              <p>{it.text}</p>
-            </div>
-          ))}
-        </div>
-      </aside>
     </div>
   );
 };

@@ -530,3 +530,53 @@ body {
     padding-bottom: env(safe-area-inset-bottom, 0px) !important;
   }
 }
+
+/* ---------------------------------------------------------------------------
+   Pasos de bóveda: desbloquear (4c / 8a) y crear la clave (5a-5c / 7d-7e).
+
+   Son el mismo momento en dos tamaños. En móvil la pantalla entera va en
+   tinta: es lo que marca que se está escribiendo algo distinto del resto de
+   la aplicación. En escritorio hay sitio para las dos cosas, así que la tinta
+   se queda en una columna —con los pasos que faltan, o con los chats que
+   siguen cerrados— y el formulario va sobre papel, que es donde se escribe
+   más cómodo.
+
+   El cambio de paleta se hace con variables y no duplicando el componente:
+   el formulario es el mismo, solo cambia sobre qué está puesto.
+   --------------------------------------------------------------------------- */
+.br-paso {
+  position: fixed; inset: 0; z-index: 1200; overflow-y: auto;
+  display: flex; flex-direction: column;
+  background: var(--ink-950, #0B1220);
+  --paso-texto: var(--paper-50);
+  --paso-apagado: rgba(255,255,255,0.72);
+  --paso-tenue: rgba(255,255,255,0.55);
+  --paso-borde: rgba(255,255,255,0.22);
+  --paso-campo: rgba(255,255,255,0.06);
+  --paso-aviso: var(--aviso-sobre-oscuro);
+  --paso-accion: var(--brass-400);
+  --paso-accion-texto: var(--ink-950, #0B1220);
+}
+.br-paso-aside { display: none; }
+.br-paso-main { flex: 1; display: flex; flex-direction: column; padding: 24px 20px; }
+
+@media (min-width: 900px) {
+  .br-paso { display: grid; grid-template-columns: minmax(300px, 400px) 1fr; }
+  .br-paso-aside {
+    display: flex; flex-direction: column;
+    padding: 32px clamp(24px, 3vw, 40px);
+    overflow-y: auto;
+  }
+  .br-paso-main {
+    background: var(--paper-50);
+    padding: 32px clamp(24px, 4vw, 56px);
+    --paso-texto: var(--ink-900);
+    --paso-apagado: var(--slate-700);
+    --paso-tenue: var(--slate-500);
+    --paso-borde: var(--border);
+    --paso-campo: var(--surface);
+    --paso-aviso: var(--aviso-texto);
+    --paso-accion: var(--ink-900);
+    --paso-accion-texto: var(--paper-50);
+  }
+}

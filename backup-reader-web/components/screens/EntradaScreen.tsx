@@ -343,7 +343,10 @@ export const EntradaScreen: FC = () => {
             <>
               <span className="br-eyebrow">{t("Paso 2 de 2")}</span>
               <h1 className="br-page-title">
-                {esNueva ? t("Crea tu cuenta") : t("Escribe tu contraseña")}
+                {/* "Hola de nuevo" y no "Escribe tu contraseña" (7b).
+                    Quien vuelve ya sabe que toca la contraseña, la tiene
+                    delante; lo que el titular puede hacer es reconocerle. */}
+                {esNueva ? t("Crea tu cuenta") : t("Hola de nuevo")}
               </h1>
               <p style={{ margin: "0 0 22px", fontSize: 15, color: "var(--slate-700)" }}>
                 {esNueva

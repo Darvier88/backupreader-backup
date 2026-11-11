@@ -2,6 +2,7 @@ import { FC, useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 
 import { useVault } from "../../context/VaultContext";
+import { ColumnaPasos } from "./ColumnaPasos";
 import { MedidorDeClave } from "./MedidorDeClave";
 import { medirFuerza, coinciden, MIN_LARGO } from "../../lib/fuerza-de-clave";
 
@@ -85,13 +86,16 @@ export function claveRecienCreada(): boolean {
   try { return sessionStorage.getItem(CLAVE_RECIEN) === "1"; } catch { return false; }
 }
 
+/* La paleta vive en CSS (`.br-paso` en backupreader-design.css) porque cambia
+   con el ancho: tinta en móvil, papel en la columna del formulario en
+   escritorio. Aquí solo se nombran las variables. */
 const paleta = {
-  fondo: "var(--ink-950, #0B1220)",
-  texto: "var(--paper-50)",
-  apagado: "rgba(255,255,255,0.72)",
-  tenue: "rgba(255,255,255,0.55)",
-  borde: "rgba(255,255,255,0.22)",
-  campo: "rgba(255,255,255,0.06)",
+  texto: "var(--paso-texto)",
+  apagado: "var(--paso-apagado)",
+  tenue: "var(--paso-tenue)",
+  borde: "var(--paso-borde)",
+  campo: "var(--paso-campo)",
+  aviso: "var(--paso-aviso)",
 };
 
 const campoBase: React.CSSProperties = {
@@ -112,7 +116,7 @@ const etiquetaBase: React.CSSProperties = {
   fontSize: 11,
   letterSpacing: "0.12em",
   textTransform: "uppercase",
-  color: "rgba(255,255,255,0.6)",
+  color: "var(--paso-tenue)",
   marginBottom: 8,
 };
 
@@ -124,8 +128,8 @@ const botonPrincipal = (activo: boolean): React.CSSProperties => ({
   border: "none",
   cursor: activo ? "pointer" : "default",
   opacity: activo ? 1 : 0.5,
-  background: "var(--brass-400)",
-  color: "var(--ink-950, #0B1220)",
+  background: "var(--paso-accion)",
+  color: "var(--paso-accion-texto)",
   fontFamily: "var(--font-sans)",
   fontSize: 16,
   fontWeight: 600,
@@ -219,24 +223,63 @@ export const PantallaCrearClave: FC<{ onListo?: () => void }> = ({ onListo }) =>
     </button>
   );
 
+  const pasos: Array<[string, string]> = [
+    [t("Crea tu clave de cifrado") as string, t("Solo tú la conoces.") as string],
+    [t("Confírmala") as string, t("Para asegurarnos de que la recuerdas.") as string],
+    [t("Guarda tu código") as string, t("Por si olvidas la clave.") as string],
+  ];
+
   return (
-    <div
-      style={{
-        position: "fixed",
-        inset: 0,
-        zIndex: 1200,
-        background: paleta.fondo,
-        display: "flex",
-        flexDirection: "column",
-        padding: "24px 20px",
-        overflowY: "auto",
-      }}
-    >
+    <div className="br-paso">
+      {/* En escritorio, la tinta se queda en esta columna y el formulario va
+          sobre papel (7d). En móvil el CSS la esconde y la pantalla entera es
+          de tinta, que es lo que marca el momento cuando no hay sitio para
+          dos columnas. */}
+      <ColumnaPasos encabezado={enTexto(t("Plan activo"))} titulo={enTexto(t("Ahora, tu clave."))}>
+        <ol style={{ listStyle: "none", margin: 0, padding: 0, display: "flex", flexDirection: "column", gap: 16 }}>
+          {pasos.map(([titulo, pie], i) => {
+            const hecho = i + 1 < paso;
+            const activo = i + 1 === paso;
+            return (
+              <li key={titulo} style={{ display: "flex", gap: 12, alignItems: "flex-start", opacity: activo || hecho ? 1 : 0.5 }}>
+                <span
+                  style={{
+                    flexShrink: 0,
+                    width: 26,
+                    height: 26,
+                    borderRadius: 999,
+                    display: "inline-flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    fontFamily: "var(--font-mono)",
+                    fontSize: 10.5,
+                    background: activo ? "var(--brass-500)" : "transparent",
+                    border: activo ? "none" : "1px solid rgba(255,255,255,0.3)",
+                    color: activo ? "var(--ink-950, #0B1220)" : "rgba(255,255,255,0.7)",
+                  }}
+                >
+                  {hecho ? "✓" : `0${i + 1}`}
+                </span>
+                <span style={{ minWidth: 0 }}>
+                  <span style={{ display: "block", fontFamily: "var(--font-sans)", fontSize: 14.5, fontWeight: 600, color: "var(--paper-50)" }}>
+                    {titulo}
+                  </span>
+                  <span style={{ display: "block", marginTop: 2, fontSize: 13, color: "rgba(255,255,255,0.6)" }}>
+                    {pie}
+                  </span>
+                </span>
+              </li>
+            );
+          })}
+        </ol>
+      </ColumnaPasos>
+
+      <div className="br-paso-main">
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-        <span style={{ fontFamily: "var(--font-serif)", fontSize: 19, color: paleta.texto }}>
+        <span className="br-solo-movil" style={{ fontFamily: "var(--font-serif)", fontSize: 19, color: paleta.texto }}>
           BackupReader
         </span>
-        <span style={{ fontFamily: "var(--font-mono)", fontSize: 10.5, letterSpacing: "0.14em", textTransform: "uppercase", color: paleta.tenue }}>
+        <span style={{ marginLeft: "auto", fontFamily: "var(--font-mono)", fontSize: 10.5, letterSpacing: "0.14em", textTransform: "uppercase", color: paleta.tenue }}>
           {enTexto(t("Paso {{n}} de 3", { n: paso }))}
         </span>
       </div>
@@ -274,12 +317,12 @@ export const PantallaCrearClave: FC<{ onListo?: () => void }> = ({ onListo }) =>
                 autoComplete="new-password"
                 onChange={(e) => { setClave(e.target.value); setAviso(""); }}
                 onKeyDown={(e) => { if (e.key === "Enter") continuar(); }}
-                style={{ ...campoBase, borderColor: aviso ? "var(--aviso-sobre-oscuro)" : paleta.borde }}
+                style={{ ...campoBase, borderColor: aviso ? paleta.aviso : paleta.borde }}
               />
               {ojo}
             </div>
             <MedidorDeClave clave={clave} />
-            <p style={{ fontFamily: "var(--font-sans)", fontSize: 13, color: aviso ? "var(--aviso-sobre-oscuro)" : paleta.tenue, margin: "8px 0 0" }}>
+            <p style={{ fontFamily: "var(--font-sans)", fontSize: 13, color: aviso ? paleta.aviso : paleta.tenue, margin: "8px 0 0" }}>
               {aviso || t("Si la olvidas, no podremos abrir tus chats. Guárdala en un lugar seguro.")}
             </p>
             <button type="button" onClick={continuar} disabled={!clave} style={botonPrincipal(!!clave)}>
@@ -302,7 +345,7 @@ export const PantallaCrearClave: FC<{ onListo?: () => void }> = ({ onListo }) =>
                 autoComplete="new-password"
                 onChange={(e) => { setRepetida(e.target.value); setAviso(""); }}
                 onKeyDown={(e) => { if (e.key === "Enter") crear(); }}
-                style={{ ...campoBase, borderColor: aviso ? "var(--aviso-sobre-oscuro)" : paleta.borde }}
+                style={{ ...campoBase, borderColor: aviso ? paleta.aviso : paleta.borde }}
               />
               {ojo}
             </div>
@@ -318,7 +361,7 @@ export const PantallaCrearClave: FC<{ onListo?: () => void }> = ({ onListo }) =>
                   fontSize: 10.5,
                   letterSpacing: "0.12em",
                   textTransform: "uppercase",
-                  color: igualan ? "var(--brass-300)" : "var(--aviso-sobre-oscuro)",
+                  color: igualan ? "var(--brass-300)" : paleta.aviso,
                 }}
               >
                 {igualan ? t("Las claves coinciden") : t("Las claves no coinciden")}
@@ -338,7 +381,7 @@ export const PantallaCrearClave: FC<{ onListo?: () => void }> = ({ onListo }) =>
             </label>
 
             {aviso && (
-              <p style={{ fontFamily: "var(--font-sans)", fontSize: 13, color: "var(--aviso-sobre-oscuro)", margin: "10px 0 0" }}>
+              <p style={{ fontFamily: "var(--font-sans)", fontSize: 13, color: paleta.aviso, margin: "10px 0 0" }}>
                 {aviso}
               </p>
             )}
@@ -443,6 +486,7 @@ export const PantallaCrearClave: FC<{ onListo?: () => void }> = ({ onListo }) =>
             </button>
           </>
         )}
+      </div>
       </div>
     </div>
   );

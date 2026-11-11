@@ -551,6 +551,25 @@ const resources = {
       "Guardando…": "Saving…",
       "Abrir app de correo": "Open mail app",
       "o con tarjeta": "or pay by card",
+      "Hola de nuevo": "Welcome back",
+      "Plan activo": "Plan active",
+      "Ahora, tu clave.": "Now, your key.",
+      "Solo tú la conoces.": "Only you know it.",
+      "Confírmala": "Confirm it",
+      "Para asegurarnos de que la recuerdas.": "So we know you remember it.",
+      "Guarda tu código": "Save your code",
+      "Por si olvidas la clave.": "In case you forget your key.",
+      "Tus chats están cifrados en este dispositivo.":
+        "Your chats are encrypted on this device.",
+      "Pago seguro con tarjeta, Apple Pay o Google Pay.":
+        "Secure payment by card, Apple Pay or Google Pay.",
+      "Esta contraseña es la de tu cuenta. Tus chats están cifrados con otra, que no cambia aquí.":
+        "This is your account password. Your chats are encrypted with a different one, which does not change here.",
+      "Tus chats siguen a salvo mientras recuperas el acceso.":
+        "Your chats stay safe while you get back in.",
+      "Suscribirme · ${{precio}}/mes": "Subscribe · ${{precio}}/mo",
+      "El cobro empieza hoy. Cancela desde tu cuenta cuando quieras. Pago seguro con tarjeta, Apple Pay o Google Pay.":
+        "Billing starts today. Cancel from your account any time. Secure payment by card, Apple Pay or Google Pay.",
       "Respalda tus chat de WhatsApp.":
         "Backup your Whatsapp Chats.",
       "Guarda y lee tus conversaciones de forma segura en la nube.":
