@@ -56,13 +56,21 @@ type Filtro = "todo" | "personas" | "mensajes";
 export const ResultadosGlobales = ({
   consulta,
   alAbrirChat,
+  anchoCompleto = false,
 }: {
   consulta: string;
   alAbrirChat: (handle: string, nombre: string) => void;
+  /** En escritorio hay sitio para dos columnas: mensajes y personas (8c). */
+  anchoCompleto?: boolean;
 }) => {
   const { t } = useTranslation();
   const { buscarEnTodos, fragmentosDeChat, estadoIndexado } = useContext(StorageContext);
-  const { irAMensaje } = usePanelChats();
+  const { irAMensaje, setPorChat } = usePanelChats();
+  /* Qué resultado está marcado para el teclado (8c): ↓ pasa al siguiente,
+     ↵ lo abre en el chat. `null` es "ninguno todavía", que es distinto de
+     "el primero": al escribir no se marca nada, para que ↵ no abra un chat
+     que el usuario aún no ha mirado. */
+  const [marcado, setMarcado] = useState<number | null>(null);
 
   const [resultados, setResultados] = useState<ResultadoEnChat[]>([]);
   const [sinIndexar, setSinIndexar] = useState(0);
@@ -79,6 +87,8 @@ export const ResultadosGlobales = ({
       setResultados([]);
       setSinIndexar(0);
       setFragmentos({});
+      setPorChat({});
+      setMarcado(null);
       return;
     }
 
@@ -91,6 +101,11 @@ export const ResultadosGlobales = ({
 
         setResultados(r.resultados);
         setSinIndexar(r.sinIndexar);
+        /* El panel lateral enseña estos números junto a cada chat (8c). */
+        setPorChat(
+          Object.fromEntries(r.resultados.map((x) => [x.backupId, x.total]))
+        );
+        setMarcado(null);
         setDesplegados({});
         setFragmentos({});
         setBuscando(false);
@@ -122,17 +137,52 @@ export const ResultadosGlobales = ({
   const aviso = avisoDeBusqueda(estadoIndexado);
   const hayQueAvisar = aviso.clave !== "completa" || sinIndexar > 0;
 
-  if (consulta.trim().length < 2) return null;
-
   const conPersonas = resultados.filter((r) => r.contactos.length > 0);
   const conMensajes = resultados.filter((r) => r.total > 0);
   const nPersonas = conPersonas.reduce((n, r) => n + r.contactos.length, 0);
   const nMensajes = conMensajes.reduce((n, r) => n + r.total, 0);
 
+  /* Los mensajes en el orden en que se ven, para que ↓ recorra lo mismo que
+     se lee. Se recalcula con los fragmentos porque hasta que no llegan no hay
+     nada que abrir. */
+  const navegables: Array<{ res: ResultadoEnChat; mensaje: number }> = [];
+  for (const res of conMensajes) {
+    const trozos = fragmentos[res.backupId];
+    if (!trozos) continue;
+    const vistos = desplegados[res.backupId] ? trozos : trozos.slice(0, POR_CHAT);
+    for (const f of vistos) navegables.push({ res, mensaje: f.mensaje });
+  }
+
   const abrirEnMensaje = (res: ResultadoEnChat, numero: number) => {
     irAMensaje({ consulta: consulta.trim(), mensaje: numero });
     alAbrirChat(handleDeBackup(res.backupId), res.nombre);
   };
+
+  useEffect(() => {
+    if (!anchoCompleto) return;
+    const alPulsar = (e: KeyboardEvent) => {
+      if (navegables.length === 0) return;
+      if (e.key === "ArrowDown") {
+        e.preventDefault();
+        setMarcado((m) => (m === null ? 0 : Math.min(m + 1, navegables.length - 1)));
+        return;
+      }
+      if (e.key === "ArrowUp") {
+        e.preventDefault();
+        setMarcado((m) => (m === null ? 0 : Math.max(m - 1, 0)));
+        return;
+      }
+      if (e.key === "Enter" && marcado !== null) {
+        /* Solo si hay algo marcado. Con ↵ a secas desde el campo de texto se
+           abriría el primer resultado sin que nadie lo haya elegido. */
+        e.preventDefault();
+        const elegido = navegables[marcado];
+        if (elegido) abrirEnMensaje(elegido.res, elegido.mensaje);
+      }
+    };
+    window.addEventListener("keydown", alPulsar);
+    return () => window.removeEventListener("keydown", alPulsar);
+  });
 
   const avatar = (nombre: string) => (
     <span
@@ -181,6 +231,11 @@ export const ResultadosGlobales = ({
     );
   };
 
+  /* La salida temprana va aquí y no arriba: por encima hay un `useEffect`
+     (los atajos de teclado) y un hook que a veces no se ejecuta deja de ser
+     un hook. */
+  if (consulta.trim().length < 2) return null;
+
   return (
     <div style={{ marginTop: 12 }}>
       {hayQueAvisar && (
@@ -226,7 +281,19 @@ export const ResultadosGlobales = ({
               )}
           </div>
 
-          {(filtro === "todo" || filtro === "personas") && nPersonas > 0 && (
+          {/* Dos columnas en escritorio: los mensajes son lo que se lee y
+              ocupan el ancho; las personas son una lista corta de nombres y
+              debajo de los mensajes quedaban fuera de pantalla justo cuando
+              hay muchas coincidencias, que es cuando más falta hacen (8c). */}
+          <div
+            style={
+              anchoCompleto
+                ? { display: "grid", gridTemplateColumns: "minmax(0, 1fr) minmax(200px, 280px)", gap: 28, alignItems: "start" }
+                : undefined
+            }
+          >
+          <div style={{ minWidth: 0, order: anchoCompleto ? 1 : undefined }}>
+          {(filtro === "todo" || filtro === "personas") && nPersonas > 0 && anchoCompleto === false && (
             <div style={{ marginBottom: 18 }}>
               <p style={etiqueta}>{enTexto(t("Personas"))}</p>
               <div style={{ marginTop: 8, display: "flex", flexDirection: "column", gap: 8 }}>
@@ -294,12 +361,24 @@ export const ResultadosGlobales = ({
                       )}
 
                       <div style={{ display: "flex", flexDirection: "column", gap: 6, paddingLeft: 44 }}>
-                        {aEnsenar.map((f) => (
+                        {aEnsenar.map((f) => {
+                          const indice = navegables.findIndex(
+                            (n) => n.res.backupId === res.backupId && n.mensaje === f.mensaje
+                          );
+                          const activo = marcado !== null && indice === marcado;
+                          return (
                           <button
                             key={f.mensaje}
                             type="button"
+                            ref={(el) => { if (activo && el) el.scrollIntoView({ block: "nearest" }); }}
                             onClick={() => abrirEnMensaje(res, f.mensaje)}
-                            style={{ ...filaBase, alignItems: "flex-start", padding: "10px 12px" }}
+                            style={{
+                              ...filaBase,
+                              alignItems: "flex-start",
+                              padding: "10px 12px",
+                              borderColor: activo ? "var(--brass-500)" : "var(--border)",
+                              boxShadow: activo ? "var(--shadow-card)" : "none",
+                            }}
                           >
                             <span style={{ minWidth: 0, flex: 1 }}>
                               <span
@@ -321,7 +400,8 @@ export const ResultadosGlobales = ({
                               </span>
                             </span>
                           </button>
-                        ))}
+                          );
+                        })}
                       </div>
 
                       {restantes > 0 && (
@@ -350,6 +430,74 @@ export const ResultadosGlobales = ({
               </div>
             </div>
           )}
+          </div>
+
+          {/* La columna derecha sale siempre que haya resultados, aunque no
+              haya ninguna persona: los atajos son del buscador, no de las
+              personas, y antes desaparecían en cuanto se buscaba una palabra
+              que no era un nombre, que es el caso normal. */}
+          {anchoCompleto && (
+            <div style={{ minWidth: 0, order: 2 }}>
+              {(filtro === "todo" || filtro === "personas") && nPersonas > 0 && (
+              <>
+              <p style={etiqueta}>{enTexto(t("Personas"))}</p>
+              <div style={{ marginTop: 8, display: "flex", flexDirection: "column", gap: 8 }}>
+                {conPersonas.map((res) =>
+                  res.contactos.map((persona) => (
+                    <button
+                      key={`${res.backupId}-${persona}`}
+                      type="button"
+                      onClick={() => alAbrirChat(handleDeBackup(res.backupId), res.nombre)}
+                      style={{ ...filaBase, alignItems: "flex-start" }}
+                    >
+                      {avatar(persona)}
+                      <span style={{ minWidth: 0, flex: 1 }}>
+                        <span style={nombreFila}>
+                          <TextoResaltado texto={persona} consulta={consulta} />
+                        </span>
+                        <span style={{ ...etiqueta, display: "block", marginTop: 2 }}>
+                          {enTexto(t("Mencionado en {{chat}}", { chat: nombreDelContacto(res.nombre) || res.nombre }))}
+                        </span>
+                      </span>
+                    </button>
+                  ))
+                )}
+              </div>
+              </>
+              )}
+
+              {/* Los atajos, escritos. Un atajo que no se anuncia no lo usa
+                  nadie, y aquí hay sitio de sobra para decirlo. */}
+              <div style={{ marginTop: 22, borderTop: "1px solid var(--border)", paddingTop: 14 }}>
+                <p style={etiqueta}>{enTexto(t("Atajos"))}</p>
+                <div style={{ marginTop: 8, display: "flex", flexDirection: "column", gap: 8 }}>
+                  {[
+                    [enTexto(t("Siguiente resultado")), "↓"],
+                    [enTexto(t("Abrir en el chat")), "↵"],
+                    [enTexto(t("Cerrar búsqueda")), "ESC"],
+                  ].map(([que, tecla]) => (
+                    <div key={tecla} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10 }}>
+                      <span style={{ fontSize: 13.5, color: "var(--slate-700)" }}>{que}</span>
+                      <kbd
+                        style={{
+                          fontFamily: mono,
+                          fontSize: 11,
+                          padding: "3px 8px",
+                          borderRadius: 6,
+                          border: "1px solid var(--border)",
+                          background: "var(--paper-100)",
+                          color: "var(--slate-700)",
+                        }}
+                      >
+                        {tecla}
+                      </kbd>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
+          </div>
         </>
       )}
     </div>

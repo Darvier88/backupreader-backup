@@ -80,7 +80,7 @@ const styles = {
 
 export const DashboardScreen: FC = () => {
   const [chatSearch, setChatSearch] = useState<string>("");
-  const { getFile, chat, chatName, uploadStatus } = useContext(StorageContext);
+  const { getFile, chat, chatName, uploadStatus, cerrarChat } = useContext(StorageContext);
   const { loading } = useLoading();
   const [toShow, setToShow] = useState<"photos" | "message">("message");
   const [state, setState] = useState<boolean>(true);
@@ -270,6 +270,26 @@ export const DashboardScreen: FC = () => {
     return username;
   }
  
+
+  /* ⌘K con un chat abierto.
+     El buscador general vive en el inicio (8b), así que desde un chat no hay
+     ningún campo que enfocar. En vez de no hacer nada —y dejar al usuario
+     pulsando un atajo que la aplicación ignora— se cierra el chat, que es lo
+     que deja el buscador delante. */
+  useEffect(() => {
+    if (!chat) return;
+    const alPulsar = (e: KeyboardEvent) => {
+      const el = e.target as HTMLElement | null;
+      const escribiendo =
+        !!el && (el.tagName === "INPUT" || el.tagName === "TEXTAREA" || el.isContentEditable);
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k" && !escribiendo) {
+        e.preventDefault();
+        cerrarChat();
+      }
+    };
+    window.addEventListener("keydown", alPulsar);
+    return () => window.removeEventListener("keydown", alPulsar);
+  }, [chat]);
 
   return (
     <Grid.Container style={{ minHeight: "100vh", background: "var(--paper-50)", maxWidth: 1360, margin: "0 auto", width: "100%" }}>

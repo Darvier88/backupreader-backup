@@ -1,7 +1,8 @@
-import { FC } from "react";
+import { FC, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 
 import { iniciales, nombreDelContacto, partirTitulo } from "../../lib/nombres-de-chat";
+import { useAtajoDeBusqueda } from "../../hooks/useAtajoDeBusqueda";
 
 /**
  * La pantalla de inicio (2a con chats, 2b sin ninguno).
@@ -83,19 +84,28 @@ export const InicioChats: FC<{
   reciénCreada?: boolean;
   /** La bóveda está cerrada: los chats existen pero no se pueden leer (4d). */
   bloqueada?: boolean;
+  /** Escritorio: más ancho y con zona para soltar el .zip (8b). */
+  ancho?: boolean;
+  /** Lo que se suelta encima de la zona de arrastre. */
+  onSoltarArchivos?: (archivos: FileList) => void;
   /** Abre el paso de desbloqueo. Solo se usa si `bloqueada`. */
   onDesbloquear?: () => void;
-}> = ({ chats, onVerMisChats, onSubir, onAbrirChat, consulta, onConsulta, resultados, maxRecientes = 4, reciénCreada = false, bloqueada = false, onDesbloquear }) => {
+}> = ({ chats, onVerMisChats, onSubir, onAbrirChat, consulta, onConsulta, resultados, maxRecientes = 4, reciénCreada = false, bloqueada = false, onDesbloquear, ancho = false, onSoltarArchivos }) => {
   const { t } = useTranslation();
   const hayChats = chats.length > 0;
+  const [encima, setEncima] = useState(false);
+  /* ⌘K trae el cursor aquí. El atajo ya existía cuando el buscador vivía en
+     el panel lateral; se muda con él. */
+  const campo = useRef<HTMLInputElement>(null);
+  useAtajoDeBusqueda(campo);
 
   return (
     <div
       style={{
         width: "100%",
-        maxWidth: 520,
+        maxWidth: ancho ? 760 : 520,
         margin: "0 auto",
-        padding: "28px 18px 40px",
+        padding: ancho ? "40px 24px 56px" : "28px 18px 40px",
       }}
     >
       {/* Bóveda cerrada (4d).
@@ -154,9 +164,19 @@ export const InicioChats: FC<{
               vez de dejarlo escribir y contestar «sin resultados», que haría
               creer que esos mensajes no existen. */}
           <input
+            ref={campo}
             value={consulta}
             disabled={bloqueada}
             onChange={(e) => onConsulta(e.target.value)}
+            onKeyDown={(e) => {
+              /* Escape vacía el campo antes de soltarlo: dejarlo con texto y
+                 sin foco deja los resultados tapando el inicio, que es lo
+                 contrario de lo que pide Escape. */
+              if (e.key === "Escape" && consulta) {
+                e.preventDefault();
+                onConsulta("");
+              }
+            }}
             placeholder={enTexto(
               bloqueada ? t("Desbloquea para buscar") : t("Personas o mensajes")
             )}
@@ -187,7 +207,12 @@ export const InicioChats: FC<{
           compactas: con el buscador arriba, un titular de dos lineas y un
           boton a todo ancho empujan los recientes fuera de la pantalla, y los
           recientes son lo que de verdad se pulsa. */}
-      {hayChats && !consulta.trim() && (
+      {/* Las dos tarjetas son de móvil.
+          En escritorio el panel de chats está siempre a la vista, así que
+          "Ver mis chats" no lleva a ninguna parte, y subir ya tiene la zona
+          de arrastre de abajo y el "Agregar chat" del panel. Tres sitios para
+          lo mismo en la misma pantalla no es tenerlo a mano, es ruido. */}
+      {hayChats && !consulta.trim() && !ancho && (
         <div style={{ display: "flex", gap: 10 }}>
           <button onClick={onVerMisChats} style={tarjetaAccion}>
             <span style={tituloAccion}>{t("Ver mis chats")}</span>
@@ -198,6 +223,46 @@ export const InicioChats: FC<{
           <button onClick={onSubir} style={tarjetaAccion}>
             <span style={tituloAccion}>{t("Subir un chat")}</span>
             <span style={{ ...etiqueta, marginTop: 4 }}>{t("Archivo .zip")}</span>
+          </button>
+        </div>
+      )}
+
+      {/* Soltar el .zip (8b).
+          En escritorio arrastrar es lo más corto que hay: el archivo ya está
+          en una carpeta abierta al lado. El botón sigue, porque no todo el
+          mundo arrastra y porque sin él no habría forma de subir con el
+          teclado. */}
+      {ancho && hayChats && !consulta.trim() && onSoltarArchivos && (
+        <div
+          onDragOver={(e) => { e.preventDefault(); setEncima(true); }}
+          onDragLeave={() => setEncima(false)}
+          onDrop={(e) => {
+            e.preventDefault();
+            setEncima(false);
+            if (e.dataTransfer?.files?.length) onSoltarArchivos(e.dataTransfer.files);
+          }}
+          style={{
+            marginTop: 30,
+            padding: "26px 22px",
+            borderRadius: 14,
+            border: `1px dashed ${encima ? "var(--brass-500)" : "var(--border)"}`,
+            background: encima ? "var(--paper-100)" : "transparent",
+            display: "flex",
+            alignItems: "center",
+            gap: 20,
+          }}
+        >
+          <img src="/redesign/upload-a-chat.svg" alt="" style={{ width: 120, height: 84, objectFit: "contain", flexShrink: 0 }} />
+          <div style={{ minWidth: 0, flex: 1 }}>
+            <span style={{ display: "block", fontFamily: serif, fontSize: 20, fontWeight: 500, color: "var(--ink-900)" }}>
+              {encima ? t("Suelta el archivo para subirlo") : t("Sube otro chat")}
+            </span>
+            <span style={{ display: "block", marginTop: 4, fontSize: 14.5, lineHeight: 1.5, color: "var(--slate-700)" }}>
+              {t("Arrastra un .zip aquí o elige desde Google Drive o Archivos.")}
+            </span>
+          </div>
+          <button type="button" className="br-btn br-btn-primary br-btn-md" onClick={onSubir} style={{ flexShrink: 0 }}>
+            {t("Subir")}
           </button>
         </div>
       )}

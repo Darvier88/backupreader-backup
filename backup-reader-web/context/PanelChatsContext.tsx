@@ -33,7 +33,21 @@ export type ObjetivoBusqueda = {
   mensaje: number;
 };
 
+/**
+ * Lo que se está buscando en TODOS los chats, y cuánto hay en cada uno.
+ *
+ * En escritorio el buscador vive en el centro de la pantalla (8b) y el panel
+ * lateral enseña cuántas coincidencias tiene cada chat (8c). Son dos sitios
+ * distintos del árbol que necesitan lo mismo, así que lo comparten aquí en
+ * vez de pasárselo por props a través de media aplicación.
+ */
 type PanelChats = {
+  /** Lo escrito en el buscador general. */
+  consulta: string;
+  setConsulta: (valor: string) => void;
+  /** backupId -> cuántas coincidencias tiene ese chat. */
+  porChat: Record<string, number>;
+  setPorChat: (valor: Record<string, number>) => void;
   abierto: boolean;
   abrir: () => void;
   cerrar: () => void;
@@ -44,6 +58,10 @@ type PanelChats = {
 };
 
 const Contexto = createContext<PanelChats>({
+  consulta: "",
+  setConsulta: () => {},
+  porChat: {},
+  setPorChat: () => {},
   abierto: false,
   abrir: () => {},
   cerrar: () => {},
@@ -56,9 +74,15 @@ const Contexto = createContext<PanelChats>({
 export const PanelChatsProvider: FC<{ children: ReactNode }> = ({ children }) => {
   const [abierto, setAbierto] = useState(false);
   const [objetivo, setObjetivo] = useState<ObjetivoBusqueda | null>(null);
+  const [consulta, setConsulta] = useState("");
+  const [porChat, setPorChat] = useState<Record<string, number>>({});
 
   const valor = useMemo(
     () => ({
+      consulta,
+      setConsulta,
+      porChat,
+      setPorChat,
       abierto,
       abrir: () => setAbierto(true),
       cerrar: () => setAbierto(false),
@@ -72,7 +96,7 @@ export const PanelChatsProvider: FC<{ children: ReactNode }> = ({ children }) =>
       },
       limpiarObjetivo: () => setObjetivo(null),
     }),
-    [abierto, objetivo]
+    [abierto, objetivo, consulta, porChat]
   );
 
   return <Contexto.Provider value={valor}>{children}</Contexto.Provider>;

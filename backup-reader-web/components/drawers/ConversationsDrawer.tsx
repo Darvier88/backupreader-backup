@@ -11,8 +11,9 @@ import { StorageContext } from "../../context/StorageContext";
 import { InformationModal } from "../modals/InformationModal";
 import { BotonCifrar } from "../vault/BotonCifrar";
 import { BotonBorrarChat } from "../chat/BotonBorrarChat";
-import { ResultadosGlobales } from "../chat/ResultadosGlobales";
-import { useAtajoDeBusqueda } from "../../hooks/useAtajoDeBusqueda";
+import { usePanelChats } from "../../context/PanelChatsContext";
+import { backupIdDeHandle } from "../../lib/backupreader-crypto";
+import { iniciales, nombreDelContacto } from "../../lib/nombres-de-chat";
 
 /** `t()` puede devolver null según sus tipos; esto lo deja en string. */
 const enTexto = (traducido: unknown): string =>
@@ -95,6 +96,9 @@ export const ConversationsDrawer: FC<ConversationsDrawerProps> = ({
   selected,
 }) => {
   const { t } = useTranslation();
+  /* Cuántas coincidencias tiene cada chat en la búsqueda en curso (8c).
+     Lo escribe la lista de resultados del centro. */
+  const { porChat } = usePanelChats();
   const { show } = useContext(ModalContext);
   const { fileList, fetchBucketSize } = useContext(StorageContext);
   const [state, setState] = useState<FileList[] | null>();
@@ -103,10 +107,7 @@ export const ConversationsDrawer: FC<ConversationsDrawerProps> = ({
   const [instagramConversations, setInstagramConversations] = useState<JSX.Element[] | null>(null);
   /* Lo que se busca en TODOS los chats. Es estado de la barra lateral y no del
      dashboard porque el buscador tiene que funcionar sin ningún chat abierto. */
-  const [consulta, setConsulta] = useState("");
   /* Comando-K lleva aqui el cursor desde cualquier parte de la aplicacion. */
-  const campoBusqueda = useRef<HTMLInputElement>(null);
-  useAtajoDeBusqueda(campoBusqueda);
 
   const deletingFile = () => {
     show({
@@ -247,39 +248,16 @@ export const ConversationsDrawer: FC<ConversationsDrawerProps> = ({
         { /* bucketSize === 0 ? <p style={{ fontSize: '11px', color: '#999999', marginLeft: '10px' }}> </p>  : <p style={{ fontSize: '11px', color: '#999999', marginLeft: '10px' }}>Conversaciones: { bucketSize } MB</p>  */ }
         <p style={{ fontFamily: 'var(--font-mono)', fontSize: '11.5px', letterSpacing: '0.06em', color: 'var(--slate-500)', marginLeft: '10px' }}>{ userEmail }</p>
 
-        {/* Buscar en TODOS los chats.
-            Vive aquí, con la lista, y no en la barra del chat abierto: buscar
-            en todos los chats es lo primero que se hace al entrar, y pedir que
-            se abra uno antes es justo lo contrario de para qué sirve. */}
-        <input
-          ref={campoBusqueda}
-          value={consulta}
-          onChange={(e) => setConsulta(e.target.value)}
-          onKeyDown={(e) => {
-            /* Escape limpia lo escrito antes de soltar el campo: dejarlo con
-               texto y sin foco deja los resultados abiertos tapando la lista
-               de chats, que es lo contrario de lo que pide Escape. */
-            if (e.key === "Escape" && consulta) {
-              e.preventDefault();
-              setConsulta("");
-            }
-          }}
-          placeholder={enTexto(t("Buscar en todos los chats"))}
-          style={{
-            width: "calc(100% - 20px)",
-            margin: "10px",
-            padding: "8px 10px",
-            borderRadius: 8,
-            border: "1px solid var(--border)",
-            background: "var(--surface)",
-            fontFamily: "var(--font-sans)",
-            fontSize: 14,
-            color: "var(--ink-900)",
-          }}
-        />
-        <div style={{ width: "calc(100% - 20px)", margin: "0 10px" }}>
-          <ResultadosGlobales consulta={consulta} alAbrirChat={onPress} />
-        </div>
+        {/* El buscador general ya no vive aquí (8b).
+            Estaba en esta columna, y con él los resultados: una lista de
+            mensajes de 300px de ancho, al lado de una pantalla vacía. Ahora
+            está en el centro del inicio, que es donde hay sitio para leer lo
+            que encuentra. Lo que sí se queda aquí es cuántas coincidencias
+            tiene cada chat, junto a su nombre (8c).
+            ⌘K sigue funcionando: cierra el chat abierto y lleva allí. */}
+        <p style={{ fontFamily: "var(--font-mono)", fontSize: "10.5px", letterSpacing: "0.14em", textTransform: "uppercase", color: "var(--slate-500)", margin: "14px 10px 0" }}>
+          {enTexto(t("Tus chats · {{n}}", { n: state?.length ?? 0 }))}
+        </p>
 
       </Container>
       
@@ -312,6 +290,7 @@ export const ConversationsDrawer: FC<ConversationsDrawerProps> = ({
           // For non-Instagram items (e.g., WhatsApp), keep the original rendering logic
           const isSelected = selected === item.name;
           const parts = splitNameDate(item.name);
+          const coincidencias = porChat[backupIdDeHandle(item.fullPath) ?? ""];
           /* Boveda bloqueada: el chat existe pero su nombre vive dentro del
              manifiesto cifrado, asi que todavia no se puede leer. Se pinta con
              candado y no se deja abrir, en vez de esconderlo: esconderlo haria
@@ -365,15 +344,47 @@ export const ConversationsDrawer: FC<ConversationsDrawerProps> = ({
                 boxShadow: isSelected ? "var(--shadow-card)" : "none",
               }}
             >
-              <div style={{ display: "flex", flexDirection: "column", gap: 3, minWidth: 0 }}>
+              {/* Iniciales y nombre del contacto, no el nombre del archivo
+                  (8b). "Chat de WhatsApp con Yuli.zip" empieza igual en todos
+                  los chats, así que hay que leer hasta el final de cada fila
+                  para distinguirlas; el panel móvil ya lo hacía así. */}
+              <span
+                aria-hidden
+                style={{
+                  flexShrink: 0,
+                  width: 34,
+                  height: 34,
+                  borderRadius: 999,
+                  display: "inline-flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  background: "var(--paper-200)",
+                  color: "var(--slate-700)",
+                  fontFamily: "var(--font-mono)",
+                  fontSize: 11.5,
+                  letterSpacing: "0.04em",
+                }}
+              >
+                {iniciales(item.name)}
+              </span>
+              <div style={{ display: "flex", flexDirection: "column", gap: 3, minWidth: 0, flex: 1 }}>
                 <span style={{ fontFamily: "var(--font-sans)", fontSize: 15, fontWeight: 600, color: "var(--ink-900)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                  {parts.name}
+                  {nombreDelContacto(item.name) || parts.name}
                 </span>
-                {parts.date && (
+                {/* Con una búsqueda en curso, el número manda sobre la fecha:
+                    lo que se quiere saber en ese momento es dónde está lo
+                    buscado, no cuándo se guardó el chat. */}
+                {coincidencias !== undefined ? (
+                  <span style={{ fontFamily: "var(--font-mono)", fontSize: 10.5, letterSpacing: "0.12em", textTransform: "uppercase", color: "var(--brass-600)" }}>
+                    {coincidencias === 1
+                      ? enTexto(t("1 coincidencia"))
+                      : enTexto(t("{{total}} coincidencias", { total: coincidencias }))}
+                  </span>
+                ) : parts.date ? (
                   <span style={{ fontFamily: "var(--font-mono)", fontSize: 11, letterSpacing: "0.04em", color: "var(--slate-500)" }}>
                     {parts.date}
                   </span>
-                )}
+                ) : null}
               </div>
               <div style={{ display: "flex", alignItems: "center", gap: 2, flexShrink: 0 }}>
                 {/* Un backup todavía en texto plano ofrece cifrarse en vez de

@@ -333,10 +333,17 @@ export const ManageFileCard: FC<ManageFileCardProps> = ({ isFirstFile, chat }) =
     <input aria-label="file Input" hidden ref={hiddenFileInput2} multiple accept=".zip,.rar,.7zip" type="file" onChange={(e) => onHandleSaveFile(e.target.files)} />
   );
 
-  if (!chat && phone) {
+  if (!chat) {
     return (
       <>
         <InicioChats
+          /* También en escritorio (8b). Antes aquí salía una tarjeta de
+             "Selecciona un chat", que describe un estado en vez de ofrecer
+             algo que hacer, y el buscador estaba escondido en el panel
+             lateral. El inicio es el mismo en los dos tamaños; lo que cambia
+             es el ancho y que en escritorio se puede soltar el .zip encima. */
+          ancho={!phone}
+          onSoltarArchivos={(archivos) => siHayBoveda(() => onHandleSaveFile(archivos))()}
           chats={(fileList || []).map((f: any) => ({ fullPath: f.fullPath, name: f.name }))}
           /* 4d: la bóveda existe pero está cerrada. Los chats se enseñan con
              candado y el buscador se apaga, en vez de esconderlos, que haría
@@ -354,6 +361,7 @@ export const ManageFileCard: FC<ManageFileCardProps> = ({ isFirstFile, chat }) =
           resultados={
             <ResultadosGlobales
               consulta={consulta}
+              anchoCompleto={!phone}
               alAbrirChat={(ruta, nombre) => abrirChat(ruta, nombre)}
             />
           }

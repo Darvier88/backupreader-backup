@@ -125,6 +125,8 @@ type StorageContextProps = {
   migracion: EstadoMigracion | null;
   /** Descarta el error actual. Lo usa el aviso que lo muestra al cerrarse. */
   limpiarError: () => void;
+  /** Cierra el chat abierto y vuelve al inicio. */
+  cerrarChat: () => void;
   chat: Chat[] | null;
   errorMessage: string;
   progress: number;
@@ -439,6 +441,22 @@ function parsearJsonInstagram(texto: string): string[][] {
      podía descartar un error... entre otras cosas porque tampoco había nada
      que los mostrara. */
   const limpiarError = () => dispatch({ type: "removeError" });
+
+  /**
+   * Cierra el chat abierto y vuelve al inicio.
+   *
+   * Hace falta porque en escritorio el buscador general vive en el inicio
+   * (8b): con un chat abierto no hay ningún sitio donde escribir, así que
+   * ⌘K tiene que poder volver. Son los mismos cinco `dispatch` que ya hacía
+   * `getFiles` antes de recargar la lista; aquí sin recargar nada.
+   */
+  const cerrarChat = () => {
+    dispatch({ type: "chatFile", payload: null });
+    dispatch({ type: "fileDownloaded", payload: { file: [] } });
+    dispatch({ type: "setRecentFileName", payload: null });
+    dispatch({ type: "setChatName", payload: null });
+    dispatch({ type: "setFullPath", payload: null });
+  };
 
   const descargar = (ruta: string): Promise<Blob> => getBlob(ref(storage, ruta));
 
@@ -1487,6 +1505,7 @@ const getFiles = async (firestoreId: string) => {
         migrarBackup,
         migracion,
         limpiarError,
+        cerrarChat,
       }}
     >
       {children}
