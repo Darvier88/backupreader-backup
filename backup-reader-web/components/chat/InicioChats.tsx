@@ -176,6 +176,7 @@ export const InicioChats: FC<{
         display: "flex",
         flexDirection: "column",
       }}
+      className="br-inicio-alto"
     >
       {/* Con la bóveda cerrada el aviso es la franja ocre de arriba (4d);
           aquí ya no se repite. */}
@@ -438,7 +439,12 @@ export const InicioChats: FC<{
       )}
 
       {!hayChats && (
-        <div>
+        /* La primera vez, el botón baja hasta el fondo de la pantalla (5c).
+           Es la única acción que hay, y el pulgar llega antes abajo que en
+           mitad de la pantalla; además separa las instrucciones de lo que
+           hay que hacer después de leerlas. Lo hace `br-primera-vez`, que
+           reparte el alto; en escritorio no aplica y queda seguido. */
+        <div className="br-primera-vez">
           {/* Pantallas 2b y 5c: la primera vez no basta con un boton.
               Quien acaba de crear la cuenta no tiene ningun chat porque
               todavia no sabe como sacarlo de WhatsApp, no porque no quiera.
@@ -461,8 +467,11 @@ export const InicioChats: FC<{
           {/* Ilustración de subir y «Empieza aquí» (5c). La lámina dice lo
               que hay que hacer antes de leer nada; la etiqueta marca que esta
               es la única acción de la pantalla. */}
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: 140, borderRadius: 12, background: "var(--paper-100)", margin: "0 0 20px" }}>
-            <img src="/redesign/upload-a-chat.svg" alt="" style={{ display: "block", width: 160, height: "auto" }} />
+          {/* Más baja en móvil: con la lámina a 140px, las instrucciones y la
+              acción no caben en una pantalla de 667px y el botón se iba por
+              debajo del borde. */}
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: ancho ? 140 : 108, borderRadius: 12, background: "var(--paper-100)", margin: "0 0 18px" }}>
+            <img src="/redesign/upload-a-chat.svg" alt="" style={{ display: "block", width: ancho ? 160 : 128, height: "auto" }} />
           </div>
           <p style={{ ...etiqueta, color: "var(--brass-600)", margin: "0 0 8px" }}>
             {t("Empieza aquí")}

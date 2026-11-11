@@ -297,7 +297,10 @@ export const NavBar: FC<NavBarProps> = ({ drawerButtonOnPress }) => {
             <SystemMessage
               image="/images/alert.svg"
               text={t("Tienes")+" "+daysLeft +" "+t("días de prueba gratuitos")}
-              alt="Imagen de alerta para recordarte que tu tiempo de prueba está por concluir"
+              /* Vacío a propósito: el icono es decorativo y el texto de al
+                 lado ya dice lo mismo. Un lector de pantalla que lea las dos
+                 cosas repite el aviso dos veces seguidas. */
+              alt=""
               width={36}
               height={36}
             />

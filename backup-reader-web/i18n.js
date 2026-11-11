@@ -599,7 +599,6 @@ const resources = {
       "Volver a escribirla": "Type it again",
       "Guardando…": "Saving…",
       "Abrir app de correo": "Open mail app",
-      "o con tarjeta": "or pay by card",
       "Hola de nuevo": "Welcome back",
       "Mencionado en {{chat}}": "Mentioned in {{chat}}",
       "Atajos": "Shortcuts",
@@ -619,15 +618,73 @@ const resources = {
       "Por si olvidas la clave.": "In case you forget your key.",
       "Tus chats están cifrados en este dispositivo.":
         "Your chats are encrypted on this device.",
-      "Pago seguro con tarjeta, Apple Pay o Google Pay.":
-        "Secure payment by card, Apple Pay or Google Pay.",
+      "Pago seguro con tarjeta.": "Secure payment by card.",
+      "Foto del chat": "Chat photo",
+
+      // --- Panel de administración ----------------------------------------
+      "(sin correo)": "(no email)",
+      "Administrador: no se borra desde aquí": "Administrator: not deleted from here",
+      "Alta": "Signed up",
+      "Último acceso": "Last seen",
+      "Borrado a medio terminar": "Deletion half finished",
+      "Borrar esta cuenta": "Delete this account",
+      "Borrar para siempre": "Delete for good",
+      "Buscar por correo, nombre o uid": "Search by email, name or uid",
+      "Cobrado": "Charged",
+      "Cobrado y NO devuelto": "Charged and NOT refunded",
+      "Cuenta borrada": "Account deleted",
+      "Cuenta de acceso borrada": "Sign-in account deleted",
+      "Devoluciones: {{hechas}} hechas, {{fallidas}} fallidas":
+        "Refunds: {{hechas}} done, {{fallidas}} failed",
+      "Devolverle {{importe}} (opcional, y aparte del borrado)":
+        "Refund them {{importe}} (optional, and separate from the deletion)",
+      "El borrado falló": "The deletion failed",
+      "Entra con": "Signs in with",
+      "Escribe": "Type",
+      "Espacio": "Space",
+      "Esto no se puede deshacer. Los chats están cifrados con una clave que solo existe dentro de la bóveda de este usuario: al borrarla, los archivos quedan ilegibles para siempre, también para ti.":
+        "This cannot be undone. The chats are encrypted with a key that exists only inside this user's vault: once it is deleted, the files are unreadable for good, for you too.",
+      "Falta la cuenta de servicio en el servidor (FIREBASE_SERVICE_ACCOUNT_B64). Sin eso no se puede listar ni borrar.":
+        "The service account is missing on the server (FIREBASE_SERVICE_ACCOUNT_B64). Without it nothing can be listed or deleted.",
+      "Firestore: {{n}} metadatos de chats, bóveda, estado y perfil":
+        "Firestore: {{n}} chat records, vault, status and profile",
+      "Los cobros ya hechos siguen en Stripe: no se pueden borrar, son el registro contable de un dinero que se movió.":
+        "Charges already made stay in Stripe: they cannot be deleted, they are the accounting record of money that moved.",
+      "No se pudo cargar la lista de usuarios.": "We couldn't load the user list.",
+      "No se pudo consultar Stripe. Puedes borrar igual, pero revisa a mano si tenía suscripción.":
+        "Stripe couldn't be checked. You can delete anyway, but check by hand whether they had a subscription.",
+      "Recargar": "Reload",
+      "Sin bóveda creada": "No vault created",
+      "Storage: {{n}} archivos borrados": "Storage: {{n}} files deleted",
+      "Stripe: {{subs}} suscripción(es) cancelada(s), {{clientes}} cliente(s) borrado(s)":
+        "Stripe: {{subs}} subscription(s) cancelled, {{clientes}} customer(s) deleted",
+      "Suscripción": "Subscription",
+      "devuelto": "refunded",
+      "en": "in",
+      "ninguna viva": "none live",
+      "ninguno": "none",
+      "para confirmar": "to confirm",
+      "sin bóveda": "no vault",
+      "sin cliente": "no customer",
+      "{{n}} chat(s) · {{tam}} cifrados": "{{n}} chat(s) · {{tam}} encrypted",
+      "{{n}} cliente(s)": "{{n}} customer(s)",
+      "{{n}} cobro(s)": "{{n}} charge(s)",
+      "Suscríbete": "Subscribe",
+
+      // --- Avisos de error (AvisoDeErrores) --------------------------------
+      "No se pudo cargar tu lista de chats": "We couldn't load your chat list",
+      "No se pudo abrir el chat": "We couldn't open the chat",
+      "Algo falló durante la subida. Suele ser la conexión. Vuelve a intentarlo; lo que se haya subido a medias no se mostrará ni ocupará sitio en tu lista.":
+        "Something went wrong during the upload. It is usually the connection. Try again; anything half-uploaded won't show up or take space in your list.",
+      "Introduce tu contraseña de cifrado para desbloquearlos. Hasta entonces no se pueden subir chats nuevos ni leer los que ya tienes cifrados.":
+        "Enter your encryption password to unlock them. Until then you can't upload new chats or read the ones you already encrypted.",
+      "La copia cifrada no se completó, así que el chat original sigue intacto y no se ha borrado nada. Puedes volver a intentarlo cuando quieras.":
+        "The encrypted copy didn't finish, so the original chat is untouched and nothing was deleted. You can try again whenever you want.",
       "Esta contraseña es la de tu cuenta. Tus chats están cifrados con otra, que no cambia aquí.":
         "This is your account password. Your chats are encrypted with a different one, which does not change here.",
       "Tus chats siguen a salvo mientras recuperas el acceso.":
         "Your chats stay safe while you get back in.",
       "Suscribirme · ${{precio}}/mes": "Subscribe · ${{precio}}/mo",
-      "El cobro empieza hoy. Cancela desde tu cuenta cuando quieras. Pago seguro con tarjeta, Apple Pay o Google Pay.":
-        "Billing starts today. Cancel from your account any time. Secure payment by card, Apple Pay or Google Pay.",
       "Respalda tus chat de WhatsApp.":
         "Backup your Whatsapp Chats.",
       "Guarda y lee tus conversaciones de forma segura en la nube.":

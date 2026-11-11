@@ -14,6 +14,10 @@ const Admin: NextPage = () => {
     <>
       <Head>
         <meta name="robots" content="noindex, nofollow" />
+        {/* El título de la pestaña se queda en español: es una página
+            interna, no la ve ningún usuario, y traducir el título sin
+            traducir la URL ni el resto del panel confundiría más que ayudar.
+            El contenido del panel sí está en los dos idiomas. */}
         <title>Administración · Backup Reader</title>
       </Head>
       <AdminScreen />

@@ -179,13 +179,17 @@ export const PantallaDesbloqueo: FC<{ onOmitir: () => void }> = ({ onOmitir }) =
 
       <div className="br-paso-main">
         {/* Cabecera de móvil (4c): logo sobre tinta y la salida a la derecha.
-            Es «Ahora no» y no «Salir»: lleva al inicio con los chats con
-            candado (4d), que es lo que el diseño describe para quien omite. */}
+            El diseño móvil la llama «Salir» y el de escritorio (8a) «Ahora
+            no»; son el mismo botón y hace lo mismo en los dos sitios —deja
+            pasar al inicio con los chats con candado (4d)—, así que se
+            respeta el texto de cada diseño en vez de unificarlo por mi
+            cuenta. No cierra la sesión: para eso está «Cerrar sesión» en el
+            panel. */}
         <div className="br-paso-solo-movil" style={{ margin: "-24px -20px 0" }}>
           <div style={{ height: 56, display: "flex", alignItems: "center", justifyContent: "space-between", padding: "0 20px", borderBottom: "1px solid var(--border-on-ink)" }}>
             <Logo oscuro compact />
             <button type="button" onClick={ahoraNo} style={{ ...enlace, textDecoration: "none", fontWeight: 600, color: "var(--ink-100)", padding: "0 8px" }}>
-              {t("Ahora no")}
+              {t("Salir")}
             </button>
           </div>
         </div>

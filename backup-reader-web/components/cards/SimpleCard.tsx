@@ -26,7 +26,7 @@ export const SimpleCard: FC<SimpleCardProps> = ({ image, title, text, ctaLabel, 
                         src={image}
                         width={300}
                         height={300}
-                        alt="Seguridad de datos"
+                        alt={title || ""}
                     /> : null
             }
                 

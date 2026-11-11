@@ -722,3 +722,24 @@ body {
 .br-lamina { animation: br-fundido 360ms ease; }
 @keyframes br-fundido { from { opacity: 0; } to { opacity: 1; } }
 @media (prefers-reduced-motion: reduce) { .br-lamina { animation: none; } }
+
+/* Las ventajas del plan: dos columnas en escritorio, una en móvil (7c). */
+.br-ventajas-plan { display: grid; grid-template-columns: 1fr; gap: 14px; }
+@media (min-width: 720px) {
+  .br-ventajas-plan { grid-template-columns: 1fr 1fr; gap: 12px 20px; }
+}
+
+/* Primera vez en móvil (2b/5c): las instrucciones arriba y la acción abajo.
+   `100dvh` y no `100vh` para que la barra del navegador móvil, que aparece y
+   desaparece al desplazarse, no deje el botón medio tapado. */
+@media (max-width: 720px) {
+  /* El contenedor llena lo que quede de pantalla y el bloque reparte el
+     hueco; `margin-top:auto` empuja la acción abajo SOLO si sobra sitio. No
+     se fuerza una altura mínima a propósito: con la franja de la prueba
+     gratuita arriba y las tres instrucciones, el contenido puede ser más alto
+     que la pantalla, y una altura mínima lo único que haría sería empujar el
+     botón por debajo del borde y obligar a buscarlo. */
+  .br-inicio-alto { min-height: calc(100dvh - 72px); }
+  .br-primera-vez { flex: 1; display: flex; flex-direction: column; }
+  .br-primera-vez .br-movil-abajo { margin-top: auto; padding-top: 24px; }
+}

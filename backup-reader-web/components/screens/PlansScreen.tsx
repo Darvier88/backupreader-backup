@@ -97,19 +97,40 @@ export const PlansScreen: FC = () => {
                     píldora destacada suele significar "esto es distinto de lo
                     normal" —una oferta, un plan recomendado—, que aquí no es
                     el caso: solo hay un plan. */}
-                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12 }}>
-                  <span style={{ fontFamily: mono, fontSize: 11, letterSpacing: "0.14em", textTransform: "uppercase", color: "var(--brass-600)" }}>{plan.details.name}</span>
-                  {/* Marca de plan elegido (6a). */}
-                  <span aria-hidden style={{ width: 22, height: 22, borderRadius: 999, background: "var(--brass-500)", color: "var(--paper-50)", display: "inline-flex", alignItems: "center", justifyContent: "center" }}>
-                    <Trazo tipo="check" tam={14} />
+                {/* La marca de plan elegido (6a) va pegada al nombre, no en
+                    la esquina: allí chocaba con la ilustración, que ocupa ese
+                    mismo rincón derecho. */}
+                <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                  <span aria-hidden style={{ width: 20, height: 20, borderRadius: 999, background: "var(--brass-500)", color: "var(--paper-50)", display: "inline-flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                    <Trazo tipo="check" tam={13} />
                   </span>
+                  <span style={{ fontFamily: mono, fontSize: 11, letterSpacing: "0.14em", textTransform: "uppercase", color: "var(--brass-600)" }}>{plan.details.name}</span>
                 </div>
-                <div style={{ marginTop: 14, display: "flex", alignItems: "baseline", gap: 8 }}>
-                  <span style={{ fontFamily: serif, fontWeight: 500, fontSize: 42, letterSpacing: "-0.02em", color: "var(--ink-900)" }}>${plan.details.price}</span>
-                  <span style={{ fontSize: 15, color: "var(--text-muted)" }}>USD / {t("mes")}</span>
+                <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "space-between", gap: 16 }}>
+                  <div style={{ marginTop: 14, display: "flex", alignItems: "baseline", gap: 8 }}>
+                    <span style={{ fontFamily: serif, fontWeight: 500, fontSize: 42, letterSpacing: "-0.02em", color: "var(--ink-900)" }}>${plan.details.price}</span>
+                    <span style={{ fontSize: 15, color: "var(--text-muted)" }}>USD / {t("mes")}</span>
+                  </div>
+                  {/* La ilustración, solo en escritorio (7c).
+                      En móvil la tarjeta ya ocupa casi toda la pantalla y un
+                      dibujo de 108px empuja el precio y las ventajas fuera
+                      del primer pantallazo, que es justo lo que hay que ver
+                      antes de decidir. */}
+                  <img
+                    className="br-solo-escritorio"
+                    src="/redesign/free-space-from-your-phone.svg"
+                    alt=""
+                    style={{ width: 108, height: "auto", marginBottom: -4, flexShrink: 0 }}
+                  />
                 </div>
               </div>
-              <ul style={{ margin: 0, padding: "22px 26px", listStyle: "none", display: "flex", flexDirection: "column", gap: 14 }}>
+              {/* Dos columnas donde hay ancho (7c).
+                  Son cuatro frases cortas: en una sola columna la tarjeta se
+                  estira hasta empujar el botón de suscribirse fuera de la
+                  pantalla, y lo que hay que poder ver de una vez es el precio
+                  junto a lo que incluye. `br-ventajas-plan` las apila otra
+                  vez por debajo de 720px. */}
+              <ul className="br-ventajas-plan" style={{ margin: 0, padding: "22px 26px", listStyle: "none" }}>
                 <li style={{ display: "flex", gap: 12, alignItems: "flex-start" }}><Check /><span style={{ fontSize: 15.5, lineHeight: 1.55, color: "var(--slate-700)" }}>{plan.details.benefit}</span></li>
                 <li style={{ display: "flex", gap: 12, alignItems: "flex-start" }}><Check /><span style={{ fontSize: 15.5, lineHeight: 1.55, color: "var(--slate-700)" }}>{enTexto(t("Hasta {{n}} MB por conversación", { n: plan.details.storage }))}</span></li>
                 <li style={{ display: "flex", gap: 12, alignItems: "flex-start" }}><Check /><span style={{ fontSize: 15.5, lineHeight: 1.55, color: "var(--slate-700)" }}>{t("Lee tus chats sin conexión, cuando quieras")}</span></li>
@@ -132,8 +153,12 @@ export const PlansScreen: FC = () => {
                 </button>
           )}
           <p className="br-fineprint" style={{ marginTop: 14, textAlign: "center" }}>
+            {/* Sin mencionar Apple Pay ni Google Pay: el pago es solo con
+                tarjeta, y nombrar aquí un método que luego no aparece en el
+                formulario es la clase de promesa que hace abandonar justo en
+                la pantalla siguiente. */}
             {t("El cobro empieza hoy. Cancela desde tu cuenta cuando quieras.")}{" "}
-            {t("Pago seguro con tarjeta, Apple Pay o Google Pay.")}
+            {t("Pago seguro con tarjeta.")}
           </p>
           </div>
         </div>

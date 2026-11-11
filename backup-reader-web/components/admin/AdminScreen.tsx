@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { Box, TextField, Typography, useMediaQuery } from "@mui/material";
 import { Button, Loading } from "@nextui-org/react";
+import { useTranslation } from "react-i18next";
 
 import { FirebaseAuth } from "../../config/firebase";
 import { bytes, fecha, llamarAdmin } from "./llamarAdmin";
@@ -23,6 +24,7 @@ import type { UsuarioDeAdmin } from "../../pages/api/admin/usuarios";
  * comprueban el permiso por su cuenta y responden 403.
  */
 export const AdminScreen: React.FC = () => {
+  const { t } = useTranslation();
   const estrecho = useMediaQuery("(max-width:900px)");
 
   const [esperandoSesion, setEsperandoSesion] = useState(true);
@@ -45,8 +47,8 @@ export const AdminScreen: React.FC = () => {
     } else {
       setProblema(
         datos?.error === "admin-sin-configurar"
-          ? "Falta la cuenta de servicio en el servidor (FIREBASE_SERVICE_ACCOUNT_B64). Sin eso no se puede listar ni borrar."
-          : "No se pudo cargar la lista de usuarios."
+          ? t("Falta la cuenta de servicio en el servidor (FIREBASE_SERVICE_ACCOUNT_B64). Sin eso no se puede listar ni borrar.") as string
+          : t("No se pudo cargar la lista de usuarios.") as string
       );
     }
     setCargando(false);
@@ -132,13 +134,13 @@ export const AdminScreen: React.FC = () => {
       <Box sx={{ display: "flex", gap: 1, alignItems: "center", margin: "20px 0 12px" }}>
         <TextField
           size="small"
-          placeholder="Buscar por correo, nombre o uid"
+          placeholder={t("Buscar por correo, nombre o uid") as string}
           value={filtro}
           onChange={(e) => setFiltro(e.target.value)}
           sx={{ flex: 1, maxWidth: 360 }}
         />
         <Button auto light onPress={cargar} disabled={cargando}>
-          {cargando ? <Loading size="sm" /> : "Recargar"}
+          {cargando ? <Loading size="sm" /> : t("Recargar")}
         </Button>
       </Box>
 
@@ -159,7 +161,7 @@ export const AdminScreen: React.FC = () => {
               }}
             >
               <Typography fontSize={15} fontWeight={600} sx={{ wordBreak: "break-all" }}>
-                {u.correo || "(sin correo)"}
+                {u.correo || t("(sin correo)")}
               </Typography>
               {u.nombre && (
                 <Typography fontSize={13} sx={{ color: "#6B6B6B" }}>
@@ -167,22 +169,22 @@ export const AdminScreen: React.FC = () => {
                 </Typography>
               )}
               <Box sx={{ fontSize: 13, color: "#3C3C3C", marginTop: 1 }}>
-                <div>Alta: {fecha(u.creado)} · Último acceso: {fecha(u.ultimoAcceso)}</div>
+                <div>{t("Alta")}: {fecha(u.creado)} · {t("Último acceso")}: {fecha(u.ultimoAcceso)}</div>
                 <div>
-                  Plan: {u.plan || "ninguno"} · {u.chats} chat(s) ·{" "}
+                  {t("Plan")}: {u.plan || t("ninguno")} · {u.chats} chat(s) ·{" "}
                   {bytes(u.bytesCifrados)}
                 </div>
-                <div>Entra con: {u.proveedores.join(", ") || "—"}</div>
-                {!u.tieneBoveda && <div>Sin bóveda creada</div>}
+                <div>{t("Entra con")}: {u.proveedores.join(", ") || "—"}</div>
+                {!u.tieneBoveda && <div>{t("Sin bóveda creada")}</div>}
               </Box>
               <Box sx={{ marginTop: 1 }}>
                 {u.esAdmin ? (
                   <Typography fontSize={13} sx={{ color: "#6B6B6B" }}>
-                    Administrador: no se borra desde aquí
+                    {t("Administrador: no se borra desde aquí")}
                   </Typography>
                 ) : (
                   <Button auto light color="error" size="sm" onPress={() => setABorrar(u)}>
-                    Borrar
+                    {t("Borrar")}
                   </Button>
                 )}
               </Box>
@@ -194,14 +196,14 @@ export const AdminScreen: React.FC = () => {
           <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 14 }}>
             <thead>
               <tr style={{ textAlign: "left", color: "#6B6B6B" }}>
-                <th style={celdaCabecera}>Correo</th>
-                <th style={celdaCabecera}>Nombre</th>
-                <th style={celdaCabecera}>Alta</th>
-                <th style={celdaCabecera}>Último acceso</th>
-                <th style={celdaCabecera}>Plan</th>
-                <th style={celdaCabecera}>Chats</th>
-                <th style={celdaCabecera}>Espacio</th>
-                <th style={celdaCabecera}>Entra con</th>
+                <th style={celdaCabecera}>{t("Correo")}</th>
+                <th style={celdaCabecera}>{t("Nombre")}</th>
+                <th style={celdaCabecera}>{t("Alta")}</th>
+                <th style={celdaCabecera}>{t("Último acceso")}</th>
+                <th style={celdaCabecera}>{t("Plan")}</th>
+                <th style={celdaCabecera}>{t("Chats")}</th>
+                <th style={celdaCabecera}>{t("Espacio")}</th>
+                <th style={celdaCabecera}>{t("Entra con")}</th>
                 <th style={celdaCabecera} />
               </tr>
             </thead>
@@ -211,7 +213,7 @@ export const AdminScreen: React.FC = () => {
                   <td style={celda}>
                     {u.correo || "(sin correo)"}
                     {!u.tieneBoveda && (
-                      <div style={{ fontSize: 12, color: "#6B6B6B" }}>sin bóveda</div>
+                      <div style={{ fontSize: 12, color: "#6B6B6B" }}>{t("sin bóveda")}</div>
                     )}
                   </td>
                   <td style={celda}>{u.nombre || "—"}</td>

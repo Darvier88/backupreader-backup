@@ -11,6 +11,7 @@ import {
   Typography,
 } from "@mui/material";
 import { Button, Loading } from "@nextui-org/react";
+import { useTranslation } from "react-i18next";
 
 import { bytes, dinero, llamarAdmin } from "./llamarAdmin";
 import type { UsuarioDeAdmin } from "../../pages/api/admin/usuarios";
@@ -50,6 +51,7 @@ type Detalle = {
 };
 
 export const DialogoBorrado: React.FC<Props> = ({ usuario, onCerrar, onBorrado }) => {
+  const { t } = useTranslation();
   const [detalle, setDetalle] = useState<Detalle | null>(null);
   const [cargandoDetalle, setCargandoDetalle] = useState(true);
   const [errorDetalle, setErrorDetalle] = useState("");
@@ -70,7 +72,7 @@ export const DialogoBorrado: React.FC<Props> = ({ usuario, onCerrar, onBorrado }
       if (datos?.ok) setDetalle(datos.stripe);
       else
         setErrorDetalle(
-          "No se pudo consultar Stripe. Puedes borrar igual, pero revisa a mano si tenía suscripción."
+          (t("No se pudo consultar Stripe. Puedes borrar igual, pero revisa a mano si tenía suscripción.") as string)
         );
       setCargandoDetalle(false);
     })();
@@ -102,10 +104,10 @@ export const DialogoBorrado: React.FC<Props> = ({ usuario, onCerrar, onBorrado }
       <Dialog open onClose={onCerrar} fullWidth maxWidth="sm">
         <DialogTitle>
           {resultado.ok && !resultado.pendiente
-            ? "Cuenta borrada"
+            ? t("Cuenta borrada")
             : resultado.pendiente
-            ? "Borrado a medio terminar"
-            : "El borrado falló"}
+            ? t("Borrado a medio terminar")
+            : t("El borrado falló")}
         </DialogTitle>
         <DialogContent>
           <Typography fontSize={14} sx={{ marginBottom: 1 }}>
@@ -122,19 +124,22 @@ export const DialogoBorrado: React.FC<Props> = ({ usuario, onCerrar, onBorrado }
             {p.stripe && (
               <>
                 <li>
-                  Stripe: {p.stripe.suscripcionesCanceladas} suscripción(es)
-                  cancelada(s), {p.stripe.clientesBorrados} cliente(s) borrado(s)
+                  {t("Stripe: {{subs}} suscripción(es) cancelada(s), {{clientes}} cliente(s) borrado(s)", {
+                    subs: p.stripe.suscripcionesCanceladas,
+                    clientes: p.stripe.clientesBorrados,
+                  })}
                 </li>
                 {p.stripe.devoluciones?.length > 0 && (
                   <li>
-                    Devoluciones:{" "}
-                    {p.stripe.devoluciones.filter((d: any) => d.ok).length} hechas,{" "}
-                    {p.stripe.devoluciones.filter((d: any) => !d.ok).length} fallidas
+                    {t("Devoluciones: {{hechas}} hechas, {{fallidas}} fallidas", {
+                      hechas: p.stripe.devoluciones.filter((d: any) => d.ok).length,
+                      fallidas: p.stripe.devoluciones.filter((d: any) => !d.ok).length,
+                    })}
                   </li>
                 )}
                 {p.stripe.cobrosQueQuedan > 0 && (
                   <li>
-                    Cobrado y NO devuelto:{" "}
+                    {t("Cobrado y NO devuelto")}:{" "}
                     {dinero(p.stripe.cobrosQueQuedan, detalle?.moneda ?? null)}
                   </li>
                 )}
@@ -148,28 +153,28 @@ export const DialogoBorrado: React.FC<Props> = ({ usuario, onCerrar, onBorrado }
             )}
             {p.storage && (
               <li>
-                Storage: {p.storage.borrados} archivos borrados
+                {t("Storage: {{n}} archivos borrados", { n: p.storage.borrados })}
                 {p.storage.fallidos > 0 && `, ${p.storage.fallidos} fallidos`}
                 {p.storage.quedan > 0 && `, ${p.storage.quedan} pendientes`}
               </li>
             )}
             {p.firestore && (
               <li>
-                Firestore: {p.firestore.backups} metadatos de chats, bóveda,
-                estado y perfil
+                {t("Firestore: {{n}} metadatos de chats, bóveda, estado y perfil", {
+                  n: p.firestore.backups,
+                })}
               </li>
             )}
-            {p.auth && <li>Cuenta de acceso borrada</li>}
+            {p.auth && <li>{t("Cuenta de acceso borrada")}</li>}
           </Box>
 
           <Typography fontSize={13} sx={{ color: "#6B6B6B", marginTop: 2 }}>
-            Los cobros ya hechos siguen en Stripe: no se pueden borrar, son el
-            registro contable de un dinero que se movió.
+            {t("Los cobros ya hechos siguen en Stripe: no se pueden borrar, son el registro contable de un dinero que se movió.")}
           </Typography>
         </DialogContent>
         <DialogActions>
           <Button auto light onPress={onCerrar}>
-            Cerrar
+            {t("Cerrar")}
           </Button>
         </DialogActions>
       </Dialog>
@@ -179,10 +184,10 @@ export const DialogoBorrado: React.FC<Props> = ({ usuario, onCerrar, onBorrado }
   /* --- Antes de ejecutar --- */
   return (
     <Dialog open onClose={borrando ? undefined : onCerrar} fullWidth maxWidth="sm">
-      <DialogTitle>Borrar esta cuenta</DialogTitle>
+      <DialogTitle>{t("Borrar esta cuenta")}</DialogTitle>
       <DialogContent>
         <Typography fontSize={15} fontWeight={600}>
-          {usuario.correo || "(sin correo)"}
+          {usuario.correo || t("(sin correo)")}
         </Typography>
         <Typography fontSize={13} sx={{ color: "#6B6B6B", wordBreak: "break-all" }}>
           {usuario.uid}
@@ -190,9 +195,9 @@ export const DialogoBorrado: React.FC<Props> = ({ usuario, onCerrar, onBorrado }
 
         <Box sx={{ marginTop: 2, fontSize: 14 }}>
           <div>
-            {usuario.chats} chat(s) · {bytes(usuario.bytesCifrados)} cifrados
+            {t("{{n}} chat(s) · {{tam}} cifrados", { n: usuario.chats, tam: bytes(usuario.bytesCifrados) })}
           </div>
-          <div>Plan: {usuario.plan || "ninguno"}</div>
+          <div>{t("Plan")}: {usuario.plan || t("ninguno")}</div>
         </Box>
 
         <Box
@@ -213,29 +218,27 @@ export const DialogoBorrado: React.FC<Props> = ({ usuario, onCerrar, onBorrado }
               <div>
                 Stripe:{" "}
                 {detalle.clientes.length === 0
-                  ? "sin cliente"
-                  : `${detalle.clientes.length} cliente(s)`}
+                  ? t("sin cliente")
+                  : (t("{{n}} cliente(s)", { n: detalle.clientes.length }) as string)}
               </div>
               <div>
-                Suscripción:{" "}
+                {t("Suscripción")}:{" "}
                 {detalle.suscripcionesVivas === 0
-                  ? "ninguna viva"
+                  ? t("ninguna viva")
                   : `${detalle.estadoSuscripcion}`}
               </div>
               <div>
-                Cobrado: {dinero(detalle.totalCobrado, detalle.moneda)} en{" "}
-                {detalle.cobros} cobro(s)
+                {t("Cobrado")}: {dinero(detalle.totalCobrado, detalle.moneda)} {t("en")}{" "}
+                {t("{{n}} cobro(s)", { n: detalle.cobros })}
                 {detalle.totalDevuelto > 0 &&
-                  ` · devuelto ${dinero(detalle.totalDevuelto, detalle.moneda)}`}
+                  ` · ${t("devuelto")} ${dinero(detalle.totalDevuelto, detalle.moneda)}`}
               </div>
             </>
           )}
         </Box>
 
         <Typography fontSize={14} sx={{ marginTop: 2, color: "var(--aviso-texto)" }}>
-          Esto no se puede deshacer. Los chats están cifrados con una clave que
-          solo existe dentro de la bóveda de este usuario: al borrarla, los
-          archivos quedan ilegibles para siempre, también para ti.
+          {t("Esto no se puede deshacer. Los chats están cifrados con una clave que solo existe dentro de la bóveda de este usuario: al borrarla, los archivos quedan ilegibles para siempre, también para ti.")}
         </Typography>
 
         {detalle && detalle.totalCobrado - detalle.totalDevuelto > 0 && (
@@ -249,19 +252,19 @@ export const DialogoBorrado: React.FC<Props> = ({ usuario, onCerrar, onBorrado }
             }
             label={
               <span style={{ fontSize: 14 }}>
-                Devolverle{" "}
-                {dinero(
-                  detalle.totalCobrado - detalle.totalDevuelto,
-                  detalle.moneda
-                )}{" "}
-                (opcional, y aparte del borrado)
+                {t("Devolverle {{importe}} (opcional, y aparte del borrado)", {
+                  importe: dinero(
+                    detalle.totalCobrado - detalle.totalDevuelto,
+                    detalle.moneda
+                  ),
+                })}
               </span>
             }
           />
         )}
 
         <Typography fontSize={14} sx={{ marginTop: 2 }}>
-          Escribe <strong>{esperado}</strong> para confirmar:
+          {t("Escribe")} <strong>{esperado}</strong> {t("para confirmar")}:
         </Typography>
         <TextField
           fullWidth
@@ -274,7 +277,7 @@ export const DialogoBorrado: React.FC<Props> = ({ usuario, onCerrar, onBorrado }
       </DialogContent>
       <DialogActions>
         <Button auto light onPress={onCerrar} disabled={borrando}>
-          Cancelar
+          {t("Cancelar")}
         </Button>
         <Button
           auto
@@ -282,7 +285,7 @@ export const DialogoBorrado: React.FC<Props> = ({ usuario, onCerrar, onBorrado }
           onPress={borrar}
           disabled={!coincide || borrando}
         >
-          {borrando ? <Loading size="sm" color="white" /> : "Borrar para siempre"}
+          {borrando ? <Loading size="sm" color="white" /> : t("Borrar para siempre")}
         </Button>
       </DialogActions>
     </Dialog>
