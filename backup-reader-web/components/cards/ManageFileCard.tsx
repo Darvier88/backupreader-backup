@@ -298,6 +298,21 @@ export const ManageFileCard: FC<ManageFileCardProps> = ({ isFirstFile, chat }) =
     }
   };  
 
+  /* El panel movil (1b) tiene su propia seccion "Agregar chat", pero toda la
+     maquinaria de subir vive aqui: el selector de Google Drive, el input
+     oculto y la comprobacion de la boveda. En vez de duplicarla alli o de
+     pasar callbacks por el Layout (que no conoce este componente), el panel
+     avisa con un evento y aqui se ejecuta lo de siempre. */
+  useEffect(() => {
+    const alPedirSubida = (e: Event) => {
+      const origen = (e as CustomEvent).detail;
+      if (origen === "drive") siHayBoveda(handleAccessTokenRequest)();
+      else siHayBoveda(() => hiddenFileInput2.current?.click())();
+    };
+    window.addEventListener("br:subir-chat", alPedirSubida as EventListener);
+    return () => window.removeEventListener("br:subir-chat", alPedirSubida as EventListener);
+  });
+
   /* El inicio movil (2a/2b) vive aqui dentro y no en DashboardScreen porque
      toda la maquinaria de subir —el selector de Google Drive, los inputs
      ocultos, la comprobacion de la boveda— ya esta en este componente.

@@ -72,9 +72,9 @@ export const ChatAudioPlayer: FC<ChatAudioPlayerProps> = ({ message }) => {
         style={{ border: "1px solid #cfd8dc" }}
       >
         {audioButton ? (
-          <PauseIcon style={{ fontSize: 25, color: "#0F52BA" }} />
+          <PauseIcon style={{ fontSize: 25, color: "var(--ink-900)" }} />
         ) : (
-          <PlayArrowIcon style={{ fontSize: 25, color: "#0F52BA" }} />
+          <PlayArrowIcon style={{ fontSize: 25, color: "var(--ink-900)" }} />
         )}
       </IconButton>
       <Container style={{ width: "100%", flex: 1 }}>
@@ -82,7 +82,7 @@ export const ChatAudioPlayer: FC<ChatAudioPlayerProps> = ({ message }) => {
           value={audioTime}
           max={100}
           size="small"
-          style={{ marginTop: 5, color: "#0F52BA" }}
+          style={{ marginTop: 5, color: "var(--ink-900)" }}
           aria-label="progress"
           disabled
         />

@@ -349,6 +349,7 @@ export const ConversationsDrawer: FC<ConversationsDrawerProps> = ({
           return (
             <div
               key={i}
+              data-fila-chat
               onClick={() => onPress(item.fullPath, item.name)}
               style={{
                 cursor: "pointer",

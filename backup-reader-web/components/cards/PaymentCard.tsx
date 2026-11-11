@@ -223,7 +223,14 @@ export const PaymentCard: FC = () => {
       setPayResult("success");
       if (user?.uid && planToPay?.id) {
         updateUser(user.uid, planToPay?.id, formState.name);
-        router.replace("/dashboard");
+        /* A la confirmacion (6b), no al panel.
+           Ir directo al panel hacia que el cobro desapareciera sin acuse:
+           acabas de pagar y lo siguiente que ves es la aplicacion, sin que
+           nada te diga a que correo va el recibo ni cuando es el proximo
+           cargo. Y la clave de cifrado aparecia de sopeton, que es la peor
+           forma de presentar algo que, si se pierde, deja los chats
+           irrecuperables. */
+        router.replace("/plan-activo");
       }
     } else if (data.codigoRechazado) {
       /* El cobro no se hizo y no se creó ninguna suscripción. Se vuelve al
@@ -324,9 +331,9 @@ export const PaymentCard: FC = () => {
           {fallaPorCodigo && (
             <div
               className="br-card"
-              style={{ marginBottom: 18, padding: "12px 16px", borderColor: "#C9553D" }}
+              style={{ marginBottom: 18, padding: "12px 16px", borderColor: "var(--aviso-borde)" }}
             >
-              <span style={{ fontSize: 14, color: "#A4442F" }}>{fallaPorCodigo}</span>
+              <span style={{ fontSize: 14, color: "var(--aviso-texto)" }}>{fallaPorCodigo}</span>
             </div>
           )}
 
@@ -407,7 +414,7 @@ export const PaymentCard: FC = () => {
                 </div>
               )}
               {errorDeCodigo && (
-                <span style={{ fontSize: 13, color: "#A4442F", marginTop: 6, display: "block" }}>
+                <span style={{ fontSize: 13, color: "var(--aviso-texto)", marginTop: 6, display: "block" }}>
                   {errorDeCodigo}
                 </span>
               )}
@@ -478,7 +485,7 @@ export const PaymentCard: FC = () => {
           {sinPlan && (
             /* Sin plan no hay nada que cobrar. Se dice y se ofrece la salida,
                en vez de dejar un formulario que no puede terminar. */
-            <p style={{ marginTop: 16, fontSize: 14, color: "#A4442F" }}>
+            <p style={{ marginTop: 16, fontSize: 14, color: "var(--aviso-texto)" }}>
               {t("No hay un plan seleccionado.")}{" "}
               <span className="br-link" style={{ cursor: "pointer" }} onClick={() => router.push("/plans")}>
                 {t("Elige un plan")}

@@ -27,7 +27,7 @@ import { isWithinTrial } from "../../config/trial";
  * Cabecera de las rutas de app que no usan `BrandHeader`: el dashboard en
  * móvil, /account, /initialDashboard y cualquier ruta nueva.
  *
- * Antes era una barra azul (#0F52BA) con el logo en PNG, mientras el dashboard
+ * Antes era una barra azul (var(--ink-900)) con el logo en PNG, mientras el dashboard
  * en escritorio ya usaba la cabecera de papel con el logo en SVG: dos marcas
  * distintas según el ancho de la pantalla. Ahora comparte con `BrandHeader` el
  * mismo `Logo`, el mismo `LangToggle` y las mismas clases `br-header`, así que

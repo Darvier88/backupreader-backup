@@ -208,7 +208,7 @@ export const PantallaDesbloqueo: FC<{ onOmitir: () => void }> = ({ onOmitir }) =
               height: 52,
               padding: "0 52px 0 14px",
               borderRadius: 10,
-              border: fallo ? "1px solid #E08A74" : "1px solid rgba(255,255,255,0.22)",
+              border: fallo ? "1px solid var(--aviso-sobre-oscuro)" : "1px solid rgba(255,255,255,0.22)",
               background: "rgba(255,255,255,0.06)",
               fontFamily: "var(--font-sans)",
               fontSize: 16,
@@ -254,7 +254,7 @@ export const PantallaDesbloqueo: FC<{ onOmitir: () => void }> = ({ onOmitir }) =
           style={{
             fontFamily: "var(--font-sans)",
             fontSize: 13,
-            color: fallo ? "#E08A74" : "rgba(255,255,255,0.55)",
+            color: fallo ? "var(--aviso-sobre-oscuro)" : "rgba(255,255,255,0.55)",
             margin: "8px 0 0",
           }}
         >

@@ -79,7 +79,9 @@ export const InicioChats: FC<{
   resultados?: React.ReactNode;
   /** Cuántos recientes enseñar. Más de cuatro ya es la lista entera. */
   maxRecientes?: number;
-}> = ({ chats, onVerMisChats, onSubir, onAbrirChat, consulta, onConsulta, resultados, maxRecientes = 4 }) => {
+  /** Si la clave de cifrado se acaba de crear, para saludarlo (5c). */
+  reciénCreada?: boolean;
+}> = ({ chats, onVerMisChats, onSubir, onAbrirChat, consulta, onConsulta, resultados, maxRecientes = 4, reciénCreada = false }) => {
   const { t } = useTranslation();
   const hayChats = chats.length > 0;
 
@@ -153,11 +155,82 @@ export const InicioChats: FC<{
 
       {!hayChats && (
         <div>
+          {/* Pantallas 2b y 5c: la primera vez no basta con un boton.
+              Quien acaba de crear la cuenta no tiene ningun chat porque
+              todavia no sabe como sacarlo de WhatsApp, no porque no quiera.
+              Un boton de "Subir un chat" a secas le pide un archivo que no
+              tiene y no le dice donde conseguirlo: se queda mirando la
+              pantalla sin nada que hacer. Las tres instrucciones son el paso
+              que falta. */}
+          {reciénCreada && (
+            <p
+              style={{
+                ...etiqueta,
+                color: "var(--brass-600)",
+                margin: "0 0 14px",
+              }}
+            >
+              {t("Tu clave está lista. Ya puedes subir chats.")}
+            </p>
+          )}
+
+          <h2
+            style={{
+              fontFamily: "var(--font-serif)",
+              fontSize: 24,
+              fontWeight: 500,
+              color: "var(--ink-900)",
+              margin: "0 0 6px",
+            }}
+          >
+            {t("Sube tu primer chat")}
+          </h2>
+          <p
+            style={{
+              fontFamily: "var(--font-sans)",
+              fontSize: 15,
+              color: "var(--slate-700)",
+              margin: "0 0 20px",
+              lineHeight: 1.5,
+            }}
+          >
+            {t("Primero expórtalo desde WhatsApp. Toma menos de un minuto.")}
+          </p>
+
+          <ol style={{ listStyle: "none", margin: "0 0 24px", padding: 0 }}>
+            {[
+              t("Abre el chat en WhatsApp."),
+              t("Toca el nombre → Exportar chat → Adjuntar archivos."),
+              t("Guárdalo en Archivos o Google Drive."),
+            ].map((paso, i) => (
+              <li
+                key={i}
+                style={{ display: "flex", gap: 12, marginBottom: 12, alignItems: "flex-start" }}
+              >
+                <span
+                  style={{
+                    flexShrink: 0,
+                    fontFamily: "var(--font-mono)",
+                    fontSize: 11,
+                    letterSpacing: "0.08em",
+                    color: "var(--brass-600)",
+                    paddingTop: 2,
+                  }}
+                >
+                  {String(i + 1).padStart(2, "0")}
+                </span>
+                <span style={{ fontFamily: "var(--font-sans)", fontSize: 15, color: "var(--slate-700)", lineHeight: 1.45 }}>
+                  {paso}
+                </span>
+              </li>
+            ))}
+          </ol>
+
           <button className="br-btn br-btn-primary br-btn-lg br-btn-block" onClick={onSubir}>
             {t("Subir un chat")}
           </button>
           <p style={{ ...etiqueta, margin: "10px 0 0", textAlign: "center" }}>
-            {t("Desde Google Drive o Archivos · .zip")}
+            {t("Archivo .zip · Google Drive o Archivos")}
           </p>
         </div>
       )}

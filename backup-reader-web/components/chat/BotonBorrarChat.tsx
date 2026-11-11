@@ -46,6 +46,15 @@ export const BotonBorrarChat = ({
   const { borrarChatDelUsuario, borrandoChat } = useContext(StorageContext);
   const [abierto, setAbierto] = useState(false);
   const [aviso, setAviso] = useState<string | null>(null);
+  const [hecho, setHecho] = useState(false);
+
+  /* El nombre del archivo tal cual ("WhatsApp Chat - Yuli.zip") no se lee
+     bien dentro de una pregunta. Se quita la extension y el prefijo que pone
+     WhatsApp al exportar, que no aportan nada aqui y alargan el titulo. */
+  const nombreLimpio = (name || "")
+    .replace(/\.zip$/i, "")
+    .replace(/^(WhatsApp |Chat de WhatsApp con |WhatsApp Chat - )/i, "")
+    .trim() || name;
 
   const esteBorrando = borrandoChat === fullPath;
   const otroBorrando = !!borrandoChat && !esteBorrando;
@@ -89,6 +98,12 @@ export const BotonBorrarChat = ({
       return;
     }
     setAbierto(false);
+    /* Aviso breve, sin boton de deshacer: no hay nada que deshacer, los
+       archivos ya no estan. Un boton de deshacer que no puede deshacer es
+       peor que ninguno. Solo confirma que lo pedido ocurrio, porque la fila
+       desaparece y sin acuse queda la duda de si fue eso o un fallo. */
+    setHecho(true);
+    window.setTimeout(() => setHecho(false), 3500);
   };
 
   const cerrar = () => {
@@ -99,6 +114,28 @@ export const BotonBorrarChat = ({
 
   return (
     <>
+      {hecho && (
+        <div
+          role="status"
+          style={{
+            position: "fixed",
+            left: "50%",
+            bottom: 24,
+            transform: "translateX(-50%)",
+            zIndex: 1400,
+            padding: "10px 18px",
+            borderRadius: 999,
+            background: "var(--ink-900)",
+            color: "var(--paper-50)",
+            fontFamily: "var(--font-sans)",
+            fontSize: 14,
+            boxShadow: "var(--shadow-md, 0 6px 24px rgba(15,24,38,.22))",
+            pointerEvents: "none",
+          }}
+        >
+          {t("Chat eliminado")}
+        </div>
+      )}
       <button
         type="button"
         aria-label={enTexto(t("Borrar chat"))}
@@ -110,19 +147,22 @@ export const BotonBorrarChat = ({
           e.stopPropagation();
           setAbierto(true);
         }}
+        /* 44px en movil, que es lo que pide un objetivo tactil, y 28 en
+           escritorio, donde se apunta con el raton. La clase la hace aparecer
+           solo al pasar el cursor por la fila (9c), pero NO en movil: alli no
+           hay cursor que pasar, asi que esconderla la haria inalcanzable. */
+        className="br-papelera"
         style={{
           flexShrink: 0,
           display: "inline-flex",
           alignItems: "center",
           justifyContent: "center",
-          width: 28,
-          height: 28,
           padding: 0,
           borderRadius: 999,
           border: "1px solid transparent",
           background: "transparent",
           cursor: otroBorrando ? "default" : "pointer",
-          opacity: otroBorrando ? 0.4 : 0.55,
+          opacity: otroBorrando ? 0.4 : undefined,
           color: "var(--slate-500)",
         }}
       >
@@ -150,6 +190,7 @@ export const BotonBorrarChat = ({
         open={abierto}
         onClose={cerrar}
         width="420px"
+        className="br-hoja-borrado"
       >
         <Modal.Header>
           <span
@@ -159,13 +200,24 @@ export const BotonBorrarChat = ({
               color: "var(--ink-900)",
             }}
           >
-            {t("Borrar este chat")}
+            {/* Se nombra el chat exacto en el titulo, no en una linea aparte:
+                lo que evita borrar el equivocado es leer su nombre en la
+                pregunta, no debajo de ella. */}
+            {enTexto(t("¿Eliminar el chat con {{nombre}}?", { nombre: nombreLimpio }))}
           </span>
         </Modal.Header>
 
         <Modal.Body>
-          <p style={{ fontSize: 15, color: "var(--slate-700)", margin: 0 }}>
-            {name}
+          <p
+            style={{
+              fontSize: 13.5,
+              color: "var(--slate-500)",
+              marginTop: 10,
+              marginBottom: 0,
+              lineHeight: 1.5,
+            }}
+          >
+            {t("Borraremos sus mensajes, fotos, videos y audios de BackupReader.")}
           </p>
           <p
             style={{
@@ -176,27 +228,32 @@ export const BotonBorrarChat = ({
               lineHeight: 1.5,
             }}
           >
-            {t(
-              "Se borran del servidor los mensajes y todos los archivos de este chat. No se puede deshacer: como están cifrados con tu clave, ni siquiera nosotros podemos recuperarlos."
-            )}
+            {/* Que no se puede deshacer Y que hacer si se arrepiente. Decir
+                solo lo primero deja al usuario con el susto y sin salida; la
+                segunda frase convierte un aviso en una instruccion. */}
+            <strong style={{ fontWeight: 600 }}>{t("Esta acción no se puede deshacer.")}</strong>{" "}
+            {t("Para recuperarlo tendrías que volver a subir el .zip.")}
           </p>
+
           <p
             style={{
-              fontSize: 13.5,
-              color: "var(--slate-500)",
-              marginTop: 10,
+              fontFamily: "var(--font-mono)",
+              fontSize: 11,
+              letterSpacing: "0.12em",
+              textTransform: "uppercase",
+              color: "var(--brass-600)",
+              marginTop: 14,
               marginBottom: 0,
-              lineHeight: 1.5,
             }}
           >
-            {t("La copia que tengas en tu teléfono o en tu computadora no se toca.")}
+            {t("Tu chat en WhatsApp no cambia")}
           </p>
 
           {aviso && (
             <p
               style={{
                 fontSize: 13.5,
-                color: "#A4442F",
+                color: "var(--aviso-texto)",
                 marginTop: 12,
                 marginBottom: 0,
                 lineHeight: 1.5,
@@ -208,7 +265,7 @@ export const BotonBorrarChat = ({
         </Modal.Body>
 
         <Modal.Footer>
-          <Button auto light onPress={cerrar} disabled={esteBorrando}>
+          <Button auto light autoFocus onPress={cerrar} disabled={esteBorrando}>
             {t("Cancelar")}
           </Button>
           {/* Arcilla, no el rojo de NextUI.

@@ -28,7 +28,7 @@ export const SearchInput: FC<SearchInputProps> = ({
           style={{ marginRight: 5 }}
           onClick={() => onSearch(value)}
         >
-          <SearchIcon style={{ color: "#0F52BA" }} />
+          <SearchIcon style={{ color: "var(--ink-900)" }} />
         </IconButton>
       }
       style={{ width: width }}

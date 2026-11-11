@@ -131,7 +131,7 @@ export const VaultRegisterModal: React.FC = () => {
                   fontSize: 10.5,
                   letterSpacing: "0.12em",
                   textTransform: "uppercase",
-                  color: igualan ? "var(--accent, #2E7D5B)" : "#A4442F",
+                  color: igualan ? "var(--accent, #2E7D5B)" : "var(--aviso-texto)",
                 }}
               >
                 {igualan ? t("Las claves coinciden") : t("Las claves no coinciden")}
@@ -153,7 +153,7 @@ export const VaultRegisterModal: React.FC = () => {
         )}
 
         {aviso && (
-          <Typography fontFamily={"var(--font-sans)"} fontSize={14} style={{ color: "#A4442F", marginTop: 10 }}>
+          <Typography fontFamily={"var(--font-sans)"} fontSize={14} style={{ color: "var(--aviso-texto)", marginTop: 10 }}>
             {aviso}
           </Typography>
         )}

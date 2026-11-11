@@ -97,10 +97,10 @@ export const RecuperarScreen: FC = () => {
                   onKeyDown={(e) => {
                     if (e.key === "Enter") enviar();
                   }}
-                  style={{ width: "100%", height: 52, borderColor: error ? "#C9553D" : undefined }}
+                  style={{ width: "100%", height: 52, borderColor: error ? "var(--aviso-borde)" : undefined }}
                 />
                 {error && (
-                  <span style={{ display: "block", marginTop: 6, fontSize: 13, color: "#A4442F" }}>
+                  <span style={{ display: "block", marginTop: 6, fontSize: 13, color: "var(--aviso-texto)" }}>
                     {error}
                   </span>
                 )}

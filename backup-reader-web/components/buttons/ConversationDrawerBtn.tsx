@@ -18,7 +18,7 @@ export const ConversationDrawerBtn: FC<ConversationDrawerBtnProps> = ({
         borderBottomRightRadius: 20,
         borderTopLeftRadius: 0,
         borderBottomLeftRadius: 0,
-        backgroundColor: "#0F52BA",
+        backgroundColor: "var(--ink-900)",
       }}
       onClick={drawerButtonOnPress}
     >

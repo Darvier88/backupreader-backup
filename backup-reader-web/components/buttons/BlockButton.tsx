@@ -57,7 +57,7 @@ export const BlockButton: React.FC<BlockButtonProps> = ({
           ? color
           : type === "light"
           ? "transparent"
-          : "#0F52BA", //theme?.colors.blue800.value
+          : "var(--ink-900)", //theme?.colors.blue800.value
         width: width,
         borderColor: disabled || navButton ? borderColor : "transparent",
         padding: 0,

@@ -83,7 +83,7 @@ export const RecoveryCodeModal: React.FC<Props> = ({ codigo }) => {
             margin: "8px 0",
             background: "#F4F6FA",
             borderRadius: 8,
-            color: "#0F52BA",
+            color: "var(--ink-900)",
             wordBreak: "break-all",
           }}
         >

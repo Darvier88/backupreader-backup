@@ -116,13 +116,13 @@ export const AdminScreen: React.FC = () => {
       </Typography>
 
       {problema && (
-        <Typography fontSize={14} sx={{ color: "#A4442F", marginTop: 2 }}>
+        <Typography fontSize={14} sx={{ color: "var(--aviso-texto)", marginTop: 2 }}>
           {problema}
         </Typography>
       )}
 
       {huerfanos.length > 0 && (
-        <Typography fontSize={13} sx={{ color: "#A4442F", marginTop: 2 }}>
+        <Typography fontSize={13} sx={{ color: "var(--aviso-texto)", marginTop: 2 }}>
           Hay {huerfanos.length} documento(s) en Firestore sin cuenta de acceso
           ({huerfanos.join(", ")}). Son restos de un borrado que quedó a medias;
           hay que limpiarlos desde la consola de Firebase.

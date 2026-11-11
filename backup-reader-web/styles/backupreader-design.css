@@ -25,6 +25,16 @@
   --ochre-600:#B8842B; --ochre-100:#F6EBCF;
   --clay-600:#9A5B3F; --clay-100:#F0DED4;
 
+  /* Rojos de aviso.
+     Estaban repartidos a pelo por 18 archivos (#C9553D en bordes, #A4442F en
+     texto, #E08A74 sobre fondo oscuro). Ya formaban una familia coherente,
+     solo que sin nombre: al no ser tokens, nadie podia cambiarlos de golpe ni
+     saber cual tocaba en cada sitio. Se nombran tal como se venian usando,
+     para que esto no cambie ningun pixel hoy y si se pueda ajustar manana. */
+  --aviso-borde:#C9553D;
+  --aviso-texto:#A4442F;
+  --aviso-sobre-oscuro:#E08A74;
+
   /* --- Surfaces --- */
   --surface-page:var(--paper-50); --surface-raised:#FFFFFF;
   --surface-sunken:var(--paper-100); --surface-inverse:var(--ink-900);
@@ -462,4 +472,61 @@ body {
   --nextui-colors-primarySolidContrast: var(--paper-50);
   --nextui-colors-primaryShadow: var(--brass-400);
   --nextui-colors-link: var(--brass-600);
+}
+
+
+/* ---------------------------------------------------------------------------
+   La papelera de cada chat (pantallas 9a y 9c).
+
+   En escritorio aparece al pasar el cursor por la fila o al llegar con el
+   teclado: una papelera permanente en cada fila de una lista pone la accion
+   destructiva al mismo nivel visual que abrir el chat, que es lo que se hace
+   cien veces mas.
+
+   En movil NO se esconde. Alli no hay cursor que pasar, asi que ocultarla la
+   volveria inalcanzable, y mide 44px porque es un objetivo que se toca con el
+   dedo.
+   --------------------------------------------------------------------------- */
+.br-papelera { width: 44px; height: 44px; opacity: 1; }
+
+@media (hover: hover) and (pointer: fine) {
+  .br-papelera {
+    width: 28px;
+    height: 28px;
+    opacity: 0;
+    transition: opacity 120ms ease;
+  }
+  /* La fila entera, no solo el boton: hay que poder llegar a el moviendo el
+     raton por la fila, sin tener que acertar primero en un boton invisible. */
+  [data-fila-chat]:hover .br-papelera,
+  [data-fila-chat]:focus-within .br-papelera,
+  .br-papelera:focus-visible { opacity: 0.75; }
+  .br-papelera:hover { opacity: 1; }
+}
+
+
+/* ---------------------------------------------------------------------------
+   El dialogo de borrar, como hoja inferior en movil (pantalla 9b).
+
+   Un dialogo centrado deja sus botones en mitad de la pantalla, que en un
+   telefono grande es justo donde el pulgar no llega sin recolocar la mano. Y
+   recolocar la mano para pulsar "Eliminar" es la clase de gesto en el que se
+   falla. Pegado abajo, los dos botones quedan al alcance.
+
+   En escritorio se queda centrado, que es donde se espera.
+   --------------------------------------------------------------------------- */
+@media (max-width: 720px) {
+  .br-hoja-borrado {
+    position: fixed !important;
+    left: 0 !important;
+    right: 0 !important;
+    bottom: 0 !important;
+    top: auto !important;
+    transform: none !important;
+    margin: 0 !important;
+    max-width: none !important;
+    width: 100% !important;
+    border-radius: 16px 16px 0 0 !important;
+    padding-bottom: env(safe-area-inset-bottom, 0px) !important;
+  }
 }

@@ -21,7 +21,7 @@ const enTexto = (traducido: unknown): string =>
 
 const colorDe = (nivel: Nivel): string => {
   if (nivel === "corta") return "var(--border)";
-  if (nivel === "simple") return "#C9553D";
+  if (nivel === "simple") return "var(--aviso-borde)";
   if (nivel === "buena") return "var(--brass-400)";
   return "var(--accent, #2E7D5B)";
 };
@@ -62,7 +62,7 @@ export const MedidorDeClave: FC<{ clave: string }> = ({ clave }) => {
           fontSize: 10.5,
           letterSpacing: "0.12em",
           textTransform: "uppercase",
-          color: nivel === "simple" ? "#A4442F" : "var(--slate-500)",
+          color: nivel === "simple" ? "var(--aviso-texto)" : "var(--slate-500)",
         }}
       >
         {texto}

@@ -75,7 +75,7 @@ export const VaultBanner: React.FC = () => {
         boton: t("Activar cifrado"),
         modal: <VaultRegisterModal />,
         fondo: "#F4F6FA",
-        borde: "#0F52BA",
+        borde: "var(--ink-900)",
       }
     : {
         titulo: t("Desbloquea tus chats"),

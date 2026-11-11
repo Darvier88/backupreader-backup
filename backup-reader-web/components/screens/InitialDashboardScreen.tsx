@@ -17,7 +17,7 @@ const styles = {
     marginTop: 1,
     fontFamily: "Sukhumvit_Set",
     letterSpacing: 0.5,
-    color: "#0F52BA",
+    color: "var(--ink-900)",
   },
 };
 
@@ -43,7 +43,7 @@ export const InitialDashboardScreen: FC = () => {
             <Typography
               fontSize={10}
               fontFamily={"Open Sans"}
-              style={{ color: "#0F52BA", textAlign: "center" }}
+              style={{ color: "var(--ink-900)", textAlign: "center" }}
             >
               Privacy Policy and Terms of Service.
             </Typography>
@@ -60,7 +60,7 @@ export const InitialDashboardScreen: FC = () => {
                 <Typography
                   fontSize={12}
                   fontFamily={"Open Sans"}
-                  style={{ color: "#0F52BA" }}
+                  style={{ color: "var(--ink-900)" }}
                 >
                   Terminos del Servicio
                 </Typography>
@@ -73,7 +73,7 @@ export const InitialDashboardScreen: FC = () => {
                 <Typography
                   fontSize={12}
                   fontFamily={"Open Sans"}
-                  style={{ color: "#0F52BA" }}
+                  style={{ color: "var(--ink-900)" }}
                 >
                   Política de Privacidad{" "}
                 </Typography>

@@ -113,7 +113,7 @@ export const DialogoBorrado: React.FC<Props> = ({ usuario, onCerrar, onBorrado }
           </Typography>
 
           {resultado.aviso && (
-            <Typography fontSize={14} sx={{ color: "#A4442F", marginBottom: 2 }}>
+            <Typography fontSize={14} sx={{ color: "var(--aviso-texto)", marginBottom: 2 }}>
               {resultado.aviso}
             </Typography>
           )}
@@ -139,12 +139,12 @@ export const DialogoBorrado: React.FC<Props> = ({ usuario, onCerrar, onBorrado }
                   </li>
                 )}
                 {p.stripe.aviso && (
-                  <li style={{ color: "#A4442F" }}>{p.stripe.aviso}</li>
+                  <li style={{ color: "var(--aviso-texto)" }}>{p.stripe.aviso}</li>
                 )}
               </>
             )}
             {p.stripeOmitido && (
-              <li style={{ color: "#A4442F" }}>{p.stripeOmitido}</li>
+              <li style={{ color: "var(--aviso-texto)" }}>{p.stripeOmitido}</li>
             )}
             {p.storage && (
               <li>
@@ -206,7 +206,7 @@ export const DialogoBorrado: React.FC<Props> = ({ usuario, onCerrar, onBorrado }
         >
           {cargandoDetalle && <Loading size="sm" />}
           {!cargandoDetalle && errorDetalle && (
-            <span style={{ color: "#A4442F" }}>{errorDetalle}</span>
+            <span style={{ color: "var(--aviso-texto)" }}>{errorDetalle}</span>
           )}
           {!cargandoDetalle && detalle && (
             <>
@@ -232,7 +232,7 @@ export const DialogoBorrado: React.FC<Props> = ({ usuario, onCerrar, onBorrado }
           )}
         </Box>
 
-        <Typography fontSize={14} sx={{ marginTop: 2, color: "#A4442F" }}>
+        <Typography fontSize={14} sx={{ marginTop: 2, color: "var(--aviso-texto)" }}>
           Esto no se puede deshacer. Los chats están cifrados con una clave que
           solo existe dentro de la bóveda de este usuario: al borrarla, los
           archivos quedan ilegibles para siempre, también para ti.

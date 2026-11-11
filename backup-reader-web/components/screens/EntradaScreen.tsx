@@ -112,7 +112,7 @@ export const EntradaScreen: FC = () => {
             width: "100%",
             height: 52,
             paddingRight: extra ? 52 : undefined,
-            borderColor: error ? "#C9553D" : undefined,
+            borderColor: error ? "var(--aviso-borde)" : undefined,
           }}
         />
         {extra}
@@ -123,7 +123,7 @@ export const EntradaScreen: FC = () => {
             display: "block",
             marginTop: 6,
             fontSize: 13,
-            color: error ? "#A4442F" : "var(--slate-500)",
+            color: error ? "var(--aviso-texto)" : "var(--slate-500)",
           }}
         >
           {error || ayuda}

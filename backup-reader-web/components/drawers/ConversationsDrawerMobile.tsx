@@ -1,10 +1,14 @@
-import { FC, useContext, useState } from "react";
+import { CSSProperties, FC, useContext, useState } from "react";
+import { useRouter } from "next/router";
+import { useTranslation } from "react-i18next";
 
 import { Text, Button, Collapse } from "@nextui-org/react";
 import { StorageContext } from "../../context/StorageContext";
+import { AuthContext } from "../../context";
 import { BotonCifrar } from "../vault/BotonCifrar";
 import { BotonBorrarChat } from "../chat/BotonBorrarChat";
 import { ResultadosGlobales } from "../chat/ResultadosGlobales";
+import { nombreDelContacto, partirTitulo, iniciales } from "../../lib/nombres-de-chat";
 import { Box, Container, Drawer, Typography } from "@mui/material";
 import { storage } from "../../config/firebase";
 import {
@@ -29,6 +33,27 @@ const styles = {
 };
 
 
+/** `t()` puede devolver null segun sus tipos; aqui se espera siempre texto. */
+const enTextoM = (traducido: unknown): string =>
+  (traducido as string | null | undefined) ?? "";
+
+/* Los enlaces del pie comparten forma: 44px de alto, alineados a la
+   izquierda como la lista, y sin aspecto de boton, porque son navegacion y
+   no acciones destacadas. */
+const enlacePanel: CSSProperties = {
+  display: "block",
+  width: "100%",
+  minHeight: 44,
+  padding: "0 12px",
+  textAlign: "left",
+  background: "transparent",
+  border: "none",
+  cursor: "pointer",
+  fontFamily: "var(--font-sans)",
+  fontSize: 15,
+  color: "var(--ink-900)",
+};
+
 type ConversationsDrawerMobileProps = {
   openState: boolean;
   setOpenState: (value: boolean) => void;
@@ -39,7 +64,10 @@ export const ConversationsDrawerMobile: FC<ConversationsDrawerMobileProps> = ({
   setOpenState,
   
 }) => {
-  const { fileList } = useContext(StorageContext);
+  const { t } = useTranslation();
+  const router = useRouter();
+  const { logOut } = useContext(AuthContext);
+  const { fileList, chatName } = useContext(StorageContext);
   const { getFile } = useContext(StorageContext);
   const onHandleGetFile = (fullPath: string, name: string) => {
     getFile(fullPath, name);
@@ -151,7 +179,7 @@ export const ConversationsDrawerMobile: FC<ConversationsDrawerMobileProps> = ({
               derecho de la pantalla no siempre llega con el pulgar. */}
           <button
             type="button"
-            aria-label="Cerrar"
+            aria-label={enTextoM(t("Cerrar"))}
             onClick={() => setOpenState(false)}
             style={{
               width: 44,
@@ -177,7 +205,7 @@ export const ConversationsDrawerMobile: FC<ConversationsDrawerMobileProps> = ({
         <input
           value={consulta}
           onChange={(e) => setConsulta(e.target.value)}
-          placeholder="Buscar en todos los chats"
+          placeholder={enTextoM(t("Buscar en todos los chats"))}
           style={{
             width: "calc(100% - 20px)",
             margin: "0 10px 10px",
@@ -193,6 +221,22 @@ export const ConversationsDrawerMobile: FC<ConversationsDrawerMobileProps> = ({
         <div style={{ width: "calc(100% - 20px)", margin: "0 10px" }}>
           <ResultadosGlobales consulta={consulta} alAbrirChat={onHandleGetFile} />
         </div>
+
+        {/* Cuantos chats hay (1b). Sin el contador, una lista larga no dice
+            si estan todos: el usuario que subio diez y ve seis en pantalla no
+            sabe si faltan cuatro o si hay que desplazarse. */}
+        <p
+          style={{
+            margin: "6px 12px 4px",
+            fontFamily: "var(--font-mono)",
+            fontSize: 10.5,
+            letterSpacing: "0.14em",
+            textTransform: "uppercase",
+            color: "var(--slate-500)",
+          }}
+        >
+          {enTextoM(t("Tus chats · {{n}}", { n: fileList?.length ?? 0 }))}
+        </p>
 
         {fileList?.map((item, i) =>{
 
@@ -221,26 +265,82 @@ export const ConversationsDrawerMobile: FC<ConversationsDrawerMobileProps> = ({
           /* El botón de cifrar va FUERA del <Button>, no dentro: un botón
              anidado en otro es HTML inválido y el clic se vuelve impredecible.
              Por eso la fila pasa a ser un div con los dos al lado. */
+          /* Fila de chat (pantalla 1b).
+             Antes era un <Button> de NextUI con el nombre crudo del archivo en
+             10px: "Chat de WhatsApp con Mama Tue, Sep 15, 2026, 07 PM". Eso no
+             se lee de un vistazo y, con varios chats, todos empiezan igual, asi
+             que hay que leer hasta el final de cada uno para distinguirlos.
+             Ahora: iniciales, nombre del contacto y la fecha debajo. */
+          const nombre = nombreDelContacto(item.name);
+          const { fecha } = partirTitulo(item.name);
+          const activo = chatName === item.name;
+
           return  (
             <div
               key={i}
+              data-fila-chat
+              onClick={() => onHandleGetFile(item.fullPath, item.name)}
               style={{
                 display: "flex",
                 alignItems: "center",
-                gap: 8,
-                marginTop: 15,
+                gap: 10,
+                padding: "10px 12px",
+                cursor: "pointer",
+                borderLeft: activo ? "3px solid var(--brass-500)" : "3px solid transparent",
+                background: activo ? "var(--paper-100)" : "transparent",
               }}
             >
-              <Button
-                auto
-                light
-                color="primary"
-                onPress={() => onHandleGetFile(item.fullPath, item.name)}
+              <span
+                aria-hidden
+                style={{
+                  flexShrink: 0,
+                  width: 36,
+                  height: 36,
+                  borderRadius: 999,
+                  display: "inline-flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  background: "var(--paper-200)",
+                  color: "var(--slate-700)",
+                  fontFamily: "var(--font-mono)",
+                  fontSize: 12,
+                  letterSpacing: "0.04em",
+                }}
               >
-                <Typography fontFamily={"Open Sans"} style={styles.drawerSubTitle}>
-                  {item.name}
-                </Typography>
-              </Button>
+                {iniciales(nombre)}
+              </span>
+
+              <span style={{ flex: 1, minWidth: 0 }}>
+                <span
+                  style={{
+                    display: "block",
+                    fontFamily: "var(--font-sans)",
+                    fontSize: 15,
+                    fontWeight: activo ? 600 : 500,
+                    color: "var(--ink-900)",
+                    overflow: "hidden",
+                    textOverflow: "ellipsis",
+                    whiteSpace: "nowrap",
+                  }}
+                >
+                  {nombre}
+                </span>
+                {fecha && (
+                  <span
+                    style={{
+                      display: "block",
+                      marginTop: 2,
+                      fontFamily: "var(--font-mono)",
+                      fontSize: 10.5,
+                      letterSpacing: "0.06em",
+                      color: "var(--slate-500)",
+                    }}
+                  >
+                    {fecha}
+                  </span>
+                )}
+              </span>
+
               {!item.cifrado && (
                 <BotonCifrar fullPath={item.fullPath} name={item.name} />
               )}
@@ -249,6 +349,62 @@ export const ConversationsDrawerMobile: FC<ConversationsDrawerMobileProps> = ({
           )
         })}
 
+
+        {/* Lo que el panel tenia que ofrecer ademas de la lista (1b).
+            Estaba todo en la cabecera de la aplicacion, que en movil se
+            queda detras del panel: con el panel abierto no habia forma de
+            agregar un chat ni de llegar a la cuenta sin cerrarlo antes. */}
+        <div style={{ marginTop: 22, borderTop: "1px solid var(--border)", paddingTop: 14 }}>
+          <p
+            style={{
+              margin: "0 12px 8px",
+              fontFamily: "var(--font-mono)",
+              fontSize: 10.5,
+              letterSpacing: "0.14em",
+              textTransform: "uppercase",
+              color: "var(--slate-500)",
+            }}
+          >
+            {t("Agregar chat")}
+          </p>
+          <button
+            type="button"
+            onClick={() => {
+              setOpenState(false);
+              window.dispatchEvent(new CustomEvent("br:subir-chat", { detail: "archivos" }));
+            }}
+            style={enlacePanel}
+          >
+            {t("Desde Archivos")}
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              setOpenState(false);
+              window.dispatchEvent(new CustomEvent("br:subir-chat", { detail: "drive" }));
+            }}
+            style={enlacePanel}
+          >
+            {t("Desde Google Drive")}
+          </button>
+        </div>
+
+        <div style={{ marginTop: 14, borderTop: "1px solid var(--border)", paddingTop: 14, paddingBottom: 20 }}>
+          <button
+            type="button"
+            onClick={() => { setOpenState(false); router.push("/account"); }}
+            style={enlacePanel}
+          >
+            {t("Mi cuenta")}
+          </button>
+          <button
+            type="button"
+            onClick={() => { setOpenState(false); logOut(); }}
+            style={{ ...enlacePanel, color: "var(--slate-700)" }}
+          >
+            {t("Cerrar sesión")}
+          </button>
+        </div>
       </Container>
     </Drawer>
   );

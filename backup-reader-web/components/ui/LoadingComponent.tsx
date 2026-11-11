@@ -333,7 +333,7 @@ const SubidaEnCurso: FC<{ progreso: number }> = ({ progreso }) => {
             thickness={3.5}
             value={arrancando ? undefined : pct}
             variant={arrancando ? "indeterminate" : "determinate"}
-            sx={{ color: "var(--brass-500, #0F52BA)" }}
+            sx={{ color: "var(--brass-500, var(--ink-900))" }}
           />
           {!arrancando && (
             <Box
