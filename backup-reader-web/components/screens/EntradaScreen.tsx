@@ -236,12 +236,18 @@ export const EntradaScreen: FC = () => {
                 </svg>
               )}
 
+              {/* El `display` en linea gana a la clase, asi que la clase va en
+                  un envoltorio sin estilos propios. Si se pusiera junta, el
+                  separador seguiria viendose en escritorio aunque el CSS
+                  dijera que no. */}
+              <div className="br-solo-movil">
               <div style={{ display: "flex", alignItems: "center", gap: 12, margin: "18px 0" }}>
                 <span style={{ flex: 1, height: 1, background: "var(--border)" }} />
                 <span style={{ fontFamily: "var(--font-mono)", fontSize: 11, letterSpacing: "0.12em", color: "var(--slate-500)" }}>
                   {t("O")}
                 </span>
                 <span style={{ flex: 1, height: 1, background: "var(--border)" }} />
+              </div>
               </div>
 
               {/* En escritorio el correo va EN LINEA, sin pantalla aparte: es
@@ -250,13 +256,13 @@ export const EntradaScreen: FC = () => {
                   primera pantalla empuja los botones de Apple y Google fuera
                   del alcance del pulgar, que es donde el diseno los quiere.
                   (7a frente a 4a.) */}
-              <div className="br-solo-escritorio">
+              <div className="br-solo-escritorio" style={{ marginTop: 18 }}>
                 {campo(
                   enTexto(t("O con tu correo")),
                   {
                     type: "email",
                     value: correo,
-                    placeholder: "tucorreo@ejemplo.com",
+                    placeholder: enTexto(t("tucorreo@email.com")),
                     onChange: (e) => {
                       setCorreo(e.target.value);
                       setErrorCorreo("");
@@ -301,7 +307,7 @@ export const EntradaScreen: FC = () => {
                   type: "email",
                   value: correo,
                   autoFocus: true,
-                  placeholder: "tucorreo@email.com",
+                  placeholder: enTexto(t("tucorreo@email.com")),
                   onChange: (e) => {
                     setCorreo(e.target.value);
                     setErrorCorreo("");

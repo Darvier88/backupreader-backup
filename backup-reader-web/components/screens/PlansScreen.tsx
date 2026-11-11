@@ -91,7 +91,10 @@ export const PlansScreen: FC = () => {
           {/* La columna de los tres pasos, la misma en 7c, 7d y 7e. En
               escritorio sobra el sitio, y los nombres de cada paso anticipan
               lo que va a pedirse despues de pagar. */}
-          <div style={{ marginBottom: 26 }}>
+          {/* Solo escritorio. En movil ya esta la linea "Paso 1 de 3" sobre
+              el titulo, y `br-aside` se apila debajo en vez de desaparecer,
+              asi que sin esto se veian los dos indicadores a la vez. */}
+          <div className="br-solo-escritorio" style={{ marginBottom: 26 }}>
             <PasosOnboarding actual={1} />
           </div>
           {asideItems(t).map((it, i) => (

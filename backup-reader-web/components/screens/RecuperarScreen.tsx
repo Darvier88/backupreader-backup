@@ -89,7 +89,7 @@ export const RecuperarScreen: FC = () => {
                   type="email"
                   autoFocus
                   value={correo}
-                  placeholder="tucorreo@email.com"
+                  placeholder={enTexto(t("tucorreo@email.com"))}
                   onChange={(e) => {
                     setCorreo(e.target.value);
                     setError("");
