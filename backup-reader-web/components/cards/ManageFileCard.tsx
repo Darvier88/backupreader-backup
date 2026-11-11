@@ -355,7 +355,13 @@ export const ManageFileCard: FC<ManageFileCardProps> = ({ isFirstFile, chat }) =
 
   return (
     <>
-      {/* Barra "Subir desde" */}
+      {/* Subir desde, SOLO sin chat abierto.
+          Con un chat abierto esta barra se quedaba encima de la conversacion:
+          lo primero que se veia al abrir un chat no era el chat, sino dos
+          botones para subir otro. Subir vive ahora en el panel de chats,
+          junto a la lista que modifica; aqui queda como atajo de la pantalla
+          vacia, que es cuando subir es de verdad lo siguiente que hacer. */}
+      {!chat && (
       <div style={{ display: "flex", flexWrap: "wrap", gap: 10, alignItems: "center", justifyContent: "flex-end", margin: phone ? "-8px 0 16px" : "8px 0 24px" }}>
         <span style={{ fontFamily: mono, fontSize: 11, letterSpacing: "0.14em", textTransform: "uppercase", color: "var(--slate-500)" }}>
           {t("Subir desde:")}
@@ -372,6 +378,7 @@ export const ManageFileCard: FC<ManageFileCardProps> = ({ isFirstFile, chat }) =
           </>
         )}
       </div>
+      )}
 
       {/* Estado vacío: tarjeta "Selecciona un chat" */}
       {!chat && (

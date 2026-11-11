@@ -126,6 +126,14 @@ export const NavBar: FC<NavBarProps> = ({ drawerButtonOnPress }) => {
   },[]);
 
 
+  /* En el movil del dashboard, la cuenta y cerrar sesion viven en el panel de
+     chats (1b), no en la cabecera. El diseno deja arriba solo lo que pertenece
+     al chat que se esta leyendo; dos iconos de cuenta encima de una
+     conversacion compiten con ella y ademas empujaban el titulo del chat a una
+     segunda linea en pantallas de 360 px. Fuera del dashboard siguen aqui,
+     porque alli no hay panel donde ponerlos y quitarlos dejaria sin salida. */
+  const enElPanel = router.pathname === "/dashboard";
+
   return (
     <>
       <header className="br-header">
@@ -185,7 +193,7 @@ export const NavBar: FC<NavBarProps> = ({ drawerButtonOnPress }) => {
               </span>
             )}
 
-            {user && phone && router.pathname !== "/account" && (
+            {user && phone && !enElPanel && router.pathname !== "/account" && (
               <IconButton
                 aria-label={t("Mi cuenta") as string}
                 title={t("Mi cuenta") as string}
@@ -216,7 +224,7 @@ export const NavBar: FC<NavBarProps> = ({ drawerButtonOnPress }) => {
               </span>
             )}
 
-            {user && phone && (
+            {user && phone && !enElPanel && (
               <IconButton
                 aria-label={t("Cerrar sesión") as string}
                 title={t("Cerrar sesión") as string}

@@ -518,6 +518,15 @@ const resources = {
       "Política de Datos de Usuario de los Servicios de API de Google":"Google API Services User Data Policy",
       ", incluidos los requisitos de Uso Limitado.":", including the Limited Use requirements.",
       "Cerrar sesión": "Logout",
+
+      // --- Panel de chats y separadores de día -----------------------------
+      "Tus chats · {{n}}": "Your chats · {{n}}",
+      "Agregar chat": "Add a chat",
+      "Desde Archivos": "From Files",
+      "Desde Google Drive": "From Google Drive",
+      "Cerrar": "Close",
+      "Hoy": "Today",
+      "Ayer": "Yesterday",
       "Respalda tus chat de WhatsApp.":
         "Backup your Whatsapp Chats.",
       "Guarda y lee tus conversaciones de forma segura en la nube.":

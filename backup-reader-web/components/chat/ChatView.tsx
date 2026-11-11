@@ -6,6 +6,7 @@ import { Typography } from "@mui/material";
 import { Container } from "@nextui-org/react";
 import { ChatImage, ChatVideoPlayer } from ".";
 import { TextoResaltado } from "./TextoResaltado";
+import { partirFechaHora } from "../../lib/fechas-de-chat";
 import { StorageContext } from '../../context/StorageContext';
 
 import useInView from '../../hooks/useInView';
@@ -278,13 +279,18 @@ export const ChatView: FC<ChatViewProps> = ({
           width: gallery ? "100%" : "auto",
         }}
       >
-        {/* Remitente + fecha */}
+        {/* Remitente + hora.
+            Solo la hora: el dia lo pone el separador de arriba, una vez por
+            dia. Repetir "9/8/26" en cada burbuja de una conversacion de mil
+            mensajes no informa de nada, porque lo que cambia entre un mensaje
+            y el siguiente es la hora. En galeria, donde no hay separadores,
+            se deja la fecha entera. */}
         <div style={{ display: "flex", flexWrap: "wrap", gap: 12, alignItems: "baseline", justifyContent: "space-between", marginBottom: isMedia ? 10 : 6 }}>
           <span style={{ fontFamily: "var(--font-mono)", fontSize: 11, letterSpacing: "0.12em", textTransform: "uppercase", color: senderColor }}>
             {messenger}
           </span>
           <span style={{ fontFamily: "var(--font-mono)", fontSize: 11, color: dateColor }}>
-            {date}
+            {gallery ? date : partirFechaHora(date).hora || date}
           </span>
         </div>
 

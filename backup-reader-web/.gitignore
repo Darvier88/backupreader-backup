@@ -53,3 +53,4 @@ _env.txt
 # Caché incremental de tsc. La genera `tsc --noEmit` al comprobar tipos y no
 # aporta nada al repositorio.
 tsconfig.tsbuildinfo
+.env.local

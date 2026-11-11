@@ -1,4 +1,4 @@
-import { FC, useContext, useState, useEffect, useMemo, useRef } from "react";
+import { FC, Fragment, useContext, useState, useEffect, useMemo, useRef } from "react";
 
 import {
   Box,
@@ -16,6 +16,7 @@ import { ConversationsDrawer } from "../drawers";
 import { BuscadorEnChat } from "../chat/BuscadorEnChat";
 import { ControlSegmentado } from "../ui/ControlSegmentado";
 import { cuantasVeces } from "../../lib/busqueda/resaltar";
+import { claveDeDia, etiquetaDeDia } from "../../lib/fechas-de-chat";
 import { usePanelChats } from "../../context/PanelChatsContext";
 
 /** `t()` puede devolver null segun sus tipos; esto lo deja en string. */
@@ -24,7 +25,7 @@ const enTexto = (traducido: unknown): string =>
 import { StorageContext } from "../../context/StorageContext";
 import { useLoading } from "../../context/LoadingContext";
 import useInView from "../../hooks/useInView";
-import { t } from "i18next";
+import i18n, { t } from "i18next";
 
 
 
@@ -412,19 +413,63 @@ export const DashboardScreen: FC = () => {
               ) : (
                 <>
                   {visibleMessages.slice(0, visibleCount).map(
-                    (item: any, i: number) => (
-                      <ChatView
-                        key={i}
-                        toShow={toShow}
-                        date={item[0]}
-                        message={item[2]}
-                        messenger={item[1]}
-                        chatSearch={chatSearch}
-                        coincidenciaActiva={activa}
-                        desplazamiento={coincidencias.desplazamientos[i] ?? 0}
-                        isMine={!!myName && (item[1] || "").trim() === myName}
-                      />
-                    )
+                    (item: any, i: number) => {
+                      /* Separador de dia.
+                         Sale cuando la fecha cambia respecto al mensaje
+                         anterior, que es exactamente cuando aporta algo. El
+                         primer mensaje siempre lo lleva: sin el, el chat
+                         empieza sin decir de cuando es. */
+                      const dia = claveDeDia(item[0]);
+                      const diaAnterior =
+                        i > 0 ? claveDeDia(visibleMessages[i - 1][0]) : null;
+                      const cambiaDeDia = !!dia && dia !== diaAnterior;
+
+                      return (
+                        <Fragment key={i}>
+                          {cambiaDeDia && (
+                            <div
+                              role="separator"
+                              style={{
+                                display: "flex",
+                                alignItems: "center",
+                                justifyContent: "center",
+                                margin: "22px 0 10px",
+                              }}
+                            >
+                              <span
+                                style={{
+                                  padding: "4px 12px",
+                                  borderRadius: 999,
+                                  background: "var(--paper-100)",
+                                  border: "1px solid var(--border)",
+                                  fontFamily: "var(--font-mono)",
+                                  fontSize: 10.5,
+                                  letterSpacing: "0.12em",
+                                  textTransform: "uppercase",
+                                  color: "var(--slate-500)",
+                                }}
+                              >
+                                {etiquetaDeDia(dia, {
+                                  idioma: i18n.language,
+                                  hoy: (t("Hoy") as string) || "Hoy",
+                                  ayer: (t("Ayer") as string) || "Ayer",
+                                })}
+                              </span>
+                            </div>
+                          )}
+                          <ChatView
+                            toShow={toShow}
+                            date={item[0]}
+                            message={item[2]}
+                            messenger={item[1]}
+                            chatSearch={chatSearch}
+                            coincidenciaActiva={activa}
+                            desplazamiento={coincidencias.desplazamientos[i] ?? 0}
+                            isMine={!!myName && (item[1] || "").trim() === myName}
+                          />
+                        </Fragment>
+                      );
+                    }
                   )}
                   {visibleCount < visibleMessages.length && (
                     <>

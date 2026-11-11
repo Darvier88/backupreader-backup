@@ -392,8 +392,45 @@ export const ConversationsDrawer: FC<ConversationsDrawerProps> = ({
         })}
       </div>
 
-
-      
+      {/* Agregar chat, dentro del panel.
+          Antes esto era una barra "Subir desde: Google Drive · Archivos"
+          flotando encima del chat abierto, es decir, encima de lo que el
+          usuario estaba leyendo. Subir es algo que se hace junto a la lista
+          de chats, no sobre la conversacion; aqui queda al lado de lo que
+          modifica. Las dos opciones las ejecuta ManageFileCard, que es quien
+          tiene el selector de Drive y el input oculto. */}
+      <div style={{ borderTop: "1px solid var(--border)", margin: "14px 10px 0", paddingTop: 14 }}>
+        <p
+          style={{
+            margin: "0 4px 8px",
+            fontFamily: "var(--font-mono)",
+            fontSize: 10.5,
+            letterSpacing: "0.14em",
+            textTransform: "uppercase",
+            color: "var(--slate-500)",
+          }}
+        >
+          {t("Agregar chat")}
+        </p>
+        <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+          <button
+            className="br-btn br-btn-ghost br-btn-sm"
+            onClick={() =>
+              window.dispatchEvent(new CustomEvent("br:subir-chat", { detail: "drive" }))
+            }
+          >
+            {t("Google Drive")}
+          </button>
+          <button
+            className="br-btn br-btn-ghost br-btn-sm"
+            onClick={() =>
+              window.dispatchEvent(new CustomEvent("br:subir-chat", { detail: "archivos" }))
+            }
+          >
+            {t("Archivos")}
+          </button>
+        </div>
+      </div>
     </>
   );
 };
