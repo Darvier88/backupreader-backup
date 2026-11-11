@@ -2,6 +2,8 @@ import { FC, useContext } from "react";
 import { useRouter } from "next/router";
 import { useTranslation } from "react-i18next";
 import { AuthContext } from "../../context/AuthContext";
+import { Animacion } from "../help/Animacion";
+import { Preguntas } from "../help/Preguntas";
 
 /* ============================================================================
    Página de Ayuda / Tutorial — rediseño "Expediente".
@@ -18,16 +20,19 @@ export const HelpScreen: FC = () => {
   const { status } = useContext(AuthContext);
   const isLoggedIn = status === "autheticated";
 
+  /* Las animaciones sustituyen a las grabaciones de pantalla anteriores.
+     Cada una tiene cuatro archivos —español e inglés, horizontal y vertical—
+     y `Animacion` elige el que toca. */
   const steps = [
     {
       index: "Paso 01",
-      video: "videos/Backup Reader - Primer Paso_051724.mp4",
+      video: "paso1-exportar",
       title: t("Primer paso - Exportar el chat desde WhatsApp"),
       body: t("1) Abre Whatsapp, 2) Presiona sobre el chat que quieres hacer backup, 3) Presiona sobre el nombre (en la parte de superior), 4) En la parte de abajo encontrarás la opción 'Exportar chat', 5) Selecciona 'Adjuntar archivos', 6) Selecciona en la parte inferior (Guardar en archivos)"),
     },
     {
       index: "Paso 02",
-      video: "videos/Backup Reader - Segundo Paso_051724.mp4",
+      video: "paso2-subir",
       title: t("Segundo paso - Sube tu backup"),
       body: t("1) Subir chat, 2) Seleccionar archivos, 3) Busca el chat que subimos en el paso 1, 4) Presiona sobre el chat, 5) Presiona 'Abrir' en la parte superior derecha, listo, ya tienes tu primer backup."),
     },
@@ -45,9 +50,7 @@ export const HelpScreen: FC = () => {
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(320px, 1fr))", gap: 24 }}>
           {steps.map((s, i) => (
             <article key={i} className="br-card" style={{ overflow: "hidden", display: "flex", flexDirection: "column" }}>
-              <div style={{ aspectRatio: "16 / 10", background: "var(--ink-900)", borderBottom: "1px solid var(--border)" }}>
-                <video src={s.video} controls style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
-              </div>
+              <Animacion base={s.video} descripcion={s.title as string} />
               <div style={{ padding: "26px 26px 30px", display: "flex", flexDirection: "column", gap: 12 }}>
                 <span style={{ fontFamily: mono, fontSize: 11, letterSpacing: "0.14em", textTransform: "uppercase", color: "var(--brass-600)" }}>{s.index}</span>
                 <h3 style={{ margin: 0, fontFamily: serif, fontWeight: 500, fontSize: 22, lineHeight: 1.25, color: "var(--ink-900)" }}>{s.title}</h3>
@@ -57,8 +60,31 @@ export const HelpScreen: FC = () => {
           ))}
         </div>
 
+        {/* El cifrado, explicado en vídeo.
+            Va después del tutorial y no antes: primero se enseña lo que hay
+            que hacer, que es lo que trae a la gente a esta página, y luego
+            por qué se puede confiar en hacerlo. Al revés, se pide confianza
+            a quien todavía no sabe qué se le está pidiendo. */}
+        <section style={{ marginTop: 56 }}>
+          <span className="br-section-label br-section-label-accent">{t("Cifrado")}</span>
+          <h2 style={{ margin: "16px 0 20px", fontFamily: serif, fontWeight: 500, fontSize: "clamp(22px,3vw,30px)", letterSpacing: "-0.015em", color: "var(--ink-900)" }}>
+            {t("Tus chats, bajo dos llaves")}
+          </h2>
+          <p style={{ margin: "0 0 22px", fontSize: 16, lineHeight: 1.65, color: "var(--slate-700)", maxWidth: "62ch" }}>
+            {t("Se cifran en tu dispositivo antes de salir de él. Ni nosotros podemos abrirlos: la clave no sale de tu lado.")}
+          </p>
+          <article className="br-card" style={{ overflow: "hidden", maxWidth: 760 }}>
+            <Animacion
+              base="cifrado-dos-llaves"
+              descripcion={t("Animación: cómo se cifran tus chats con dos llaves") as string}
+            />
+          </article>
+        </section>
+
+        <Preguntas />
+
         {!isLoggedIn && (
-          <div className="br-card" style={{ marginTop: 40, background: "var(--ink-900)", border: "none", padding: "clamp(32px,5vw,48px)", textAlign: "center" }}>
+          <div className="br-card" style={{ marginTop: 56, background: "var(--ink-900)", border: "none", padding: "clamp(32px,5vw,48px)", textAlign: "center" }}>
             <h2 style={{ margin: 0, fontFamily: serif, fontWeight: 500, fontSize: "clamp(24px,3vw,32px)", letterSpacing: "-0.015em", color: "var(--paper-50)" }}>
               {t("Backup de tus recuerdos")}
             </h2>

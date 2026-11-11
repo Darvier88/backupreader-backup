@@ -621,6 +621,64 @@ const resources = {
       "Pago seguro con tarjeta.": "Secure payment by card.",
       "Foto del chat": "Chat photo",
 
+      // --- Ayuda: animaciones y preguntas frecuentes ----------------------
+      "Cifrado": "Encryption",
+      "Tus chats, bajo dos llaves": "Your chats, under two keys",
+      "Se cifran en tu dispositivo antes de salir de él. Ni nosotros podemos abrirlos: la clave no sale de tu lado.":
+        "They're encrypted on your device before they leave it. Not even we can open them: the key never leaves your side.",
+      "Animación: cómo se cifran tus chats con dos llaves":
+        "Animation: how your chats are encrypted with two keys",
+      "Preguntas": "Questions",
+      "Lo que suele preguntarse antes de subir el primer chat":
+        "What people usually ask before uploading their first chat",
+      "¿Te queda alguna duda? Escríbenos a info@backupreader.com y te contestamos.":
+        "Still unsure about something? Write to info@backupreader.com and we'll answer.",
+      "XChaCha20-Poly1305 · Argon2id · cifrado en tu dispositivo":
+        "XChaCha20-Poly1305 · Argon2id · encrypted on your device",
+
+      "¿Qué tipo de cifrado se usa?": "What kind of encryption do you use?",
+      "Tus mensajes y tus archivos se cifran con XChaCha20-Poly1305, en bloques de 64 KB. No es AES-256, que es lo que suele nombrarse: es un algoritmo de la misma generación y la misma solidez, y la razón de elegirlo es que va más rápido en el navegador, que es donde se cifra todo aquí.":
+        "Your messages and files are encrypted with XChaCha20-Poly1305, in 64 KB blocks. It isn't AES-256, which is the one usually named: it's an algorithm of the same generation and the same strength, and the reason for choosing it is that it runs faster in the browser, which is where everything is encrypted here.",
+      "Tu contraseña de cifrado no se usa directamente para cifrar. Pasa primero por Argon2id, con 64 MB de memoria y tres pasadas, que es lo que convierte una contraseña en una clave y hace que probarlas a la fuerza salga carísimo. Con esa clave se envuelve otra clave, aleatoria, que es la que cifra de verdad tus chats.":
+        "Your encryption password isn't used to encrypt directly. It first goes through Argon2id, with 64 MB of memory and three passes, which is what turns a password into a key and makes guessing them by brute force extremely expensive. That key then wraps another, random key, which is the one that actually encrypts your chats.",
+      "Ese rodeo es lo que permite que tu código de recuperación funcione sin guardar tu contraseña en ningún sitio: la misma clave aleatoria va envuelta dos veces, una con tu contraseña y otra con el código.":
+        "That detour is what lets your recovery code work without storing your password anywhere: the same random key is wrapped twice, once with your password and once with the code.",
+
+      "¿Puede el equipo de BackupReader leer mis chats?":
+        "Can the BackupReader team read my chats?",
+      "No. El cifrado ocurre en tu teléfono o en tu ordenador, antes de que nada salga de ahí. Lo que llega a nuestros servidores son archivos cifrados y un índice cifrado; tu contraseña no se envía nunca, ni siquiera transformada. Sin ella no hay forma de abrir nada, y nosotros no la tenemos.":
+        "No. The encryption happens on your phone or your computer, before anything leaves it. What reaches our servers are encrypted files and an encrypted index; your password is never sent, not even transformed. Without it there's no way to open anything, and we don't have it.",
+      "Hay una excepción honesta, y preferimos decirla: los chats que se subieron antes de que existiera el cifrado siguen guardados sin cifrar hasta que los cifres tú. La aplicación te los marca y te ofrece un botón para hacerlo. Mientras no lo pulses, esos chats concretos sí son legibles por quien tenga acceso al servidor.":
+        "There's one honest exception, and we'd rather say it: chats uploaded before the encryption existed are still stored unencrypted until you encrypt them. The app marks them and offers you a button to do it. Until you press it, those particular chats are readable by anyone with access to the server.",
+
+      "¿Qué pasa si olvido la contraseña y el código de recuperación?":
+        "What if I forget both my password and my recovery code?",
+      "Los chats se pierden. No es una política que podamos saltarnos haciendo una excepción: la clave que abre tus archivos solo existe dentro de dos envoltorios, uno que abre tu contraseña y otro que abre tu código. Si se pierden los dos, no queda nada en ninguna parte con lo que abrirlos, tampoco de nuestro lado.":
+        "The chats are lost. It isn't a policy we could waive as a favour: the key that opens your files exists only inside two wrappers, one your password opens and one your code opens. If both are lost, there is nothing anywhere left to open them with, on our side either.",
+      "Es el precio de que nadie más pueda leerlos. Un sistema donde soporte puede devolverte el acceso es un sistema donde soporte puede entrar. Por eso el código de recuperación se enseña una sola vez y te pedimos que confirmes que lo has guardado: guárdalo donde guardas las cosas que no puedes perder.":
+        "It's the price of nobody else being able to read them. A system where support can give you back access is a system where support can get in. That's why the recovery code is shown only once and we ask you to confirm you've saved it: keep it where you keep the things you can't afford to lose.",
+
+      "¿Dónde se guardan mis datos?": "Where is my data stored?",
+      "En la infraestructura de Google Cloud, a través de Firebase: los archivos en Cloud Storage y los datos de la cuenta en Firestore. Los pagos los procesa Stripe, que recibe tu tarjeta y tu correo; nosotros no guardamos ningún número de tarjeta.":
+        "On Google Cloud's infrastructure, through Firebase: the files in Cloud Storage and your account data in Firestore. Payments are handled by Stripe, which receives your card and your email; we don't store any card number.",
+      "Da igual en qué país esté el servidor para lo que de verdad importa: lo que hay en él está cifrado con una clave que no sale de tu dispositivo. Una orden judicial, una filtración o un empleado curioso se encontrarían con archivos que no se pueden abrir.":
+        "Which country the server sits in doesn't change what matters most: what's on it is encrypted with a key that never leaves your device. A court order, a leak or a curious employee would all find files that can't be opened.",
+
+      "¿Cuánto almacenamiento incluye la suscripción?":
+        "How much storage does the subscription include?",
+      "Cada conversación puede ocupar hasta {{n}} MB.":
+        "Each conversation can take up to {{n}} MB.",
+      "Lo verás en la pantalla de planes, con el precio al lado.":
+        "You'll see it on the plans screen, next to the price.",
+      "Lo que ocupa cada conversación depende sobre todo de las fotos, los audios y los vídeos: un chat de solo texto, por largo que sea, apenas pesa.":
+        "What each conversation takes up depends mostly on photos, audio and video: a text-only chat, however long, barely weighs anything.",
+
+      "¿Puedo cancelar cuando quiera?": "Can I cancel whenever I want?",
+      "Sí, desde «Mi cuenta», sin escribir a nadie ni dar explicaciones. La cancelación se aplica al final del periodo que ya has pagado: no se te vuelve a cobrar, y hasta esa fecha sigues entrando con normalidad. No devolvemos la parte del mes en curso porque no la cortamos: la sigues usando.":
+        "Yes, from \"My account\", without writing to anyone or explaining yourself. The cancellation takes effect at the end of the period you've already paid for: you won't be charged again, and until that date you keep signing in as usual. We don't refund the current month because we don't cut it short: you keep using it.",
+      "Si además quieres que borremos tu cuenta y todo lo que has subido, escríbenos a info@backupreader.com desde el correo con el que te registraste.":
+        "If you also want us to delete your account and everything you've uploaded, write to info@backupreader.com from the address you signed up with.",
+
       // --- Enlaces de los correos de Firebase (5f) -------------------------
       "Comprobando el enlace…": "Checking the link…",
       "Este enlace no sirve": "This link doesn't work",
