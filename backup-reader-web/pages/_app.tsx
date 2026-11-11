@@ -13,7 +13,8 @@ import { FirestoreProvider } from "../context/FirestoreContext";
 import { LoadingProvider } from "../context/LoadingContext";
 import { PanelChatsProvider } from "../context/PanelChatsContext";
 import { AudioPlayingProvider, ModalProvider } from "../context";
-import { aplicarIdiomaDetectado } from "../i18n";
+import i18n, { aplicarIdiomaDetectado } from "../i18n";
+import { FirebaseAuth } from "../config/firebase";
 import ReactGA from "react-ga4";
 
 type NextPageWithLayout = NextPage & {
@@ -59,6 +60,29 @@ function MyApp({ Component, pageProps }: AppPropsWithLayout) {
      idioma fijo para que servidor y cliente pinten lo mismo. */
   useEffect(() => {
     aplicarIdiomaDetectado();
+  }, []);
+
+  /* Los correos que manda Firebase, en el idioma del usuario.
+     Sin esto, Firebase usa el idioma por defecto del proyecto —inglés— y
+     alguien que tiene toda la aplicación en español recibe en inglés el
+     correo de recuperar la contraseña, que es justo el momento en que está
+     perdido y menos ganas tiene de traducir. Google traduce sus propias
+     plantillas; lo único que hacía falta era decirle qué idioma.
+
+     Va aquí y no dentro de `cambiarIdioma` para no meter Firebase dentro de
+     i18n.js, que se carga también en las pruebas y en el render de servidor,
+     donde no hay sesión ninguna. */
+  useEffect(() => {
+    const aplicar = (idioma: string) => {
+      try {
+        FirebaseAuth.languageCode = (idioma || "es").startsWith("en") ? "en" : "es";
+      } catch {
+        /* Si Auth aún no está listo, el siguiente cambio de idioma lo pondrá. */
+      }
+    };
+    aplicar(i18n.language);
+    i18n.on("languageChanged", aplicar);
+    return () => { i18n.off("languageChanged", aplicar); };
   }, []);
 
   /* GA4 se inicia UNA vez, al montar la aplicación. Antes la llamada estaba en

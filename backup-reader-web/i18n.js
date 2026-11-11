@@ -621,6 +621,34 @@ const resources = {
       "Pago seguro con tarjeta.": "Secure payment by card.",
       "Foto del chat": "Chat photo",
 
+      // --- Enlaces de los correos de Firebase (5f) -------------------------
+      "Comprobando el enlace…": "Checking the link…",
+      "Este enlace no sirve": "This link doesn't work",
+      "Este enlace está incompleto. Ábrelo desde el correo que te enviamos.":
+        "This link is incomplete. Open it from the email we sent you.",
+      "Este enlace ya no vale: se usó o pasó más de una hora desde que se envió. Pide uno nuevo.":
+        "This link is no longer valid: it was used, or more than an hour has passed since it was sent. Ask for a new one.",
+      "Pedir un enlace nuevo": "Ask for a new link",
+      "Crea una contraseña nueva": "Create a new password",
+      "Para {{correo}}": "For {{correo}}",
+      "Contraseña nueva": "New password",
+      "Esa contraseña es demasiado corta.": "That password is too short.",
+      "Esto cambia la contraseña de acceso. Tu clave de cifrado sigue igual y la pediremos al entrar.":
+        "This changes your sign-in password. Your encryption key stays the same, and we'll ask for it when you sign in.",
+      "Guardar y entrar": "Save and sign in",
+      "No se pudo guardar. Prueba con otra contraseña o pide un enlace nuevo.":
+        "We couldn't save it. Try another password, or ask for a new link.",
+      "Tu contraseña está lista": "Your password is ready",
+      "Entra con tu contraseña nueva. Después te pediremos tu clave de cifrado para abrir tus chats.":
+        "Sign in with your new password. We'll then ask for your encryption key to open your chats.",
+      "Tu correo está verificado": "Your email is verified",
+      "Ya puedes entrar con normalidad.": "You can sign in as usual now.",
+      "Recuperaste tu correo": "You got your email back",
+      "Tu cuenta vuelve a ser {{correo}}. Cambia tu contraseña si no reconoces este cambio.":
+        "Your account is {{correo}} again. Change your password if you don't recognise this change.",
+      "Cambia tu contraseña si no reconoces este cambio.":
+        "Change your password if you don't recognise this change.",
+
       // --- Panel de administración ----------------------------------------
       "(sin correo)": "(no email)",
       "Administrador: no se borra desde aquí": "Administrator: not deleted from here",
