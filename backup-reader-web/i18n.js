@@ -104,7 +104,7 @@ const resources = {
       "Hallazgos clasificados como correcto, a revisar o requiere atención":"Findings graded as clear, worth reviewing, or needs attention",
       "La facturación empieza hoy. Cancela desde tu cuenta cuando quieras; tus backups siguen siendo legibles hasta que termine el periodo.":"Billing starts today. Cancel from your account whenever you want; your backups stay readable until the period ends.",
       "Las contraseñas no coinciden":"Passwords do not match",
-      "Lee tus chats offline, cuando quieras":"Read your chats offline, any time",
+      "Lee tus chats sin conexión, cuando quieras":"Read your chats offline, any time",
       "Los pagos se procesan por nuestro proveedor de pago. Nunca guardamos los datos de tu tarjeta.":"Payments are processed by our payment provider. We never store your card details.",
       "MB cada una":"MB each",
       "Mostrar":"Show",
@@ -550,6 +550,7 @@ const resources = {
       "Volver a escribirla": "Type it again",
       "Guardando…": "Saving…",
       "Abrir app de correo": "Open mail app",
+      "o con tarjeta": "or pay by card",
       "Respalda tus chat de WhatsApp.":
         "Backup your Whatsapp Chats.",
       "Guarda y lee tus conversaciones de forma segura en la nube.":

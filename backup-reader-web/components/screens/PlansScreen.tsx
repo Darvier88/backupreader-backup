@@ -55,9 +55,14 @@ export const PlansScreen: FC = () => {
           {plan ? (
             <div className="br-card" style={{ overflow: "hidden" }}>
               <div style={{ padding: "24px 26px 20px", borderBottom: "1px solid var(--border)" }}>
+                {/* Sin la píldora "Mes".
+                    Debajo ya pone "$2.99 / mes", así que la píldora repetía
+                    el periodo con otras palabras y en otro sitio, y una
+                    píldora destacada suele significar "esto es distinto de lo
+                    normal" —una oferta, un plan recomendado—, que aquí no es
+                    el caso: solo hay un plan. */}
                 <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12 }}>
                   <span style={{ fontFamily: mono, fontSize: 11, letterSpacing: "0.14em", textTransform: "uppercase", color: "var(--brass-600)" }}>{plan.details.name}</span>
-                  <span style={{ fontFamily: "var(--font-sans)", fontSize: 12.5, fontWeight: 600, color: "var(--ink-800)", background: "var(--paper-200)", borderRadius: 100, padding: "5px 14px" }}>{plan.details.frequently}</span>
                 </div>
                 <div style={{ marginTop: 14, display: "flex", alignItems: "baseline", gap: 8 }}>
                   <span style={{ fontFamily: serif, fontWeight: 500, fontSize: 42, letterSpacing: "-0.02em", color: "var(--ink-900)" }}>${plan.details.price}</span>
@@ -67,7 +72,11 @@ export const PlansScreen: FC = () => {
               <ul style={{ margin: 0, padding: "22px 26px", listStyle: "none", display: "flex", flexDirection: "column", gap: 14 }}>
                 <li style={{ display: "flex", gap: 12, alignItems: "flex-start" }}><Check /><span style={{ fontSize: 15.5, lineHeight: 1.55, color: "var(--slate-700)" }}>{plan.details.benefit}</span></li>
                 <li style={{ display: "flex", gap: 12, alignItems: "flex-start" }}><Check /><span style={{ fontSize: 15.5, lineHeight: 1.55, color: "var(--slate-700)" }}>{t("Conversaciones de hasta")} {plan.details.storage} {t("MB cada una")}</span></li>
-                <li style={{ display: "flex", gap: 12, alignItems: "flex-start" }}><Check /><span style={{ fontSize: 15.5, lineHeight: 1.55, color: "var(--slate-700)" }}>{t("Lee tus chats offline, cuando quieras")}</span></li>
+                <li style={{ display: "flex", gap: 12, alignItems: "flex-start" }}><Check /><span style={{ fontSize: 15.5, lineHeight: 1.55, color: "var(--slate-700)" }}>{t("Lee tus chats sin conexión, cuando quieras")}</span></li>
+                {/* El cifrado es la razón por la que alguien elige esto en
+                    vez de dejar el .zip en su nube, así que es un punto de la
+                    lista y no una nota al pie. */}
+                <li style={{ display: "flex", gap: 12, alignItems: "flex-start" }}><Check /><span style={{ fontSize: 15.5, lineHeight: 1.55, color: "var(--slate-700)" }}>{t("Cifrado con una clave que solo tú conoces")}</span></li>
               </ul>
               <div style={{ padding: "0 26px 26px" }}>
                 <button className="br-btn br-btn-primary br-btn-lg br-btn-block" onClick={() => onHandlePlanSelected(plan.id)}>

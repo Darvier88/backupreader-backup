@@ -10,6 +10,7 @@ import {
   CardCvcElement,
   CardExpiryElement,
   CardNumberElement,
+  PaymentRequestButtonElement,
   useElements,
   useStripe,
 } from "@stripe/react-stripe-js";
@@ -159,6 +160,24 @@ export const PaymentCard: FC = () => {
       },
     }) ?? {};
 
+    await cobrarCon(paymentMethod, error, formState.name, formState.email);
+  };
+
+  /**
+   * El cobro a partir de un medio de pago ya creado.
+   *
+   * Lo usan los dos caminos: el formulario de tarjeta y el botón de Apple Pay
+   * o Google Pay. Es el mismo cliente, la misma suscripción y el mismo código
+   * de descuento; lo único que cambia es de dónde sale el `paymentMethod`, y
+   * duplicar todo esto por eso habría significado arreglar cada fallo dos
+   * veces.
+   */
+  const cobrarCon = async (
+    paymentMethod: any,
+    error: any,
+    nombre: string,
+    correo: string
+  ) => {
     const createCustomer = async () => {
       try {
         const response = await fetch('/api/customer/create', {
@@ -169,8 +188,8 @@ export const PaymentCard: FC = () => {
           /* El uid viaja para quedar en metadata del cliente de Stripe. Es lo
              que permite encontrarlo al cancelar sin depender del correo. */
           body: JSON.stringify({
-            name: formState.name,
-            email: formState.email,
+            name: nombre,
+            email: correo,
             uid: user?.uid,
           }),
         });
@@ -198,7 +217,7 @@ export const PaymentCard: FC = () => {
       }
     };
 
-    createCustomer();
+    await createCustomer();
   };
 
   const createSubscription = async (customerId: string, paymentMethodId: string, planId: string) => {
@@ -314,6 +333,65 @@ export const PaymentCard: FC = () => {
    */
   const sinPlan = !planToPay?.details.price;
 
+  /**
+   * Apple Pay y Google Pay.
+   *
+   * `paymentRequest` se queda en null si el navegador no ofrece ninguno de
+   * los dos —no hay tarjeta guardada, el dominio no está verificado en
+   * Stripe, o el sitio no va por HTTPS—, y entonces el botón no se pinta y la
+   * pantalla queda exactamente como estaba. Un botón de Apple Pay que al
+   * pulsarlo no hace nada es peor que no tenerlo.
+   *
+   * Importante para quien lo despliegue: Apple Pay además exige registrar el
+   * dominio en el panel de Stripe. Sin ese paso el botón no aparecerá en
+   * producción aunque aquí esté todo bien.
+   *
+   * El importe que se enseña en la hoja del sistema es el total CON
+   * descuento, que es lo que se va a cobrar hoy. Enseñar el precio de lista
+   * en una hoja que el usuario confirma con su huella sería cobrarle algo
+   * distinto de lo que aprobó.
+   */
+  const [paymentRequest, setPaymentRequest] = useState<any>(null);
+
+  useEffect(() => {
+    if (!stripe || sinPlan) return;
+    const pr = (stripe as any).paymentRequest({
+      country: "US",
+      currency: "usd",
+      total: {
+        label: planToPay?.details.name || "BackupReader",
+        amount: totalCentavos,
+      },
+      requestPayerName: true,
+      requestPayerEmail: true,
+    });
+
+    let vivo = true;
+    pr.canMakePayment().then((resultado: any) => {
+      if (vivo && resultado) setPaymentRequest(pr);
+    });
+
+    pr.on("paymentmethod", async (ev: any) => {
+      setPayResult("checking");
+      /* Se cierra la hoja del sistema antes de llamar a nuestro servidor:
+         dejarla abierta mientras se crea la suscripción la deja girando
+         varios segundos y el usuario cree que se ha colgado. */
+      ev.complete("success");
+      await cobrarCon(
+        ev.paymentMethod,
+        null,
+        ev.payerName || formState.name,
+        ev.payerEmail || formState.email
+      );
+    });
+
+    return () => {
+      vivo = false;
+    };
+    /* Se rehace si cambia el importe: el descuento aplicado después de montar
+       el botón tiene que llegar a la hoja del sistema. */
+  }, [stripe, sinPlan, totalCentavos, planToPay?.details.name]);
+
   return (
     <div style={{ width: "100%", maxWidth: 460, margin: "0 auto" }}>
       {(payResult === "starting" || payResult === "checking") ? (
@@ -334,6 +412,21 @@ export const PaymentCard: FC = () => {
               style={{ marginBottom: 18, padding: "12px 16px", borderColor: "var(--aviso-borde)" }}
             >
               <span style={{ fontSize: 14, color: "var(--aviso-texto)" }}>{fallaPorCodigo}</span>
+            </div>
+          )}
+
+          {paymentRequest && (
+            <div style={{ marginBottom: 22 }}>
+              <PaymentRequestButtonElement
+                options={{ paymentRequest, style: { paymentRequestButton: { height: "52px" } } }}
+              />
+              <div style={{ display: "flex", alignItems: "center", gap: 12, margin: "18px 0 0" }}>
+                <span style={{ flex: 1, height: 1, background: "var(--border)" }} />
+                <span style={{ fontFamily: mono, fontSize: 10.5, letterSpacing: "0.14em", textTransform: "uppercase", color: "var(--slate-500)" }}>
+                  {t("o con tarjeta")}
+                </span>
+                <span style={{ flex: 1, height: 1, background: "var(--border)" }} />
+              </div>
             </div>
           )}
 
