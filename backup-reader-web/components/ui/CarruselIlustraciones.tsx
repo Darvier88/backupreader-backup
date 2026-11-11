@@ -35,7 +35,7 @@ import { useTranslation } from "react-i18next";
 type Lamina = { imagen: string; titulo: string; texto: string };
 
 /** Cada cuánto pasa de lámina, en milisegundos. */
-const PASO = 5000;
+const PASO = 2000;
 
 export const CarruselIlustraciones: FC<{ compacto?: boolean; pie?: string }> = ({ compacto, pie }) => {
   const { t } = useTranslation();
@@ -61,22 +61,26 @@ export const CarruselIlustraciones: FC<{ compacto?: boolean; pie?: string }> = (
 
   const [actual, setActual] = useState(0);
   const [parado, setParado] = useState(false);
-  const [vueltas, setVueltas] = useState(0);
 
-  /* «Las tres ilustraciones rotan UNA vez, con fundido de 360ms, y se
-     detienen» (7a). Igual en móvil (4a) y en escritorio. Al volver a la
-     primera se para; los puntos permiten cambiarlas a mano. */
+  /* Rota sola, en bucle, cada dos segundos.
+     Antes daba una sola vuelta y se detenía en la última lámina. El problema
+     es que quien llega a la pantalla con el formulario ya en pantalla no ve
+     esa única vuelta, y a partir de ahí los puntos parecen decorativos: hay
+     tres, pero nada se mueve nunca. En bucle, el que mira dos segundos ve
+     que hay más de una cosa que contar.
+
+     Se para en cuanto el usuario toca un punto: entonces quiere ver esa, no
+     la siguiente. */
   useEffect(() => {
-    if (parado || vueltas >= laminas.length - 1) return;
+    if (parado) return;
     if (typeof window !== "undefined" && window.matchMedia?.("(prefers-reduced-motion: reduce)").matches) {
       return;
     }
-    const id = window.setTimeout(() => {
+    const id = window.setInterval(() => {
       setActual((i) => (i + 1) % laminas.length);
-      setVueltas((v) => v + 1);
     }, PASO);
-    return () => window.clearTimeout(id);
-  }, [parado, vueltas, laminas.length]);
+    return () => window.clearInterval(id);
+  }, [parado, laminas.length]);
 
   const l = laminas[actual];
 

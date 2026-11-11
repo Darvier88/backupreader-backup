@@ -28,3 +28,17 @@
  * así que no hay enlaces sueltos dando vueltas.
  */
 export const RECUPERAR_CONTRASENA = false;
+
+/**
+ * Entrar o crear cuenta con Apple.
+ *
+ * APAGADO: el botón está hecho y la llamada también, pero Apple no está dado
+ * de alta como proveedor en Firebase, y para darlo de alta hace falta una
+ * cuenta de Apple Developer de pago. Mientras no lo esté, pulsar el botón
+ * lleva a un error de Firebase que no dice nada al usuario.
+ *
+ * Un botón que falla es peor que un botón que no está: el que no está no se
+ * pulsa, y el que falla deja a alguien convencido de que la aplicación no
+ * funciona justo en la primera pantalla.
+ */
+export const ENTRAR_CON_APPLE = false;

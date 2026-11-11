@@ -125,8 +125,14 @@ export const BrandHeader: FC<{ minimal?: boolean; app?: boolean; wide?: boolean;
   }
 
   if (minimal) {
+    /* La rejilla de dos columnas acompaña a las pantallas partidas de
+       escritorio. En móvil no cabe y `auto-fit` la parte en DOS FILAS: el
+       logo arriba y «Volver al inicio» con el idioma debajo. Eso dejaba una
+       cabecera pegajosa de 123 px —casi una quinta parte de un iPhone— que
+       además tapaba el título de la pantalla. `br-cabecera-minima` la vuelve
+       una sola fila por debajo de 720 px. */
     return (
-      <header className="br-header">
+      <header className="br-header br-cabecera-minima">
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(340px, 100%), 1fr))", alignItems: "center" }}>
           <div style={{ padding: "12px clamp(16px, 4vw, 24px)" }}>
             <div style={{ maxWidth: 420, margin: "0 auto", display: "flex", alignItems: "center" }}>
@@ -135,7 +141,10 @@ export const BrandHeader: FC<{ minimal?: boolean; app?: boolean; wide?: boolean;
           </div>
           <div style={{ padding: "12px clamp(16px, 4vw, 24px)" }}>
             <div style={{ maxWidth: 400, margin: "0 auto", display: "flex", alignItems: "center", justifyContent: "flex-end", gap: "clamp(14px,2.2vw,24px)" }}>
-              <span className="br-navlink" style={{ cursor: "pointer" }} onClick={() => go("/")}>{t("Volver al inicio")}</span>
+              {/* «Volver al inicio» solo en escritorio: en móvil estas
+                  pantallas ya tienen su flecha de atrás, y el logo de la
+                  izquierda lleva al inicio igual. */}
+              <span className="br-navlink br-solo-escritorio" style={{ cursor: "pointer" }} onClick={() => go("/")}>{t("Volver al inicio")}</span>
               <LangToggle />
             </div>
           </div>

@@ -125,9 +125,16 @@ export const Layout: FC<LayoutProps> = ({ children }) => {
             </main>
           </LoadingComponent>
         </div>
-        {["/", "/help", "/privacyPolicy", "/termsConditions", "/importancia-de-respaldar-informacion", "/auth", "/login", "/plans", "/payment", "/dashboard"].includes(router.pathname) && (
+        {/* Sin pie en entrar ni crear cuenta cuando se ven en móvil.
+            El diseño de esas pantallas (4a, 4b) no lo tiene, y con razón:
+            son pantallas de un solo paso, con la acción abajo al alcance del
+            pulgar, y debajo del botón aparecían el logo otra vez, dos
+            enlaces legales y la razón social. En escritorio sí cabe y se
+            queda. */}
+        {["/", "/help", "/privacyPolicy", "/termsConditions", "/importancia-de-respaldar-informacion", "/plans", "/payment", "/dashboard"].includes(router.pathname) && (
           <BrandFooter />
         )}
+        {["/auth", "/login"].includes(router.pathname) && !phone && <BrandFooter />}
       </div>
     </>
   );

@@ -1,9 +1,9 @@
-import { FC, useContext, useState } from "react";
+import { FC, useContext, useEffect, useState } from "react";
 import { useRouter } from "next/router";
 import { useTranslation } from "react-i18next";
 
 import { CarruselIlustraciones } from "../ui/CarruselIlustraciones";
-import { RECUPERAR_CONTRASENA } from "../../lib/funciones-activas";
+import { ENTRAR_CON_APPLE, RECUPERAR_CONTRASENA } from "../../lib/funciones-activas";
 import { BotonAtras, Trazo } from "../ui/Paso";
 import { Logo } from "../ui/BrandChrome";
 
@@ -46,6 +46,18 @@ export const EntradaScreen: FC = () => {
   const { t } = useTranslation();
   const router = useRouter();
   const { signIn, signUp, signInGoogle, signInApple } = useContext(AuthContext);
+
+  /* El foco automático, solo en escritorio.
+     En un móvil, enfocar un campo hace que el navegador lo desplace a la
+     vista y levante el teclado. Como la cabecera es pegajosa, el usuario
+     llegaba a «Crea tu cuenta» con la página ya bajada 270 px: el título y
+     el primer campo quedaban tapados por la cabecera y lo primero que veía
+     era un campo a medias sin saber en qué pantalla estaba. En escritorio no
+     pasa —no hay teclado que levantar— y ahorra un clic. */
+  const [conTeclado, setConTeclado] = useState(false);
+  useEffect(() => {
+    setConTeclado(window.matchMedia("(min-width: 721px)").matches);
+  }, []);
 
   const [paso, setPaso] = useState<"inicio" | "correo" | "clave">("inicio");
   const [esNueva, setEsNueva] = useState(false);
@@ -250,8 +262,9 @@ export const EntradaScreen: FC = () => {
               </p>
 
               {/* Apple y Google van en sus estilos oficiales porque las dos
-                  marcas lo exigen en sus condiciones de uso. */}
-              {botonSocial(
+                  marcas lo exigen en sus condiciones de uso.
+                  Apple está apagado por ahora: ver `lib/funciones-activas.ts`. */}
+              {ENTRAR_CON_APPLE && botonSocial(
                 enTexto(t("Continuar con Apple")),
                 signInApple,
                 "#000000",
@@ -280,9 +293,13 @@ export const EntradaScreen: FC = () => {
                   separador seguiria viendose en escritorio aunque el CSS
                   dijera que no. */}
               <div className="br-solo-movil">
-              <div style={{ display: "flex", alignItems: "center", gap: 12, margin: "18px 0" }}>
+              {/* 6px arriba y abajo, como el diseño (4a), no 18.
+                  Con 18 el «Continuar con correo» quedaba flotando lejos de
+                  los otros dos y dejaba de leerse como la tercera opción de
+                  la misma lista. */}
+              <div style={{ display: "flex", alignItems: "center", gap: 12, padding: "6px 0" }}>
                 <span style={{ flex: 1, height: 1, background: "var(--border)" }} />
-                <span style={{ fontFamily: "var(--font-mono)", fontSize: 11, letterSpacing: "0.12em", color: "var(--slate-500)" }}>
+                <span style={{ fontFamily: "var(--font-mono)", fontSize: 11, letterSpacing: "0.14em", color: "var(--slate-500)" }}>
                   {t("O")}
                 </span>
                 <span style={{ flex: 1, height: 1, background: "var(--border)" }} />
@@ -343,11 +360,24 @@ export const EntradaScreen: FC = () => {
                   type="button"
                   onClick={() => setPaso("correo")}
                   className="br-btn br-btn-ghost"
-                  /* Tercera opción, sin borde y con el sobre (4a): Apple y
-                     Google son las principales. */
-                  style={{ width: "100%", minHeight: 52, borderRadius: 10, cursor: "pointer", border: "none", gap: 10 }}
+                  /* Tercera opción, sin borde y con el sobre (4a): Google es
+                     la principal. Mismo alto, cuerpo y peso que los botones
+                     de arriba, que es lo que lo mantiene en la misma lista;
+                     lo que cambia es que no lleva fondo ni borde. */
+                  style={{
+                    width: "100%",
+                    height: 52,
+                    borderRadius: 10,
+                    cursor: "pointer",
+                    border: "none",
+                    background: "transparent",
+                    gap: 10,
+                    fontSize: 16,
+                    fontWeight: 600,
+                    color: "var(--ink-900)",
+                  }}
                 >
-                  <Trazo tipo="sobre" tam={18} />
+                  <Trazo tipo="sobre" tam={20} />
                   {t("Continuar con correo")}
                 </button>
               </div>
@@ -366,7 +396,7 @@ export const EntradaScreen: FC = () => {
                 {
                   type: "email",
                   value: correo,
-                  autoFocus: true,
+                  autoFocus: conTeclado,
                   placeholder: enTexto(t("tucorreo@ejemplo.com")),
                   onChange: (e) => {
                     setCorreo(e.target.value);
@@ -434,7 +464,7 @@ export const EntradaScreen: FC = () => {
                   enTexto(t("Nombre")),
                   {
                     value: nombre,
-                    autoFocus: true,
+                    autoFocus: conTeclado,
                     placeholder: enTexto(t("Tu nombre")),
                     onChange: (e) => setNombre(e.target.value),
                   },
@@ -446,7 +476,7 @@ export const EntradaScreen: FC = () => {
                 {
                   type: verla ? "text" : "password",
                   value: clave,
-                  autoFocus: !esNueva,
+                  autoFocus: conTeclado && !esNueva,
                   autoComplete: esNueva ? "new-password" : "current-password",
                   placeholder: esNueva ? enTexto(t("Mínimo 8 caracteres")) : undefined,
                   onChange: (e) => {
