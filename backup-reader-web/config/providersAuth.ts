@@ -8,6 +8,7 @@ import {
   signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
 } from "firebase/auth";
+import i18n from "../i18n";
 import { FirebaseAuth } from "./firebase";
 
 import { fetchSignInMethodsForEmail } from "firebase/auth";
@@ -173,14 +174,45 @@ export const logOutFunction = async () => {
   }
 };
 
-export const sendEmailResetPassword = async (correo: string) => {
+/**
+ * Mandar el correo de recuperación.
+ *
+ * Primero se intenta por nuestro endpoint, que escribe el correo con nuestro
+ * diseño, en el idioma del usuario, y con un enlace que lleva a NUESTRA
+ * pantalla. Si no hay proveedor configurado, o el endpoint no contesta, se
+ * manda por Firebase como toda la vida.
+ *
+ * El repliegue no es por prudencia excesiva: no poder recuperar la cuenta es
+ * de los peores fallos que puede tener esta aplicación, porque deja al usuario
+ * fuera de sus propias conversaciones. Un correo feo es infinitamente mejor
+ * que ningún correo.
+ */
+export const sendEmailResetPassword = async (
+  correo: string
+): Promise<{ ok: boolean; error?: unknown }> => {
+  const porFirebase = async (): Promise<{ ok: boolean; error?: unknown }> => {
+    try {
+      await sendPasswordResetEmail(FirebaseAuth, correo);
+      return { ok: true };
+    } catch (error) {
+      return { ok: false, error };
+    }
+  };
+
   try {
-    await sendPasswordResetEmail(FirebaseAuth, correo);
-    return { ok: true };
+    const r = await fetch("/api/recuperar", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        correo,
+        idioma: (i18n.language || "es").startsWith("en") ? "en" : "es",
+      }),
+    });
+    const datos = await r.json().catch(() => ({}));
+    if (r.ok && datos?.ok && !datos?.repliega) return { ok: true };
   } catch (error) {
-    return {
-      ok: false,
-      error,
-    };
+    console.error("El endpoint de recuperación no contestó; se usa el correo de Firebase.", error);
   }
+
+  return porFirebase();
 };
