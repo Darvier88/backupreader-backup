@@ -109,6 +109,12 @@ export const InicioChats: FC<{
      título y aparece «Cancelar» (móvil) o la pista ESC (escritorio). */
   const [enfocado, setEnfocado] = useState(false);
   const buscando = !bloqueada && (enfocado || consulta.length > 0);
+  /* Igual que en el chat abierto (3b): en el móvil el buscador toma la
+     cabecera y la barra del logo se esconde mientras se busca. */
+  useEffect(() => {
+    document.body.classList.toggle("br-buscando", buscando);
+    return () => document.body.classList.remove("br-buscando");
+  }, [buscando]);
   const salirDeBusqueda = () => {
     onConsulta("");
     setEnfocado(false);

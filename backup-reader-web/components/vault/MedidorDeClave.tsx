@@ -22,8 +22,9 @@ const enTexto = (traducido: unknown): string =>
 const colorDe = (nivel: Nivel): string => {
   if (nivel === "corta") return "var(--border)";
   if (nivel === "simple") return "var(--aviso-borde)";
-  if (nivel === "buena") return "var(--brass-400)";
-  return "var(--accent, #2E7D5B)";
+  /* Verde en «buena» y «excelente» (5a/7d), con el mismo verde del «Las
+     claves coinciden» de la pantalla siguiente. */
+  return "var(--paso-ok, var(--accent, #2E7D5B))";
 };
 
 export const MedidorDeClave: FC<{ clave: string }> = ({ clave }) => {
@@ -36,7 +37,9 @@ export const MedidorDeClave: FC<{ clave: string }> = ({ clave }) => {
       : nivel === "simple"
       ? enTexto(t("Simple · añade otra palabra"))
       : nivel === "buena"
-      ? enTexto(t("Buena"))
+      ? /* «Buena · Mínimo 10 caracteres» (5a): recuerda la regla sin que
+           parezca un error. */
+        `${enTexto(t("Buena"))} · ${enTexto(t("Mínimo {{n}} caracteres", { n: MIN_LARGO }))}`
       : enTexto(t("Excelente"));
 
   return (
@@ -62,7 +65,12 @@ export const MedidorDeClave: FC<{ clave: string }> = ({ clave }) => {
           fontSize: 10.5,
           letterSpacing: "0.12em",
           textTransform: "uppercase",
-          color: nivel === "simple" ? "var(--aviso-texto)" : "var(--slate-500)",
+          color:
+            nivel === "simple"
+              ? "var(--aviso-texto)"
+              : nivel === "corta"
+              ? "var(--slate-500)"
+              : "var(--paso-ok, var(--accent, #2E7D5B))",
         }}
       >
         {texto}

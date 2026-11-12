@@ -60,13 +60,12 @@ export const HojaSubirChat: FC<{
       style={{
         display: "flex",
         alignItems: "center",
-        gap: 14,
+        gap: 12,
         width: "100%",
         minHeight: 60,
-        padding: "0 18px",
+        padding: "0 14px",
         background: "transparent",
         border: "none",
-        borderBottom: "1px solid var(--border)",
         cursor: "pointer",
         textAlign: "left",
       }}
@@ -74,41 +73,27 @@ export const HojaSubirChat: FC<{
       <span
         style={{
           flexShrink: 0,
-          width: 36,
-          height: 36,
+          width: 24,
+          height: 24,
           display: "inline-flex",
           alignItems: "center",
           justifyContent: "center",
-          borderRadius: 9,
-          background: "var(--paper-100)",
-          color: "var(--brass-600)",
+          color: "var(--ink-700)",
         }}
       >
         {icono}
       </span>
-      <span style={{ minWidth: 0 }}>
-        <span
-          style={{
-            display: "block",
-            fontFamily: "var(--font-sans)",
-            fontSize: 15.5,
-            fontWeight: 600,
-            color: "var(--ink-900)",
-          }}
-        >
-          {etiqueta}
-        </span>
-        <span
-          style={{
-            display: "block",
-            fontFamily: "var(--font-sans)",
-            fontSize: 13,
-            color: "var(--slate-500)",
-          }}
-        >
-          {descripcion}
+      {/* Solo el nombre del sitio y una flecha (2c). La descripción se queda
+          para los lectores de pantalla, oculta a la vista. */}
+      <span style={{ flex: 1, minWidth: 0, fontFamily: "var(--font-sans)", fontSize: 15, fontWeight: 600, color: "var(--ink-900)" }}>
+        {etiqueta}
+        <span style={{ position: "absolute", width: 1, height: 1, overflow: "hidden", clip: "rect(0 0 0 0)", whiteSpace: "nowrap" }}>
+          {`. ${descripcion}`}
         </span>
       </span>
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--slate-500)" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" style={{ flexShrink: 0 }}>
+        <path d="M9 6l6 6-6 6" />
+      </svg>
     </button>
   );
 
@@ -134,7 +119,7 @@ export const HojaSubirChat: FC<{
         style={{
           width: "100%",
           maxWidth: 520,
-          background: "var(--surface-raised)",
+          background: "var(--paper-50)",
           borderTopLeftRadius: 18,
           borderTopRightRadius: 18,
           paddingBottom: "env(safe-area-inset-bottom, 12px)",
@@ -163,22 +148,24 @@ export const HojaSubirChat: FC<{
           </p>
         </div>
 
-        <div style={{ borderTop: "1px solid var(--border)" }}>
+        {/* Las opciones en una tarjeta con borde, separadas por una línea (2c). */}
+        <div style={{ margin: "0 18px", background: "#fff", border: "1px solid var(--border)", borderRadius: 10, overflow: "hidden" }}>
           {fila(
             enTexto(t("Google Drive")),
             enTexto(t("Si lo guardaste en tu Drive")),
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M12 3l9 15H3l9-15z" />
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M17.5 19H9a7 7 0 1 1 6.7-9h1.8a4.5 4.5 0 1 1 0 9z" />
             </svg>,
             onGoogleDrive
           )}
 
+          {mostrarArchivos && <div style={{ height: 1, background: "var(--border)" }} />}
           {mostrarArchivos &&
             fila(
               enTexto(t("Archivos del teléfono")),
               enTexto(t("Si lo descargaste a este dispositivo")),
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M4 7h5l2 2h9v10H4V7z" />
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2z" />
               </svg>,
               onArchivos
             )}
@@ -187,8 +174,10 @@ export const HojaSubirChat: FC<{
         <p
           style={{
             margin: 0,
-            padding: "14px 18px",
-            textAlign: "center",
+            padding: "16px 18px 18px",
+            display: "flex",
+            alignItems: "center",
+            gap: 8,
             fontFamily: "var(--font-mono)",
             fontSize: 10.5,
             letterSpacing: "0.14em",
@@ -196,6 +185,10 @@ export const HojaSubirChat: FC<{
             color: "var(--slate-500)",
           }}
         >
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+            <rect x="4" y="11" width="16" height="10" rx="2" />
+            <path d="M8 11V7a4 4 0 0 1 8 0v4" />
+          </svg>
           {t("Solo tú puedes ver tus chats")}
         </p>
       </div>

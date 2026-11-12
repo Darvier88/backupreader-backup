@@ -44,6 +44,15 @@ export const BuscadorEnChat: FC<{
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [abierto]);
 
+  /* En el móvil la búsqueda toma la cabecera entera (1c): se esconde la
+     barra del logo. Si no, al saltar a una coincidencia la barra fija tapa
+     el propio campo de búsqueda. La regla CSS solo actúa por debajo de
+     720px. */
+  useEffect(() => {
+    document.body.classList.toggle("br-buscando", abierto);
+    return () => document.body.classList.remove("br-buscando");
+  }, [abierto]);
+
   const saltar = (paso: number) => {
     if (total === 0) return;
     /* Da la vuelta en los extremos: al llegar a la última, la siguiente es la

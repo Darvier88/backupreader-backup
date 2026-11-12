@@ -770,6 +770,11 @@ body {
   .br-acciones-hero .br-btn-inverse:hover { background: var(--paper-100); }
 }
 
+/* Mientras se busca en el móvil, el buscador es la cabecera (1c, 3b). */
+@media (max-width: 720px) {
+  body.br-buscando .br-header { display: none; }
+}
+
 /* «Conversaciones · N» en la cabecera móvil (10a): borde en tinta, icono a
    la izquierda y el número en una pastilla. */
 .br-boton-conversaciones {
