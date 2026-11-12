@@ -319,6 +319,11 @@ export const DashboardScreen: FC = () => {
         md={8}
         style={{
           ...styles.chatContainer,
+          /* El tope de 85vh es para el chat abierto, que tiene su propio
+             scroll de mensajes dentro. En el inicio (lista de chats, 3a/4d)
+             no hay scroll interno: con el tope, una lista larga se salía de
+             la columna y se pintaba encima del pie y por debajo de él. */
+          maxHeight: chat ? styles.chatContainer.maxHeight : "none",
           flexDirection: "column",
         }}
       >
