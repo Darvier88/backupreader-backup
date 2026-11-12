@@ -1,4 +1,4 @@
-import { FC, useContext } from "react";
+import { FC, useContext, useEffect, useState } from "react";
 import { useRouter } from "next/router";
 import { useTranslation } from "react-i18next";
 
@@ -31,7 +31,7 @@ const enTexto = (traducido: unknown): string =>
   (traducido as string | null | undefined) ?? "";
 
 export const PlanActivoScreen: FC = () => {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const router = useRouter();
   const { user } = useContext(AuthContext);
   const { subscription, planId } = useContext(FirestoreContext);
@@ -44,13 +44,27 @@ export const PlanActivoScreen: FC = () => {
      lo que la gente quiere saber es "cuándo me vuelven a cobrar", no el día
      exacto. Si algún día entra el webhook de Stripe, esto se sustituye por la
      fecha real que el propio Stripe manda. */
-  const proximo = new Date();
-  proximo.setMonth(proximo.getMonth() + 1);
-  const fecha = proximo.toLocaleDateString(undefined, {
-    day: "numeric",
-    month: "short",
-    year: "numeric",
-  });
+  /* Se calcula DESPUÉS de montar, no al renderizar.
+     Con `toLocaleDateString` dentro del render, el servidor la escribía con
+     su idioma y su huso («Dec 12, 2026») y el navegador con los del usuario
+     («12 dic 2026»). React lo detecta como HTML que no cuadra, tira el que
+     vino del servidor y vuelve a pintar la página entera: en desarrollo sale
+     la pantalla roja de error, y en producción un parpadeo justo después de
+     pagar, que es el peor momento para que algo parezca haber fallado.
+     Hasta que el efecto corre, la fila queda vacía: es una línea, dura un
+     fotograma y no mueve nada de sitio. */
+  const [fecha, setFecha] = useState("");
+  useEffect(() => {
+    const proximo = new Date();
+    proximo.setMonth(proximo.getMonth() + 1);
+    setFecha(
+      proximo.toLocaleDateString(i18n.language?.startsWith("en") ? "en-US" : "es-ES", {
+        day: "numeric",
+        month: "short",
+        year: "numeric",
+      })
+    );
+  }, [i18n.language]);
 
   /* Fila de dato como en 6b: etiqueta normal a la izquierda, valor en
      negrita a la derecha; la fecha en mono. */
