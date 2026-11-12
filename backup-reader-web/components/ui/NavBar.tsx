@@ -19,7 +19,6 @@ import { useRouter } from "next/router";
 import { useTranslation } from "react-i18next";
 import { useState } from "react";
 import { StorageContext } from "../../context/StorageContext";
-import { isWithinTrial } from "../../config/trial";
 
 /**
  * Cabecera de las rutas de app que no usan `BrandHeader`: el dashboard en
@@ -31,8 +30,9 @@ import { isWithinTrial } from "../../config/trial";
  * mismo `Logo`, el mismo `LangToggle` y las mismas clases `br-header`, así que
  * lo único que cambia entre pantallas es qué controles caben.
  *
- * Lo que va DEBAJO de la cabecera —el aviso de días de prueba y el botón del
- * cajón de chats— no se tocó: son hermanos de la barra, no hijos suyos.
+ * Lo que va DEBAJO de la cabecera es hermano de la barra, no hijo suyo. El
+ * aviso de días de prueba que iba ahí se quitó: el diseño no contempla la
+ * prueba gratuita.
  */
 
 type NavBarProps = {
@@ -58,7 +58,6 @@ export const NavBar: FC<NavBarProps> = ({ drawerButtonOnPress }) => {
   const { logOut } = useContext(AuthContext);
   const { saveFile, fileList } = useContext(StorageContext);
   const { user, getUser, getPlans, clean } = useContext(FirestoreContext);
-  const [daysLeft, setDaysLeft] = useState<number>(0);
   const [isAndroidDevice, setIsAndroidDevice] = useState(false);
 
   const phone = useMediaQuery(({ breakpoints }: Theme) =>
@@ -87,22 +86,12 @@ export const NavBar: FC<NavBarProps> = ({ drawerButtonOnPress }) => {
 
   useEffect(() => {
     const handleRedirect = async (userF: User | null) => {
-      const createdAt = userF?.metadata.creationTime;
-
       if( userF ){
         setTimeout(()=>{
           getUser(userF.uid)
         },2000)
 
         getPlans();
-
-        if(createdAt){
-          const creationDate = new Date(createdAt);
-          const currentDate = new Date();
-          const timeDifference = currentDate.getTime() - creationDate.getTime();
-          const differenceInDays = Math.floor(timeDifference / (1000 * 3600 * 24));
-          setDaysLeft( 15 - differenceInDays )
-        }
       }
 
     }
@@ -323,26 +312,10 @@ export const NavBar: FC<NavBarProps> = ({ drawerButtonOnPress }) => {
         />
       )}
 
-      {
-        (!user?.plan && isWithinTrial(daysLeft)) && router.pathname == '/dashboard' ?
-          /* Franja de la prueba gratuita con la misma forma que la de «Tus
-             chats están bloqueados» (4d): a todo el ancho bajo la cabecera,
-             icono a la izquierda, una línea. En verde y no en ocre, porque
-             informa, no avisa de un problema. Sustituye al aviso viejo, que
-             llevaba un icono azul ajeno a la paleta. */
-          <div role="status" style={{ width: "100%", background: "var(--brass-100)", borderBottom: "1px solid rgba(47,126,108,0.2)" }}>
-            <div style={{ maxWidth: 1360, margin: "0 auto", display: "flex", alignItems: "center", gap: 12, padding: "12px clamp(16px, 4vw, 24px)" }}>
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--brass-600)" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" style={{ flexShrink: 0 }}>
-                <circle cx="12" cy="12" r="9" />
-                <path d="M12 7v5l3 2" />
-              </svg>
-              <span style={{ fontFamily: "var(--font-sans)", fontSize: 14, lineHeight: 1.4, color: "var(--ink-900)" }}>
-                {t("Tienes")+" "+daysLeft +" "+t("días de prueba gratuitos")}
-              </span>
-            </div>
-          </div>
-      : null
-      }
+      {/* Aquí iba la franja «Tienes N días de prueba gratuitos». Se quitó
+          porque el diseño no contempla la prueba gratuita en ninguna
+          pantalla. La prueba en sí sigue controlada por
+          NEXT_PUBLIC_FREE_TRIAL_ENABLED (config/trial.ts). */}
 
       {/* El botón «< Chats» que iba aquí, en una fila aparte, ahora vive en
           la cabecera (ver arriba). */}

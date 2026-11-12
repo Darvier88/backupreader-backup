@@ -481,9 +481,14 @@ export const ConversationsDrawer: FC<ConversationsDrawerProps> = ({
                 servía para distinguir dos cuentas. El plan, en cambio, es lo
                 único de la cuenta que cambia solo (se acaba la prueba, se
                 cancela) y no se ve en ninguna otra parte del panel. */}
-            <span style={{ display: "block", fontFamily: "var(--font-mono)", fontSize: 10.5, letterSpacing: "0.04em", color: "var(--slate-500)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-              {perfil?.plan ? t("Plan personal") : t("Prueba gratuita")}
-            </span>
+            {/* «Plan personal» solo si de verdad hay plan. Quien está en la
+                prueba gratuita no ve línea: el diseño no contempla la prueba
+                y decirle «Plan personal» sería decirle que ya paga. */}
+            {perfil?.plan && (
+              <span style={{ display: "block", fontFamily: "var(--font-mono)", fontSize: 10.5, letterSpacing: "0.04em", color: "var(--slate-500)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                {t("Plan personal")}
+              </span>
+            )}
           </span>
           <LangToggle />
         </div>
