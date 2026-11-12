@@ -3,7 +3,7 @@ import { useTranslation } from "react-i18next";
 
 import { iniciales, nombreDelContacto } from "../../lib/nombres-de-chat";
 import { useAtajoDeBusqueda } from "../../hooks/useAtajoDeBusqueda";
-import { etiquetaApertura, ultimaApertura } from "../../lib/aperturas";
+import { etiquetaDeGuardado } from "../../lib/fecha-de-guardado";
 
 /**
  * La pantalla de inicio (2a con chats, 2b sin ninguno).
@@ -66,6 +66,8 @@ export type ChatReciente = {
   fullPath: string;
   /** Título tal como lo guardó la exportación. */
   name: string;
+  /** Cuándo se guardó, en epoch ms. Los backups v1 no lo traen. */
+  creadoEn?: number;
 };
 
 export const InicioChats: FC<{
@@ -157,18 +159,23 @@ export const InicioChats: FC<{
     </span>
   );
 
+  /* Recientes se ordena por fecha de guardado, el último arriba.
+     Antes se ordenaba por la última vez que se abrió el chat, pero eso vivía
+     en el `localStorage` del navegador: en el móvil salía un orden y en el
+     portátil otro, sin que nada lo explicara. La fecha de guardado es la
+     misma en todas partes. */
   const recientes = chats
-    .map((c, i) => ({ c, i, abierto: ultimaApertura(c.fullPath) }))
-    .sort((a, b) => (b.abierto ?? -1) - (a.abierto ?? -1) || a.i - b.i);
+    .map((c, i) => ({ c, i }))
+    .sort((a, b) => (b.c.creadoEn ?? -1) - (a.c.creadoEn ?? -1) || a.i - b.i);
 
-  const cuandoAbierto = (abierto: number | null) => {
-    if (!abierto) return t("Guardado");
-    const cuando = etiquetaApertura(abierto, i18n.language || "es");
+  const cuandoGuardado = (creadoEn?: number) => {
+    if (!creadoEn) return t("Guardado");
+    const cuando = etiquetaDeGuardado(creadoEn, i18n.language || "es");
     return cuando === "hoy"
-      ? t("Abierto hoy")
+      ? t("Guardado hoy")
       : cuando === "ayer"
-      ? t("Abierto ayer")
-      : enTexto(t("Abierto {{fecha}}", { fecha: cuando }));
+      ? t("Guardado ayer")
+      : enTexto(t("Guardado {{fecha}}", { fecha: cuando }));
   };
 
   return (
@@ -337,11 +344,11 @@ export const InicioChats: FC<{
       {/* Recientes.
           Móvil: lista plana con el archivo en mono (3a). Con la bóveda cerrada
           se listan todos como «Chat cifrado · Bloqueado» (4d).
-          Escritorio: dos tarjetas con cuándo se abrieron (8b). */}
+          Escritorio: dos tarjetas con cuándo se guardaron (8b). */}
       {hayChats && !buscando && (
         ancho && !bloqueada ? (
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginTop: 40 }}>
-            {recientes.slice(0, 2).map(({ c, abierto }, n) => {
+            {recientes.slice(0, 2).map(({ c }, n) => {
               const nombre = nombreDelContacto(c.name) || c.name;
               return (
                 <button
@@ -353,7 +360,7 @@ export const InicioChats: FC<{
                   {tile(iniciales(c.name), n === 0, 38)}
                   <span style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", gap: 3 }}>
                     <span style={{ fontSize: 15, fontWeight: 600, color: "var(--ink-900)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{nombre}</span>
-                    <span style={{ fontFamily: mono, fontSize: 10.5, textTransform: "uppercase", color: "var(--slate-500)" }}>{cuandoAbierto(abierto)}</span>
+                    <span style={{ fontFamily: mono, fontSize: 10.5, textTransform: "uppercase", color: "var(--slate-500)" }}>{cuandoGuardado(c.creadoEn)}</span>
                   </span>
                 </button>
               );

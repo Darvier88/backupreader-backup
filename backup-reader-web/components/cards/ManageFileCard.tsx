@@ -344,7 +344,7 @@ export const ManageFileCard: FC<ManageFileCardProps> = ({ isFirstFile, chat }) =
              es el ancho y que en escritorio se puede soltar el .zip encima. */
           ancho={!phone}
           onSoltarArchivos={(archivos) => siHayBoveda(() => onHandleSaveFile(archivos))()}
-          chats={(fileList || []).map((f: any) => ({ fullPath: f.fullPath, name: f.name }))}
+          chats={(fileList || []).map((f: any) => ({ fullPath: f.fullPath, name: f.name, creadoEn: f.creadoEn }))}
           /* 4d: la bóveda existe pero está cerrada. Los chats se enseñan con
              candado y el buscador se apaga, en vez de esconderlos, que haría
              creer que se han perdido. */

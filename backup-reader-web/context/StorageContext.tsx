@@ -1,5 +1,4 @@
 import axios, { AxiosResponse } from 'axios';
-import { registrarApertura } from "../lib/aperturas";
 import utf8 from 'utf8';
 import { createContext, useReducer, useContext, useEffect, useRef, useState } from "react";
 
@@ -534,6 +533,7 @@ function parsearJsonInstagram(texto: string): string[][] {
           fullPath: handleDeBackup(d.backupId),
           cifrado: true,
           bloqueado: true,
+          creadoEn: d.createdAt,
         }));
       } catch (error) {
         console.error("No se pudo contar los backups bloqueados:", error);
@@ -550,6 +550,9 @@ function parsearJsonInstagram(texto: string): string[][] {
             name: abierto.manifest.name,
             fullPath: handleDeBackup(d.backupId),
             cifrado: true,
+            /* La fecha de guardado para Recientes (8b): ya está en el
+               documento de Firestore, que es lo que lleva la cuota. */
+            creadoEn: d.createdAt,
           });
         }
       } catch (error) {
@@ -1005,9 +1008,6 @@ function parsearJsonInstagram(texto: string): string[][] {
     It gets trigger when the user clicks on a conversation present on the sidebar.
   */
   const getFile = async (fullpath: string, chatName: string) => {
-    /* Para «Abierto hoy» en Recientes (8b). */
-    registrarApertura(fullpath);
-
     /* Único punto donde se bifurca v1 / v2. Mientras esto no se filtre a los
        componentes, la convivencia se mantiene barata (ver Etapa 8). */
     if (esHandleV2(fullpath)) {

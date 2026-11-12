@@ -15,6 +15,15 @@ export interface FileList {
    * cuelga de él se pueden quitar.
    */
   cifrado: boolean;
+  /**
+   * Cuándo se guardó el backup, en epoch ms, para «Guardado hoy» en Recientes
+   * (8b). Sale del documento de Firestore, que ya lleva esa fecha para la
+   * cuota, así que no hay que pedir nada nuevo ni contarle nada al servidor.
+   *
+   * Los backups v1, en texto plano, no lo traen: allí la lista enseña
+   * «Guardado» a secas, que es lo que ponía antes para todos.
+   */
+  creadoEn?: number;
 }
 
 export interface FileDetail {
