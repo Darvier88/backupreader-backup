@@ -591,7 +591,7 @@ const resources = {
       "Guarda la conversación aquí y bórrala del móvil sin perderla.":
         "Keep the conversation here and delete it from your phone without losing it.",
       "Cifrado con una clave que solo tú conoces":
-        "Encrypted with a key only you know",
+        "Encrypted with a password only you know",
       "Ni nosotros podemos leer lo que subes.": "Not even we can read what you upload.",
       "Tus chats están aquí, cerrados. Escribe tu contraseña de cifrado para leerlos.":
         "Your chats are here, locked. Enter your encryption password to read them.",
