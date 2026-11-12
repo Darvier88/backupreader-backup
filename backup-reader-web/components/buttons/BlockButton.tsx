@@ -64,7 +64,7 @@ export const BlockButton: React.FC<BlockButtonProps> = ({
       }}
       onPress={onPress}
     >
-      <Typography fontSize={13} fontFamily={"Open Sans"} color={'#FFFFFF'}>
+      <Typography fontSize={13} fontFamily={"var(--font-sans)"} color={'#FFFFFF'}>
         {title}
       </Typography>
     </Button>

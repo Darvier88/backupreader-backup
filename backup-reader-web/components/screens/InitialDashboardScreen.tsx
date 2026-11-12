@@ -42,7 +42,7 @@ export const InitialDashboardScreen: FC = () => {
           {phone ? (
             <Typography
               fontSize={10}
-              fontFamily={"Open Sans"}
+              fontFamily={"var(--font-sans)"}
               style={{ color: "var(--ink-900)", textAlign: "center" }}
             >
               Privacy Policy and Terms of Service.
@@ -50,8 +50,8 @@ export const InitialDashboardScreen: FC = () => {
           ) : (
             <Typography
               fontSize={12}
-              fontFamily={"Open Sans"}
-              style={{ color: "#3C3C3C", textAlign: "center" }}
+              fontFamily={"var(--font-sans)"}
+              style={{ color: "var(--ink-900)", textAlign: "center" }}
             >
               <Button
                 style={{ textTransform: "none" }}
@@ -59,7 +59,7 @@ export const InitialDashboardScreen: FC = () => {
               >
                 <Typography
                   fontSize={12}
-                  fontFamily={"Open Sans"}
+                  fontFamily={"var(--font-sans)"}
                   style={{ color: "var(--ink-900)" }}
                 >
                   Terminos del Servicio
@@ -72,7 +72,7 @@ export const InitialDashboardScreen: FC = () => {
               >
                 <Typography
                   fontSize={12}
-                  fontFamily={"Open Sans"}
+                  fontFamily={"var(--font-sans)"}
                   style={{ color: "var(--ink-900)" }}
                 >
                   Política de Privacidad{" "}

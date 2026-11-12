@@ -47,16 +47,16 @@ export const VaultUnlockModal: React.FC = () => {
   return (
     <>
       <Modal.Header>
-        <Typography fontFamily={"PT Serif"} fontSize={18} style={{ color: "#3C3C3C" }}>
+        <Typography fontFamily={"var(--font-serif)"} fontSize={18} style={{ color: "var(--ink-900)" }}>
           {t("Desbloquea tus chats")}
         </Typography>
       </Modal.Header>
 
       <Modal.Body>
         <Typography
-          fontFamily={"Open Sans"}
+          fontFamily={"var(--font-sans)"}
           fontSize={15}
-          style={{ color: "#3C3C3C", marginBottom: 8 }}
+          style={{ color: "var(--ink-900)", marginBottom: 8 }}
         >
           {modo === "password"
             ? t("Introduce tu contraseña de cifrado para ver tus chats.")
@@ -86,7 +86,7 @@ export const VaultUnlockModal: React.FC = () => {
         )}
 
         {aviso && (
-          <Typography fontFamily={"Open Sans"} fontSize={14} style={{ color: "#B23B3B" }}>
+          <Typography fontFamily={"var(--font-sans)"} fontSize={14} style={{ color: "var(--clay-600)" }}>
             {aviso}
           </Typography>
         )}

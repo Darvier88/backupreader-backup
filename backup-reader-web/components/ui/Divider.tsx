@@ -23,9 +23,9 @@ export const Divider: FC = () => {
       <div style={{ ...styles.dividerContainer, flexDirection: "row" }}>
         <div style={styles.dividerLine} />
         <Typography
-          style={{ color: "#3C3C3C" }}
+          style={{ color: "var(--ink-900)" }}
           fontSize={10}
-          fontFamily={"Open Sans"}
+          fontFamily={"var(--font-sans)"}
         >
           o
         </Typography>

@@ -18,7 +18,7 @@ export const FullScreenTextModal: React.FC<fullScreenTextModalProps> = ({
   return (
     <>
       <Modal.Header>
-        <Typography fontFamily={"PT Serif"} fontSize={18}>
+        <Typography fontFamily={"var(--font-serif)"} fontSize={18}>
           {title}
         </Typography>
       </Modal.Header>

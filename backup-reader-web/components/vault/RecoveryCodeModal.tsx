@@ -57,16 +57,16 @@ export const RecoveryCodeModal: React.FC<Props> = ({ codigo }) => {
   return (
     <>
       <Modal.Header>
-        <Typography fontFamily={"PT Serif"} fontSize={18} style={{ color: "#3C3C3C" }}>
+        <Typography fontFamily={"var(--font-serif)"} fontSize={18} style={{ color: "var(--ink-900)" }}>
           {t("Guarda tu código de recuperación")}
         </Typography>
       </Modal.Header>
 
       <Modal.Body>
         <Typography
-          fontFamily={"Open Sans"}
+          fontFamily={"var(--font-sans)"}
           fontSize={15}
-          style={{ color: "#3C3C3C", marginBottom: 8 }}
+          style={{ color: "var(--ink-900)", marginBottom: 8 }}
         >
           {t(
             "Este código es la única forma de recuperar tus chats si olvidas la contraseña. No volverá a mostrarse."
@@ -108,7 +108,7 @@ export const RecoveryCodeModal: React.FC<Props> = ({ codigo }) => {
             />
           }
           label={
-            <Typography fontFamily={"Open Sans"} fontSize={14} style={{ color: "#3C3C3C" }}>
+            <Typography fontFamily={"var(--font-sans)"} fontSize={14} style={{ color: "var(--ink-900)" }}>
               {t("He guardado el código en un lugar seguro")}
             </Typography>
           }

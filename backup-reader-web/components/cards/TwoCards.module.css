@@ -21,13 +21,13 @@
 }
 
 .twoCardsContainer h1{
-    font-family: 'PT Serif';
+    font-family: var(--font-serif);
 }
 
 .leftContainer h3, .rightContainer h3{
     font-size: 28px;
     text-align: left;
-    font-family: 'PT Serif';
+    font-family: var(--font-serif);
 }
 
 .leftContainer p, .rightContainer p{

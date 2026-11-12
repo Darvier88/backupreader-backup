@@ -14,7 +14,7 @@ const styles = {
   text: {
     marginTop: 5,
     letterSpacing: 0.5,
-    color: "#3C3C3C",
+    color: "var(--ink-900)",
   },
 };
 
@@ -57,14 +57,14 @@ export const PlanCard: FC<PlanCardProps> = ({
         fontSize={phone ? 18 : 20}
         style={styles.text}
         fontWeight={"bold"}
-        fontFamily={"Open Sans"}
+        fontFamily={"var(--font-sans)"}
       >
         {name}
       </Typography>
       <div style={{ marginTop: 10 }}>
         {
           /*
-          <Typography fontSize={14} style={styles.text} fontFamily={"Open Sans"}>
+          <Typography fontSize={14} style={styles.text} fontFamily={"var(--font-sans)"}>
             {t(description)}
           </Typography>
           */
@@ -73,7 +73,7 @@ export const PlanCard: FC<PlanCardProps> = ({
           fontWeight={"bold"}
           fontSize={18}
           style={styles.text}
-          fontFamily={"Open Sans"}
+          fontFamily={"var(--font-sans)"}
         >
           $ {price} / {t(frequently)}
         </Typography>
@@ -84,7 +84,7 @@ export const PlanCard: FC<PlanCardProps> = ({
           <CheckIcon fontSize="small" style={{ color: "#0050C1" }} />
           <Typography
             fontSize={16}
-            fontFamily={"Open Sans"}
+            fontFamily={"var(--font-sans)"}
             style={{ ...styles.text, marginLeft: 5 }}
           >
             {t(benefit)}
@@ -101,7 +101,7 @@ export const PlanCard: FC<PlanCardProps> = ({
           <Typography
             fontSize={16}
             fontWeight={"bold"}
-            fontFamily={"Open Sans"}
+            fontFamily={"var(--font-sans)"}
             style={{ ...styles.text, marginLeft: 5 }}
           >
             Conversaciones hasta {storage} MB

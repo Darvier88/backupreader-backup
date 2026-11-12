@@ -50,13 +50,13 @@ export const VaultPasswordSection: React.FC = () => {
   if (status === "none") {
     return (
       <Box sx={{ marginTop: 3 }}>
-        <Typography fontFamily={"PT Serif"} fontSize={18} style={{ color: "#3C3C3C" }}>
+        <Typography fontFamily={"var(--font-serif)"} fontSize={18} style={{ color: "var(--ink-900)" }}>
           {t("Cifrado")}
         </Typography>
         <Typography
-          fontFamily={"Open Sans"}
+          fontFamily={"var(--font-sans)"}
           fontSize={15}
-          style={{ color: "#3C3C3C", margin: "8px 0" }}
+          style={{ color: "var(--ink-900)", margin: "8px 0" }}
         >
           {t("Todavía no has activado el cifrado de tus chats.")}
         </Typography>
@@ -138,14 +138,14 @@ export const VaultPasswordSection: React.FC = () => {
 
   return (
     <Box sx={{ marginTop: 3 }}>
-      <Typography fontFamily={"PT Serif"} fontSize={18} style={{ color: "#3C3C3C" }}>
+      <Typography fontFamily={"var(--font-serif)"} fontSize={18} style={{ color: "var(--ink-900)" }}>
         {t("Cifrado")}
       </Typography>
 
       <Typography
-        fontFamily={"Open Sans"}
+        fontFamily={"var(--font-sans)"}
         fontSize={14}
-        style={{ color: "#6B6B6B", margin: "4px 0 12px" }}
+        style={{ color: "var(--slate-500)", margin: "4px 0 12px" }}
       >
         {bloqueada
           ? t("La bóveda está bloqueada en esta sesión.")
@@ -184,7 +184,7 @@ export const VaultPasswordSection: React.FC = () => {
         </div>
       )}
 
-      <Typography fontFamily={"Open Sans"} fontSize={15} style={{ color: "#3C3C3C" }}>
+      <Typography fontFamily={"var(--font-sans)"} fontSize={15} style={{ color: "var(--ink-900)" }}>
         {t("Cambiar la contraseña de cifrado")}
       </Typography>
 
@@ -209,12 +209,12 @@ export const VaultPasswordSection: React.FC = () => {
         />
 
         {aviso && (
-          <Typography fontFamily={"Open Sans"} fontSize={14} style={{ color: "#B23B3B" }}>
+          <Typography fontFamily={"var(--font-sans)"} fontSize={14} style={{ color: "var(--clay-600)" }}>
             {aviso}
           </Typography>
         )}
         {exito && (
-          <Typography fontFamily={"Open Sans"} fontSize={14} style={{ color: "#2E7D32" }}>
+          <Typography fontFamily={"var(--font-sans)"} fontSize={14} style={{ color: "var(--brass-600)" }}>
             {exito}
           </Typography>
         )}
@@ -242,10 +242,10 @@ export const VaultPasswordSection: React.FC = () => {
           </Button>
         ) : (
           <Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
-            <Typography fontFamily={"Open Sans"} fontSize={15} style={{ color: "#3C3C3C" }}>
+            <Typography fontFamily={"var(--font-sans)"} fontSize={15} style={{ color: "var(--ink-900)" }}>
               {t("Restablecer con el código de recuperación")}
             </Typography>
-            <Typography fontFamily={"Open Sans"} fontSize={14} style={{ color: "#6B6B6B" }}>
+            <Typography fontFamily={"var(--font-sans)"} fontSize={14} style={{ color: "var(--slate-500)" }}>
               {t("Introduce el código que guardaste al activar el cifrado y elige una contraseña nueva. Tus chats no se vuelven a cifrar: siguen intactos.")}
             </Typography>
 
@@ -269,12 +269,12 @@ export const VaultPasswordSection: React.FC = () => {
             />
 
             {avisoR && (
-              <Typography fontFamily={"Open Sans"} fontSize={14} style={{ color: "#B23B3B" }}>
+              <Typography fontFamily={"var(--font-sans)"} fontSize={14} style={{ color: "var(--clay-600)" }}>
                 {avisoR}
               </Typography>
             )}
 
-            <Typography fontFamily={"Open Sans"} fontSize={13} style={{ color: "#6B6B6B" }}>
+            <Typography fontFamily={"var(--font-sans)"} fontSize={13} style={{ color: "var(--slate-500)" }}>
               {t("Al restablecerla se te dará un código de recuperación nuevo y el anterior dejará de servir.")}
             </Typography>
 
@@ -300,13 +300,13 @@ export const VaultPasswordSection: React.FC = () => {
 
       <Divider sx={{ margin: "20px 0" }} />
 
-      <Typography fontFamily={"Open Sans"} fontSize={15} style={{ color: "#3C3C3C" }}>
+      <Typography fontFamily={"var(--font-sans)"} fontSize={15} style={{ color: "var(--ink-900)" }}>
         {t("Código de recuperación")}
       </Typography>
       <Typography
-        fontFamily={"Open Sans"}
+        fontFamily={"var(--font-sans)"}
         fontSize={14}
-        style={{ color: "#6B6B6B", margin: "4px 0 8px" }}
+        style={{ color: "var(--slate-500)", margin: "4px 0 8px" }}
       >
         {t("Generar uno nuevo invalida el anterior. Requiere la bóveda desbloqueada.")}
       </Typography>

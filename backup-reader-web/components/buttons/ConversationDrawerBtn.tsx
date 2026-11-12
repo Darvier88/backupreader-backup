@@ -23,7 +23,7 @@ export const ConversationDrawerBtn: FC<ConversationDrawerBtnProps> = ({
       onClick={drawerButtonOnPress}
     >
       <Typography
-        fontFamily={"Open Sans"}
+        fontFamily={"var(--font-sans)"}
         fontSize={12}
         style={{ color: "white" }}
       >

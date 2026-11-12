@@ -20,12 +20,12 @@ const styles = {
   title: {
     marginTop: 3,
     letterSpacing: 0.5,
-    color: "#3C3C3C",
+    color: "var(--ink-900)",
   },
   text: {
     marginTop: 1,
     letterSpacing: 0.5,
-    color: "#3C3C3C",
+    color: "var(--ink-900)",
   },
 };
 
@@ -60,14 +60,14 @@ export const TextCard: FC<TextCardProps> = ({
       <Typography
         fontSize={18}
         sx={{ ...styles.title, textAlign: phone ? "center" : "initial" }}
-        fontFamily={"PT Serif"}
+        fontFamily={"var(--font-serif)"}
       >
         {title}
       </Typography>
       <Typography
         fontSize={14}
         sx={{ ...styles.text, textAlign: phone ? "center" : "initial" }}
-        fontFamily={"Open Sans"}
+        fontFamily={"var(--font-sans)"}
       >
         {text}
       </Typography>

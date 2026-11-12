@@ -96,10 +96,10 @@ export const AdminScreen: React.FC = () => {
   if (!esAdmin) {
     return (
       <Box sx={{ maxWidth: 560, margin: "0 auto", padding: "48px 16px" }}>
-        <Typography fontFamily="PT Serif" fontSize={24} sx={{ color: "#3C3C3C" }}>
+        <Typography fontFamily={"var(--font-serif)"} fontSize={24} sx={{ color: "var(--ink-900)" }}>
           No tienes acceso a esta página
         </Typography>
-        <Typography fontSize={15} sx={{ color: "#6B6B6B", marginTop: 1 }}>
+        <Typography fontSize={15} sx={{ color: "var(--slate-500)", marginTop: 1 }}>
           Si crees que deberías, revisa que tu cuenta esté en SUPER_ADMIN_UIDS.
         </Typography>
       </Box>
@@ -108,10 +108,10 @@ export const AdminScreen: React.FC = () => {
 
   return (
     <Box sx={{ maxWidth: 1360, margin: "0 auto", padding: "24px clamp(16px, 4vw, 24px) 48px" }}>
-      <Typography fontFamily="PT Serif" fontSize={26} sx={{ color: "#3C3C3C" }}>
+      <Typography fontFamily={"var(--font-serif)"} fontSize={26} sx={{ color: "var(--ink-900)" }}>
         Administración
       </Typography>
-      <Typography fontSize={14} sx={{ color: "#6B6B6B", marginTop: 0.5 }}>
+      <Typography fontSize={14} sx={{ color: "var(--slate-500)", marginTop: 0.5 }}>
         {usuarios.length} cuenta(s). Borrar es irreversible: se van los chats,
         la bóveda, el perfil y el cliente de Stripe. Los cobros ya hechos no se
         pueden borrar de Stripe.
@@ -164,11 +164,11 @@ export const AdminScreen: React.FC = () => {
                 {u.correo || t("(sin correo)")}
               </Typography>
               {u.nombre && (
-                <Typography fontSize={13} sx={{ color: "#6B6B6B" }}>
+                <Typography fontSize={13} sx={{ color: "var(--slate-500)" }}>
                   {u.nombre}
                 </Typography>
               )}
-              <Box sx={{ fontSize: 13, color: "#3C3C3C", marginTop: 1 }}>
+              <Box sx={{ fontSize: 13, color: "var(--ink-900)", marginTop: 1 }}>
                 <div>{t("Alta")}: {fecha(u.creado)} · {t("Último acceso")}: {fecha(u.ultimoAcceso)}</div>
                 <div>
                   {t("Plan")}: {u.plan || t("ninguno")} · {u.chats} chat(s) ·{" "}
@@ -179,7 +179,7 @@ export const AdminScreen: React.FC = () => {
               </Box>
               <Box sx={{ marginTop: 1 }}>
                 {u.esAdmin ? (
-                  <Typography fontSize={13} sx={{ color: "#6B6B6B" }}>
+                  <Typography fontSize={13} sx={{ color: "var(--slate-500)" }}>
                     {t("Administrador: no se borra desde aquí")}
                   </Typography>
                 ) : (
@@ -195,7 +195,7 @@ export const AdminScreen: React.FC = () => {
         <Box sx={{ overflowX: "auto" }}>
           <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 14 }}>
             <thead>
-              <tr style={{ textAlign: "left", color: "#6B6B6B" }}>
+              <tr style={{ textAlign: "left", color: "var(--slate-500)" }}>
                 <th style={celdaCabecera}>{t("Correo")}</th>
                 <th style={celdaCabecera}>{t("Nombre")}</th>
                 <th style={celdaCabecera}>{t("Alta")}</th>
@@ -213,7 +213,7 @@ export const AdminScreen: React.FC = () => {
                   <td style={celda}>
                     {u.correo || "(sin correo)"}
                     {!u.tieneBoveda && (
-                      <div style={{ fontSize: 12, color: "#6B6B6B" }}>{t("sin bóveda")}</div>
+                      <div style={{ fontSize: 12, color: "var(--slate-500)" }}>{t("sin bóveda")}</div>
                     )}
                   </td>
                   <td style={celda}>{u.nombre || "—"}</td>
@@ -227,7 +227,7 @@ export const AdminScreen: React.FC = () => {
                   </td>
                   <td style={celda}>
                     {u.esAdmin ? (
-                      <span style={{ color: "#6B6B6B", fontSize: 12 }}>admin</span>
+                      <span style={{ color: "var(--slate-500)", fontSize: 12 }}>admin</span>
                     ) : (
                       <Button
                         auto
@@ -248,7 +248,7 @@ export const AdminScreen: React.FC = () => {
       )}
 
       {!cargando && visibles.length === 0 && (
-        <Typography fontSize={14} sx={{ color: "#6B6B6B", marginTop: 2 }}>
+        <Typography fontSize={14} sx={{ color: "var(--slate-500)", marginTop: 2 }}>
           Ninguna cuenta coincide.
         </Typography>
       )}

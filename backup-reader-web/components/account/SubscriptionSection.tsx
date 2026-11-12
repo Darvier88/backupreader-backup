@@ -110,13 +110,13 @@ export const SubscriptionSection: React.FC = () => {
   if (!user?.plan) {
     return (
       <Box sx={{ marginTop: 3 }}>
-        <Typography fontFamily={"PT Serif"} fontSize={18} style={{ color: "#3C3C3C" }}>
+        <Typography fontFamily={"var(--font-serif)"} fontSize={18} style={{ color: "var(--ink-900)" }}>
           {t("Suscripción")}
         </Typography>
         <Typography
-          fontFamily={"Open Sans"}
+          fontFamily={"var(--font-sans)"}
           fontSize={15}
-          style={{ color: "#3C3C3C", margin: "8px 0" }}
+          style={{ color: "var(--ink-900)", margin: "8px 0" }}
         >
           {t("No tienes una suscripción activa.")}
         </Typography>
@@ -131,14 +131,14 @@ export const SubscriptionSection: React.FC = () => {
 
   return (
     <Box sx={{ marginTop: 3 }}>
-      <Typography fontFamily={"PT Serif"} fontSize={18} style={{ color: "#3C3C3C" }}>
+      <Typography fontFamily={"var(--font-serif)"} fontSize={18} style={{ color: "var(--ink-900)" }}>
         {t("Suscripción")}
       </Typography>
 
       <Typography
-        fontFamily={"Open Sans"}
+        fontFamily={"var(--font-sans)"}
         fontSize={15}
-        style={{ color: "#3C3C3C", margin: "8px 0 2px" }}
+        style={{ color: "var(--ink-900)", margin: "8px 0 2px" }}
       >
         {plan?.details?.name
           ? `${t("Plan")} ${plan.details.name}`
@@ -147,25 +147,25 @@ export const SubscriptionSection: React.FC = () => {
 
       {cancelado && user.planCancelAt ? (
         <Typography
-          fontFamily={"Open Sans"}
+          fontFamily={"var(--font-sans)"}
           fontSize={14}
-          style={{ color: "#6B6B6B", margin: "0 0 12px" }}
+          style={{ color: "var(--slate-500)", margin: "0 0 12px" }}
         >
           {t("Cancelada. Mantienes el acceso hasta el")} {fecha(user.planCancelAt)}.
         </Typography>
       ) : vencido && user.planCancelAt ? (
         <Typography
-          fontFamily={"Open Sans"}
+          fontFamily={"var(--font-sans)"}
           fontSize={14}
-          style={{ color: "#6B6B6B", margin: "0 0 12px" }}
+          style={{ color: "var(--slate-500)", margin: "0 0 12px" }}
         >
           {t("Tu suscripción terminó el")} {fecha(user.planCancelAt)}.
         </Typography>
       ) : (
         <Typography
-          fontFamily={"Open Sans"}
+          fontFamily={"var(--font-sans)"}
           fontSize={14}
-          style={{ color: "#6B6B6B", margin: "0 0 12px" }}
+          style={{ color: "var(--slate-500)", margin: "0 0 12px" }}
         >
           {t("Se renueva cada mes. Puedes cancelar cuando quieras.")}
         </Typography>
@@ -173,18 +173,18 @@ export const SubscriptionSection: React.FC = () => {
 
       {aviso && (
         <Typography
-          fontFamily={"Open Sans"}
+          fontFamily={"var(--font-sans)"}
           fontSize={14}
-          style={{ color: "#B23B3B", marginBottom: 8 }}
+          style={{ color: "var(--clay-600)", marginBottom: 8 }}
         >
           {aviso}
         </Typography>
       )}
       {exito && (
         <Typography
-          fontFamily={"Open Sans"}
+          fontFamily={"var(--font-sans)"}
           fontSize={14}
-          style={{ color: "#2E7D32", marginBottom: 8 }}
+          style={{ color: "var(--brass-600)", marginBottom: 8 }}
         >
           {exito}
         </Typography>
@@ -209,9 +209,9 @@ export const SubscriptionSection: React.FC = () => {
            debería disparar con un solo clic despistado. */
         <Box>
           <Typography
-            fontFamily={"Open Sans"}
+            fontFamily={"var(--font-sans)"}
             fontSize={14}
-            style={{ color: "#3C3C3C", marginBottom: 8 }}
+            style={{ color: "var(--ink-900)", marginBottom: 8 }}
           >
             {t("Dejaremos de cobrarte, y mantendrás el acceso hasta el final del periodo que ya pagaste. Tus chats no se borran.")}
           </Typography>

@@ -14,17 +14,17 @@ export const AccountScreen: FC = () => {
 
   return (
     <Box sx={{ maxWidth: 720, margin: "0 auto", padding: "24px 16px 48px" }}>
-      <Typography fontFamily={"PT Serif"} fontSize={26} style={{ color: "#3C3C3C" }}>
+      <Typography fontFamily={"var(--font-serif)"} fontSize={26} style={{ color: "var(--ink-900)" }}>
         {t("Mi cuenta")}
       </Typography>
 
       <Box sx={{ marginTop: 2 }}>
         {user?.displayName && (
-          <Typography fontFamily={"Open Sans"} fontSize={16} style={{ color: "#3C3C3C" }}>
+          <Typography fontFamily={"var(--font-sans)"} fontSize={16} style={{ color: "var(--ink-900)" }}>
             {user.displayName}
           </Typography>
         )}
-        <Typography fontFamily={"Open Sans"} fontSize={15} style={{ color: "#6B6B6B" }}>
+        <Typography fontFamily={"var(--font-sans)"} fontSize={15} style={{ color: "var(--slate-500)" }}>
           {user?.email}
         </Typography>
       </Box>

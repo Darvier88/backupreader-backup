@@ -33,13 +33,13 @@ export const AuthButton: FC<authButtonProps> = ({
   return (
     <Button bordered style={styles.authButtoStyles} onPress={onClick}>
       {signInWith === "email" ? (
-        <Typography fontSize={14} fontFamily={"Open Sans"}>
+        <Typography fontSize={14} fontFamily={"var(--font-sans)"}>
           {t("Continuar con email")}
         </Typography>
       ) : signInWith === "google" ? (
         <Typography
           fontSize={14}
-          fontFamily={"Open Sans"}
+          fontFamily={"var(--font-sans)"}
           style={{ display: "flex", alignItems: "center" }}
         >
           <FcGoogle size={17} style={{ marginRight: 5 }} /> {t("Iniciar con Google")}
@@ -47,7 +47,7 @@ export const AuthButton: FC<authButtonProps> = ({
       ) : (
         <Typography
           fontSize={14}
-          fontFamily={"Open Sans"}
+          fontFamily={"var(--font-sans)"}
           style={{ display: "flex", alignItems: "center" }}
         >
           <FaApple size={17} style={{ marginRight: 5 }} /> Iniciar con AppleId

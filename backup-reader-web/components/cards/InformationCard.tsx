@@ -13,7 +13,7 @@ const styles = {
   },
   title: {
     letterSpacing: 0.5,
-    color: "#3C3C3C",
+    color: "var(--ink-900)",
   },
 };
 
@@ -43,7 +43,7 @@ export const InformationCard: FC<InformationCardPros> = ({
           justifyContent: "space-between",
         }}
       >
-        <Typography fontFamily={"PT Serif"} fontSize={20} style={styles.title}>
+        <Typography fontFamily={"var(--font-serif)"} fontSize={20} style={styles.title}>
           {title}
         </Typography>
         {icon === "success" ? (

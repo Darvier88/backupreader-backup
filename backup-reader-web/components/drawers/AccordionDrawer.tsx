@@ -46,7 +46,7 @@ export const AccordionDrawer: FC<AccordionDrawerProps> = ({
           id="panel1bh-header"
         >
           <Typography
-            fontFamily={"Open Sans"}
+            fontFamily={"var(--font-sans)"}
             variant={"subtitle1"}
             sx={{
               ...styles.title,
@@ -61,7 +61,7 @@ export const AccordionDrawer: FC<AccordionDrawerProps> = ({
           <Typography
             variant={"caption"}
             fontSize={14}
-            fontFamily={"Open Sans"}
+            fontFamily={"var(--font-sans)"}
             sx={styles.title}
           >
             {textContent}

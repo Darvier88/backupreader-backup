@@ -13,7 +13,7 @@
 }
 
 .simpleCardContainerBackground h3, .simpleCardContainer h3{
-    font-family: "PT Serif";
+    font-family: var(--font-serif);
     font-size: 28px;
 }
 

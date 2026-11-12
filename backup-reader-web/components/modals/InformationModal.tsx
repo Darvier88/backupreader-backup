@@ -2,7 +2,7 @@ import React, { useContext } from "react";
 import { Typography } from "@mui/material";
 import { ModalContext } from "../../context";
 import { useTranslation } from "react-i18next";
-import { Button, Modal } from "@nextui-org/react";
+import { Modal } from "@nextui-org/react";
 
 type InformationModalProps = {
   title: string;
@@ -18,30 +18,35 @@ export const InformationModal: React.FC<InformationModalProps> = ({
   const onHandleHide = () => {
     hide();
   };
+  /* Mismo estilo que el resto de avisos del rediseño (p. ej. «Subiendo
+     chat»): título en serif y tinta, texto en la sans del sistema de diseño
+     en pizarra, y el botón principal de la marca. Antes iba en PT Serif /
+     Open Sans con gris #3C3C3C y el botón de NextUI, que se veía más claro
+     y con otra letra. */
   return (
     <>
-      <Modal.Header>
+      <Modal.Header css={{ paddingTop: 24 }}>
         <Typography
-          fontFamily={"PT Serif"}
-          fontSize={18}
-          style={{ color: "#3C3C3C" }}
+          fontFamily={"var(--font-serif)"}
+          fontSize={22}
+          style={{ color: "var(--ink-900)", fontWeight: 500 }}
         >
           {title}
         </Typography>
       </Modal.Header>
       <Modal.Body>
         <Typography
-          fontFamily={"Open Sans"}
-          fontSize={18}
-          style={{ textAlign: "center", color: "#3C3C3C" }}
+          fontFamily={"var(--font-sans)"}
+          fontSize={15.5}
+          style={{ textAlign: "center", color: "var(--slate-700)", lineHeight: 1.55 }}
         >
           {text}
         </Typography>
       </Modal.Body>
-      <Modal.Footer justify="center">
-        <Button auto onPress={onHandleHide}>
+      <Modal.Footer justify="center" css={{ paddingBottom: 22 }}>
+        <button type="button" className="br-btn br-btn-primary br-btn-md" onClick={onHandleHide} autoFocus>
           {t("Continuar")}
-        </Button>
+        </button>
       </Modal.Footer>
     </>
   );
