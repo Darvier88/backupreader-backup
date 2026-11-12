@@ -20,7 +20,7 @@ const enTexto = (traducido: unknown): string =>
   (traducido as string | null | undefined) ?? "";
 import { FirebaseAuth } from "../../config/firebase";
 import { useRouter } from "next/router";
-import { AuthContext } from "../../context";
+import { AuthContext, FirestoreContext } from "../../context";
 import { Logo, LangToggle } from "../ui/BrandChrome";
 import { storage } from "../../config/firebase";
 
@@ -115,6 +115,9 @@ export const ConversationsDrawer: FC<ConversationsDrawerProps> = ({
   const [agregando, setAgregando] = useState(false);
   const router = useRouter();
   const { logOut } = useContext(AuthContext);
+  /* Para la línea bajo el nombre: quien está en la prueba gratuita no tiene
+     `plan` todavía, y llamarle «Plan personal» le diría que ya paga. */
+  const { user: perfil } = useContext(FirestoreContext);
   const [instagramConversations, setInstagramConversations] = useState<JSX.Element[] | null>(null);
   /* Lo que se busca en TODOS los chats. Es estado de la barra lateral y no del
      dashboard porque el buscador tiene que funcionar sin ningún chat abierto. */
@@ -479,7 +482,7 @@ export const ConversationsDrawer: FC<ConversationsDrawerProps> = ({
                 único de la cuenta que cambia solo (se acaba la prueba, se
                 cancela) y no se ve en ninguna otra parte del panel. */}
             <span style={{ display: "block", fontFamily: "var(--font-mono)", fontSize: 10.5, letterSpacing: "0.04em", color: "var(--slate-500)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-              {t("Plan personal")}
+              {perfil?.plan ? t("Plan personal") : t("Prueba gratuita")}
             </span>
           </span>
           <LangToggle />

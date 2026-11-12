@@ -6,6 +6,7 @@ const resources = {
   en: {
     translation: {
       /* Rediseño, revisión de flujos (rondas 1–9) */
+      "Prueba gratuita": "Free trial",
       "Exportar chat": "Export chat",
       "Borrar búsqueda": "Clear search",
       "Personas o mensajes en tus {{n}} chats": "People or messages in your {{n}} chats",
