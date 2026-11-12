@@ -414,7 +414,7 @@ const resources = {
       "Borrar este chat":"Delete this chat",
       "Borrar":"Delete",
       "Borrando…":"Deleting…",
-      "Se borran del servidor los mensajes y todos los archivos de este chat. No se puede deshacer: como están cifrados con tu clave, ni siquiera nosotros podemos recuperarlos.":"This deletes the messages and every file in this chat from the server. It can't be undone: they're encrypted with your key, so not even we can recover them.",
+      "Se borran del servidor los mensajes y todos los archivos de este chat. No se puede deshacer: como están cifrados con tu clave, ni siquiera nosotros podemos recuperarlos.":"This deletes the messages and every file in this chat from the server. It can't be undone: they're encrypted with your password, so not even we can recover them.",
       "La copia que tengas en tu teléfono o en tu computadora no se toca.":"Any copy on your phone or computer is left untouched.",
       "Quedaron {{cantidad}} archivo(s) sin borrar. El chat sigue en la lista: vuelve a intentarlo.":"{{cantidad}} file(s) could not be deleted. The chat is still listed: try again.",
       "Los archivos se borraron, pero el chat sigue en la lista. Vuelve a intentarlo para quitarlo.":"The files were deleted, but the chat is still listed. Try again to remove it.",
