@@ -60,6 +60,14 @@ export const EntradaScreen: FC = () => {
   }, []);
 
   const [paso, setPaso] = useState<"inicio" | "correo" | "clave">("inicio");
+
+  /* En el móvil, los pasos del correo y de la contraseña van sin la cabecera
+     del logo (4b): solo la flecha y «Paso x de 2». La regla CSS solo actúa
+     por debajo de 720 px; en escritorio la cabecera se queda. */
+  useEffect(() => {
+    document.body.classList.toggle("br-sin-cabecera", paso !== "inicio");
+    return () => document.body.classList.remove("br-sin-cabecera");
+  }, [paso]);
   const [esNueva, setEsNueva] = useState(false);
   const [correo, setCorreo] = useState("");
   const [nombre, setNombre] = useState("");
