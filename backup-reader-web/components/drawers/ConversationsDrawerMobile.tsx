@@ -5,6 +5,7 @@ import { useTranslation } from "react-i18next";
 import { Text, Button, Collapse } from "@nextui-org/react";
 import { StorageContext } from "../../context/StorageContext";
 import { AuthContext } from "../../context";
+import { LangToggle } from "../ui/BrandChrome";
 import { BotonCifrar } from "../vault/BotonCifrar";
 import { BotonBorrarChat } from "../chat/BotonBorrarChat";
 import { Logo } from "../ui/BrandChrome";
@@ -416,6 +417,26 @@ export const ConversationsDrawerMobile: FC<ConversationsDrawerMobileProps> = ({
         <div style={{ flex: 1, minHeight: 24 }} />
 
         <div style={{ display: "flex", flexDirection: "column", borderTop: "1px solid var(--border)", padding: "8px 8px 28px" }}>
+          {/* El idioma, junto a la cuenta (10a).
+              Estaba en la cabecera, compitiendo con el botón de
+              conversaciones encima de la conversación que se está leyendo.
+              Aquí está donde vive el resto de lo que configura el usuario, y
+              se toca una vez al año. */}
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, padding: "6px 12px 12px" }}>
+            <span
+              style={{
+                fontFamily: "var(--font-mono)",
+                fontSize: 10.5,
+                letterSpacing: "0.14em",
+                textTransform: "uppercase",
+                color: "var(--slate-500)",
+              }}
+            >
+              {t("Idioma")}
+            </span>
+            <LangToggle />
+          </div>
+
           <button
             type="button"
             onClick={() => { setOpenState(false); router.push("/account"); }}

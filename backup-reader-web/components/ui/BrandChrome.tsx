@@ -3,6 +3,8 @@ import { useRouter } from "next/router";
 import { useTranslation } from "react-i18next";
 import { AuthContext, FirestoreContext } from "../../context";
 import { cambiarIdioma } from "../../i18n";
+import { useMediaQuery } from "@mui/material";
+import { MenuMovil } from "./MenuMovil";
 
 /* ============================================================================
    BrandHeader / BrandFooter — cromo "Expediente" para las páginas de marketing
@@ -75,6 +77,8 @@ export const LangToggle: FC = () => {
 export const BrandHeader: FC<{ minimal?: boolean; app?: boolean; wide?: boolean; narrow?: boolean }> = ({ minimal, app, wide, narrow }) => {
   const router = useRouter();
   const { t } = useTranslation();
+  const phone = useMediaQuery("(max-width:720px)");
+  const [menuAbierto, setMenuAbierto] = useState(false);
   const { logOut } = useContext(AuthContext);
   const { clean } = useContext(FirestoreContext);
   const go = (href: string) => router.push(href);
@@ -153,21 +157,59 @@ export const BrandHeader: FC<{ minimal?: boolean; app?: boolean; wide?: boolean;
     );
   }
 
+  /* Cabecera sin sesión (10b).
+     En escritorio, los cuatro enlaces de siempre. En móvil, una sola fila de
+     60px —logo, «Comienza ahora» y el botón de menú—, y todo lo demás dentro
+     del menú a pantalla completa (10c). Con los enlaces arriba, en 360px la
+     cabecera se partía en dos filas y se comía la frase que tiene que
+     convencer a quien acaba de llegar. */
   return (
-    <header className="br-header">
-      <div className="br-header-inner" style={{ maxWidth: narrow ? 760 : "var(--page-max)" }}>
-        <Logo onClick={() => go("/")} />
-        <nav style={{ display: "flex", alignItems: "center", gap: "clamp(14px,2.2vw,26px)", flexWrap: "wrap" }}>
-          <a href="/#features" className="br-navlink">{t("Características")}</a>
-          <a href="/#faq" className="br-navlink">FAQ</a>
-          <span className="br-navlink" style={{ cursor: "pointer" }} onClick={() => go("/help")}>{t("Tutorial")}</span>
-          <LangToggle />
-          <button className="br-btn br-btn-primary br-btn-sm" onClick={() => go("/auth")}>
-            {t("Comienza ahora")}
-          </button>
-        </nav>
-      </div>
-    </header>
+    <>
+      <header className="br-header">
+        <div className="br-header-inner" style={{ maxWidth: narrow ? 760 : "var(--page-max)" }}>
+          <Logo onClick={() => go("/")} compact={phone} />
+          <nav style={{ display: "flex", alignItems: "center", gap: phone ? 8 : "clamp(14px,2.2vw,26px)", flexWrap: "nowrap" }}>
+            {!phone && (
+              <>
+                <a href="/#features" className="br-navlink">{t("Características")}</a>
+                <a href="/#faq" className="br-navlink">FAQ</a>
+                <span className="br-navlink" style={{ cursor: "pointer" }} onClick={() => go("/help")}>{t("Tutorial")}</span>
+                <LangToggle />
+              </>
+            )}
+            <button className="br-btn br-btn-primary br-btn-sm" onClick={() => go("/auth")} style={{ whiteSpace: "nowrap" }}>
+              {t("Comienza ahora")}
+            </button>
+            {phone && (
+              <button
+                type="button"
+                aria-label={(t("Menú") as string) || "Menú"}
+                aria-expanded={menuAbierto}
+                onClick={() => setMenuAbierto(true)}
+                style={{
+                  width: 44,
+                  height: 44,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  background: "transparent",
+                  border: "none",
+                  cursor: "pointer",
+                  color: "var(--ink-900)",
+                  marginRight: -10,
+                }}
+              >
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" aria-hidden>
+                  <path d="M3 6h18M3 12h18M3 18h18" />
+                </svg>
+              </button>
+            )}
+          </nav>
+        </div>
+      </header>
+
+      <MenuMovil abierto={menuAbierto} onCerrar={() => setMenuAbierto(false)} />
+    </>
   );
 };
 

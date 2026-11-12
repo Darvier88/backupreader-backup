@@ -309,25 +309,23 @@ export const InicioChats: FC<{
         </div>
       )}
 
-      {/* Dos tarjetas compactas en el móvil (3a): «Ver mis chats» en tinta,
-          «Subir un chat» en blanco. En escritorio el panel ya está a la vista
-          y la zona de arrastre está abajo. */}
+      {/* Una sola tarjeta, a lo ancho (10a).
+          «Ver mis chats» se fue a la cabecera, al botón «Conversaciones · N»:
+          estaba aquí abajo, en una rejilla de dos, y duplicaba algo que ya se
+          podía hacer desde arriba. Lo que queda es subir, que es la única
+          acción de esta pantalla que no está en ningún otro sitio. */}
       {hayChats && !buscando && !bloqueada && !ancho && (
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginTop: 24 }}>
-          <button type="button" onClick={onVerMisChats} style={{ ...tarjetaAccion, background: "var(--ink-900)", border: "1px solid var(--ink-900)", color: "var(--paper-50)" }}>
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-              <path d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.6A8 8 0 1 1 21 12z" />
-            </svg>
-            <span style={{ ...tituloAccion, color: "inherit" }}>{t("Ver mis chats")}</span>
-          </button>
-          <button type="button" onClick={onSubir} style={tarjetaAccion}>
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--brass-600)" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-              <path d="M12 15V4M7 9l5-5 5 5" />
-              <path d="M5 15v4a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-4" />
-            </svg>
-            <span style={tituloAccion}>{t("Subir un chat")}</span>
-          </button>
-        </div>
+        <button
+          type="button"
+          onClick={onSubir}
+          style={{ ...tarjetaAccion, width: "100%", marginTop: 24 }}
+        >
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--brass-600)" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+            <path d="m17 8-5-5-5 5M12 3v12" />
+          </svg>
+          <span style={tituloAccion}>{t("Subir un chat")}</span>
+        </button>
       )}
 
       {/* Recientes.

@@ -85,7 +85,12 @@ export const HomeScreen: FC = () => {
             <p style={{ margin: "22px 0 0", fontSize: "clamp(16px,1.6vw,17.5px)", lineHeight: 1.65, color: "var(--ink-100)", maxWidth: "52ch" }}>
               {t("No pierdas tus recuerdos. Con nuestro servicio, puedes guardar mensajes, fotos, videos, documentos y enlaces de cualquier chat o grupo, liberando espacio en tu teléfono y manteniendo tus chats fácilmente accesibles incluso si Whatsapp no está disponible.")}
             </p>
-            <div style={{ marginTop: 32, display: "flex", gap: 14, flexWrap: "wrap" }}>
+            {/* Apilados y a lo ancho en móvil (10b).
+                Con `flex-wrap`, el segundo botón caía debajo pero con el
+                ancho de su texto, así que los dos quedaban de tamaños
+                distintos y ninguno llegaba al borde. `br-acciones-hero` los
+                iguala por debajo de 720px. */}
+            <div className="br-acciones-hero" style={{ marginTop: 32, display: "flex", gap: 14, flexWrap: "wrap" }}>
               <button className="br-btn br-btn-primary br-btn-lg" onClick={goAuth}>{t("Comienza ahora")}</button>
               <a href="#features" className="br-btn br-btn-inverse br-btn-lg">{t("Lee chats sin estar en línea")}</a>
             </div>

@@ -757,3 +757,9 @@ body {
   .br-cabecera-minima > div > div { padding: 8px 16px !important; }
   .br-cabecera-minima > div > div > div { margin: 0 !important; }
 }
+
+/* Acciones del hero en móvil (10b): apiladas y a ancho completo. */
+@media (max-width: 720px) {
+  .br-acciones-hero { flex-direction: column; align-items: stretch; gap: 10px; }
+  .br-acciones-hero > * { width: 100%; justify-content: center; text-align: center; }
+}

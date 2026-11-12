@@ -620,6 +620,10 @@ const resources = {
         "Your chats are encrypted on this device.",
       "Pago seguro con tarjeta.": "Secure payment by card.",
       "Foto del chat": "Chat photo",
+      "Conversaciones": "Conversations",
+      "Idioma": "Language",
+      "Menú": "Menu",
+      "Ya tengo cuenta · Entrar": "I already have an account · Sign in",
 
       // --- Ayuda: animaciones y preguntas frecuentes ----------------------
       "Cifrado": "Encryption",

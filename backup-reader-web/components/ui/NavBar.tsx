@@ -57,7 +57,7 @@ export const NavBar: FC<NavBarProps> = ({ drawerButtonOnPress }) => {
   const router = useRouter();
   const { t } = useTranslation();
   const { logOut } = useContext(AuthContext);
-  const { saveFile } = useContext(StorageContext);
+  const { saveFile, fileList } = useContext(StorageContext);
   const { user, getUser, getPlans, clean } = useContext(FirestoreContext);
   const [daysLeft, setDaysLeft] = useState<number>(0);
   const [isAndroidDevice, setIsAndroidDevice] = useState(false);
@@ -133,32 +133,23 @@ export const NavBar: FC<NavBarProps> = ({ drawerButtonOnPress }) => {
      porque alli no hay panel donde ponerlos y quitarlos dejaria sin salida. */
   const enElPanel = router.pathname === "/dashboard";
 
+  /* Cuántos chats hay, para el botón y para decidir si sale.
+     Sin chats la cabecera es solo el logo y el idioma (2b, 5c): un botón
+     que dice «Conversaciones · 0» y abre un panel vacío es peor que no
+     tener botón. */
+  const cuantosChats = fileList?.length ?? 0;
+
   return (
     <>
       <header className="br-header">
         {/* maxWidth 1360: el mismo que usa BrandHeader en el dashboard, para
             que el logo caiga a la misma altura en las dos pantallas. */}
         <div className="br-header-inner" style={{ maxWidth: 1360 }}>
-          {/* Botón del panel de chats DENTRO de la cabecera (1a).
-              Antes era una píldora «< Chats» en una fila propia debajo de la
-              cabecera: ocupaba una línea entera encima de la conversación y
-              parecía un botón de «atrás». Ahora es el control de la izquierda
-              de la cabecera, en tinta, con 44px de área táctil. */}
+          {/* El panel se abre ahora con el botón «Conversaciones · N» de la
+              derecha (10a), no con un icono. Un icono de panel no dice
+              cuántos chats hay ni que sean tuyos; el botón dice las dos
+              cosas y además es un objetivo mucho más fácil de acertar. */}
           <div style={{ display: "flex", alignItems: "center", gap: 8, minWidth: 0 }}>
-          {router.pathname === "/dashboard" && phone && (
-            <button
-              type="button"
-              className="br-boton-panel"
-              aria-label={t("Abrir el panel de chats") as string}
-              title={t("Tus chats") as string}
-              onClick={() => drawerButtonOnPress()}
-            >
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-                <rect x="3" y="4" width="18" height="16" rx="2" />
-                <path d="M9 4v16" />
-              </svg>
-            </button>
-          )}
           <Logo
             compact={phone}
             onClick={() => {
@@ -257,6 +248,39 @@ export const NavBar: FC<NavBarProps> = ({ drawerButtonOnPress }) => {
               </IconButton>
             )}
 
+            {/* «Conversaciones · N» (10a).
+                Sale en todas las pantallas con chats: el inicio, el inicio
+                bloqueado y la vista de chat. Lleva el número porque es lo
+                que convierte un botón de navegación en una respuesta: el
+                usuario sabe cuántos tiene sin abrir nada. */}
+            {user && phone && enElPanel && cuantosChats > 0 && (
+              <button
+                type="button"
+                className="br-btn br-btn-ghost br-btn-sm"
+                onClick={() => drawerButtonOnPress()}
+                style={{ display: "inline-flex", alignItems: "center", gap: 8, minHeight: 40, whiteSpace: "nowrap" }}
+              >
+                {t("Conversaciones")}
+                <span
+                  style={{
+                    display: "inline-flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    minWidth: 22,
+                    height: 22,
+                    padding: "0 6px",
+                    borderRadius: 999,
+                    background: "var(--ink-900)",
+                    color: "var(--paper-50)",
+                    fontFamily: "var(--font-mono)",
+                    fontSize: 11,
+                  }}
+                >
+                  {cuantosChats}
+                </span>
+              </button>
+            )}
+
             {/* Sustituye al menú de idioma que colgaba de un IconButton
                 comentado: el <Menu> seguía en el árbol pero nada podía abrirlo.
                 Este es el mismo control que usa BrandHeader. */}
@@ -267,9 +291,15 @@ export const NavBar: FC<NavBarProps> = ({ drawerButtonOnPress }) => {
                 dibujo, asi que el dedo tiene que acertar en 35.
                 El sitio que se ganaba ya no hace falta: la cabecera ahora
                 puede pasar a dos lineas en pantallas estrechas. */}
-            <span>
-              <LangToggle />
-            </span>
+            {/* El idioma se va al panel cuando hay chats (10a): allí vive
+                junto a la cuenta, y aquí arriba dejaba la cabecera con tres
+                controles compitiendo encima de una conversación. Sin chats
+                (2b, 5c) no hay panel al que mandarlo y se queda. */}
+            {!(user && phone && enElPanel && cuantosChats > 0) && (
+              <span>
+                <LangToggle />
+              </span>
+            )}
           </nav>
         </div>
       </header>
