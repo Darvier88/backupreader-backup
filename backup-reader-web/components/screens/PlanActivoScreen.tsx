@@ -106,7 +106,20 @@ export const PlanActivoScreen: FC = () => {
           <h1 className="br-page-title" style={{ marginTop: 24 }}>{t("Tu plan está activo")}</h1>
           <p style={{ margin: "0 0 24px", fontSize: 15.5, color: "var(--slate-700)" }}>
             {user?.email
-              ? enTexto(t("Te enviamos el recibo a {{correo}}.", { correo: user.email }))
+              ? /* El correo en negrita (6b): es donde hay que ir a buscar el recibo. */
+                (() => {
+                  const c = user.email as string;
+                  const frase = enTexto(t("Te enviamos el recibo a {{correo}}.", { correo: c }));
+                  const i = frase.indexOf(c);
+                  if (i < 0) return frase;
+                  return (
+                    <>
+                      {frase.slice(0, i)}
+                      <strong style={{ fontWeight: 600, color: "var(--ink-900)" }}>{c}</strong>
+                      {frase.slice(i + c.length)}
+                    </>
+                  );
+                })()
               : t("Te enviamos el recibo por correo.")}
           </p>
 
