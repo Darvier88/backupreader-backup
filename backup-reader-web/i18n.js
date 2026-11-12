@@ -433,6 +433,8 @@ const resources = {
 
       // --- Sueltas que nunca tuvieron traducción --------------------------
       "Chats":"Chats",
+      "Planes":"Plans",
+      "Pago":"Payment",
       "Mi cuenta":"My account",
       "Continuar":"Continue",
       "Google Drive":"Google Drive",

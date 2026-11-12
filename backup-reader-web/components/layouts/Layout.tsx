@@ -2,6 +2,7 @@ import { FC, useContext, useEffect, useState } from "react";
 
 import Head from "next/head";
 import { useRouter } from "next/router";
+import { useTranslation } from "react-i18next";
 import { Box, Theme, useMediaQuery } from "@mui/material";
 
 import { NavBar } from "../ui";
@@ -19,6 +20,7 @@ interface LayoutProps {
 
 export const Layout: FC<LayoutProps> = ({ children }) => {
   const router = useRouter();
+  const { t, i18n } = useTranslation();
   const { user } = useContext(FirestoreContext);
   const [title, setTitle] = useState<string>("");
   /* El estado del panel vive ahora en su contexto: ademas de la cabecera, lo
@@ -29,41 +31,32 @@ export const Layout: FC<LayoutProps> = ({ children }) => {
     breakpoints.down("sm")
   );
 
+  /* El título de la pestaña, en el idioma de quien navega.
+     Estaba fijo en español («Planes», «Pagos», «Mi cuenta») también para
+     quien tenía la web en inglés: con cuatro pestañas abiertas, el título es
+     lo único por lo que se distingue una de otra, así que era la parte de la
+     interfaz donde más molestaba.
+
+     Era además una lista de `if` sueltos, con `/login` dos veces, así que
+     ahora es una tabla: añadir una ruta es una línea y no se puede olvidar
+     un `else`. El inicio no pasa por `t()` a propósito: es el nombre del
+     producto más su descripción para los buscadores, y esa no se traduce. */
   useEffect(() => {
-    if (router.pathname === "/auth") {
-      setTitle("Registro");
-    }
-    if (router.pathname === "/login") {
-      setTitle("Login");
-    }
-    if (router.pathname === "/dashboard") {
-      setTitle("Chats");
-    }
-    if (router.pathname === "/login") {
-      setTitle("Login");
-    }
-    if (router.pathname === "/plans") {
-      setTitle("Planes");
-    }
-    if (router.pathname === "/payment") {
-      setTitle("Pagos");
-    }
-    if (router.pathname === "/help") {
-      setTitle("Ayuda");
-    }
-    if (router.pathname === "/account") {
-      setTitle("Mi cuenta");
-    }
-    if (router.pathname === "/") {
-      setTitle("Backup Reader - Social media backups");
-    }
-    if (router.pathname === "/privacyPolicy") {
-      setTitle("Política de Privacidad");
-    }
-    if (router.pathname === "/termsConditions") {
-      setTitle("Términos del servicio");
-    }
-  }, [router]);
+    const titulos: Record<string, string> = {
+      "/auth": t("Crear cuenta") as string,
+      "/login": t("Entrar") as string,
+      "/dashboard": t("Chats") as string,
+      "/plans": t("Planes") as string,
+      "/payment": t("Pago") as string,
+      "/help": t("Ayuda") as string,
+      "/account": t("Mi cuenta") as string,
+      "/privacyPolicy": t("Política de Privacidad") as string,
+      "/termsConditions": t("Términos del Servicio") as string,
+      "/": "Backup Reader - Social media backups",
+    };
+    const nuevo = titulos[router.pathname];
+    if (nuevo) setTitle(nuevo);
+  }, [router, t, i18n.language]);
 
   return (
     <>
