@@ -125,6 +125,7 @@ export const ConversationsDrawer: FC<ConversationsDrawerProps> = ({
 
   const deletingFile = () => {
     show({
+      width: "min(420px, 92vw)",
       modalContent: (
         <InformationModal
           title={t("Solicitud enviada")}

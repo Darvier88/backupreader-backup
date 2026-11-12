@@ -91,6 +91,7 @@ export const AuthProvider = ({ children }: any) => {
          pasaba de verdad. Ahora se traduce el código real. */
       console.error("Fallo al crear la cuenta:", (resp as any)?.error);
       show({
+        width: "min(420px, 92vw)",
         modalContent: (
           <InformationModal
             title={t("Aviso")}
@@ -128,6 +129,7 @@ export const AuthProvider = ({ children }: any) => {
         type: "notAuthenticated",
       });
       show({
+        width: "min(420px, 92vw)",
         modalContent: (
           <InformationModal
             title={t("Aviso")}

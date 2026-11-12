@@ -29,15 +29,16 @@ export const InformationModal: React.FC<InformationModalProps> = ({
         <Typography
           fontFamily={"var(--font-serif)"}
           fontSize={22}
-          style={{ color: "var(--ink-900)", fontWeight: 500 }}
+          style={{ color: "var(--ink-900)" }}
         >
           {title}
         </Typography>
       </Modal.Header>
       <Modal.Body>
+        {/* Texto igual que el de «Subiendo chat» (LoadingComponent): la
+            letra del tema, 14.5 px, pizarra e interlineado 1.55. */}
         <Typography
-          fontFamily={"var(--font-sans)"}
-          fontSize={15.5}
+          fontSize={14.5}
           style={{ textAlign: "center", color: "var(--slate-700)", lineHeight: 1.55 }}
         >
           {text}

@@ -104,6 +104,9 @@ export const ModalConsumer: React.FC = () => {
           aria-labelledby="modal-title"
           scroll={withScroll ? withScroll : false}
           fullScreen={isFullScreen ? isFullScreen : false}
+          /* La misma tarjeta que «Subiendo chat»: fondo papel y borde fino,
+             no el blanco de NextUI. */
+          css={isFullScreen ? undefined : { backgroundColor: "var(--paper-50)", border: "1px solid var(--border)", boxShadow: "var(--shadow-card, 0 8px 30px rgba(22,35,59,0.12))" }}
         >
           {render(modalContent)}
         </Modal>
