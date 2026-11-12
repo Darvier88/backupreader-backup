@@ -7,6 +7,7 @@ import { FirebaseAuth } from "../../config/firebase";
 import { ColumnaPasos } from "./ColumnaPasos";
 import { IconoPaso, Trazo } from "../ui/Paso";
 import { Logo } from "../ui/BrandChrome";
+import { ENTRAR_CON_APPLE } from "../../lib/funciones-activas";
 
 /**
  * Desbloquear los chats, como un paso de la entrada (pantalla 4c).
@@ -205,11 +206,25 @@ export const PantallaDesbloqueo: FC<{ onOmitir: () => void }> = ({ onOmitir }) =
             {/* «Clave de cifrado», no «contraseña» (8a): «contraseña» ya es la
                 de la cuenta, y llamar igual a las dos es lo que hace que la
                 gente escriba la equivocada. */}
-            {t("Escribe tu clave de cifrado para abrirlos y subir nuevos.")}
+            {/* El texto de 4c en el móvil y el de 8a en escritorio: el diseño
+                los escribe distinto y aquí se respeta cada uno. */}
+            <span className="br-solo-movil-inline">
+              {t("Tus chats están cifrados con una contraseña que solo tú conoces. La necesitamos para abrirlos y para subir nuevos.")}
+            </span>
+            <span className="br-solo-escritorio-inline">
+              {t("Escribe tu clave de cifrado para abrirlos y subir nuevos.")}
+            </span>
           </p>
 
           <label style={{ display: "block", fontFamily: "var(--font-sans)", fontSize: 13, fontWeight: 600, color: "var(--paso-texto)", marginBottom: 6 }}>
-            {modo === "clave" ? t("Clave de cifrado") : t("Código de recuperación")}
+            {modo === "clave" ? (
+              <>
+                <span className="br-solo-movil-inline">{t("Contraseña de cifrado")}</span>
+                <span className="br-solo-escritorio-inline">{t("Clave de cifrado")}</span>
+              </>
+            ) : (
+              t("Código de recuperación")
+            )}
           </label>
 
           <div style={{ position: "relative" }}>
@@ -263,11 +278,21 @@ export const PantallaDesbloqueo: FC<{ onOmitir: () => void }> = ({ onOmitir }) =
           <p style={{ fontFamily: "var(--font-sans)", fontSize: 13, color: fallo ? "var(--paso-aviso)" : "var(--paso-tenue)", margin: "8px 0 0" }}>
             {fallo ||
               errorMessage ||
-              t(
-                modo === "clave"
-                  ? "Es distinta a la contraseña de tu cuenta."
-                  : "Es el código que guardaste al crear tu contraseña de cifrado."
-              )}
+              (modo === "clave" ? (
+                <>
+                  {/* 4c dice «tu cuenta de Apple o Google», pero mientras
+                      ENTRAR_CON_APPLE esté apagado, nombrar Apple confunde a
+                      quien entró con su correo: se nombra solo cuando existe. */}
+                  <span className="br-solo-movil-inline">
+                    {ENTRAR_CON_APPLE
+                      ? t("Es distinta a la de tu cuenta de Apple o Google.")
+                      : t("Es distinta a la contraseña de tu cuenta.")}
+                  </span>
+                  <span className="br-solo-escritorio-inline">{t("Es distinta a la contraseña de tu cuenta.")}</span>
+                </>
+              ) : (
+                t("Es el código que guardaste al crear tu contraseña de cifrado.")
+              ))}
           </p>
 
           {/* «Recordar en este dispositivo por 30 días» (8a): desmarcada por
@@ -315,7 +340,14 @@ export const PantallaDesbloqueo: FC<{ onOmitir: () => void }> = ({ onOmitir }) =
                 {t("Ahora no")}
               </button>
               <button type="button" onClick={olvido} style={{ ...enlace, marginLeft: "auto", marginRight: "auto", color: "var(--paso-apagado)" }} className="br-olvide">
-                {modo === "clave" ? t("Olvidé mi clave de cifrado") : t("Usar mi clave")}
+                {modo === "clave" ? (
+                  <>
+                    <span className="br-solo-movil-inline">{t("Olvidé mi contraseña de cifrado")}</span>
+                    <span className="br-solo-escritorio-inline">{t("Olvidé mi clave de cifrado")}</span>
+                  </>
+                ) : (
+                  t("Usar mi clave")
+                )}
               </button>
             </div>
           </div>
