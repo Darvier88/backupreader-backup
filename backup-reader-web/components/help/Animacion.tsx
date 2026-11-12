@@ -41,7 +41,10 @@ export const Animacion: FC<{
   const [ancha, setAncha] = useState<boolean | null>(null);
 
   useEffect(() => {
-    const mirar = () => setAncha(window.innerWidth >= CORTE);
+    /* Horizontal si hay ancho de escritorio O si la pantalla está apaisada:
+       un móvil girado (667x375) no debe recibir el vídeo vertical, que a todo
+       el ancho mediría más de 1000 px de alto. */
+    const mirar = () => setAncha(window.innerWidth >= CORTE || window.innerWidth > window.innerHeight);
     mirar();
     window.addEventListener("resize", mirar);
     return () => window.removeEventListener("resize", mirar);
@@ -51,28 +54,24 @@ export const Animacion: FC<{
   const proporcion = ancha ? "16x10" : "9x16";
   const src = `/videos/${base}-${idioma}-${proporcion}.mp4`;
 
-  /* LA CAJA SE DIBUJA SIN `aspect-ratio` NI `max-height` JUNTOS
-     Antes era una sola caja con `aspectRatio: 9/16` y `maxHeight: 70vh`. Cada
-     navegador resuelve distinto esa mezcla cuando el tope de alto corta: Chrome
-     deja la caja a todo el ancho y rompe la proporción; Safari en iPhone
-     encoge el ANCHO para mantenerla y la deja pegada a la izquierda, con una
-     franja blanca a la derecha y el vídeo descentrado.
+  /* LA CAJA TIENE LA PROPORCIÓN EXACTA DEL ARCHIVO Y OCUPA TODO EL ANCHO
+     Los vídeos miden 1080x1920 (9:16, móvil) y 1920x1200 (16:10,
+     escritorio). La caja usa esa misma proporción y el ancho entero de la
+     tarjeta, así que el vídeo la llena sin franjas a los lados ni arriba y
+     abajo. Antes se limitaba al 70 % del alto de la pantalla y en móviles
+     anchos quedaban dos bandas oscuras.
 
-     Ahora hay dos cajas. La de fuera ocupa todo el ancho y pone el fondo en
-     tinta, así que si sobra sitio a los lados se ve oscuro, no blanco. La de
-     dentro tiene un ancho calculado —nunca más que el disponible, ni más del
-     que cabe en el 70 % del alto de la pantalla— y está centrada; la
-     proporción la da el truco del `padding-top` en porcentaje, que funciona
-     igual en todos los navegadores, incluidos los Safari viejos que no
-     entienden `aspect-ratio`. El vídeo va encima, absoluto, ocupándola
-     entera. */
+     La proporción va con el truco del `padding-top` en porcentaje y no con
+     `aspect-ratio`: funciona igual en todos los navegadores, incluidos los
+     Safari viejos. Nada de `aspect-ratio` junto a `max-height`: cada
+     navegador resuelve distinto esa mezcla (Safari encogía el ancho y dejaba
+     la caja pegada a la izquierda). El vídeo va encima, absoluto. */
   const vertical = ancha === false;
   const proporcion100 = vertical ? (16 / 9) * 100 : (10 / 16) * 100;
-  const anchoMaximo = vertical ? "calc(70vh * 9 / 16)" : "none";
 
   return (
     <div style={{ width: "100%", background: "var(--ink-900)", borderBottom: "1px solid var(--border)", overflow: "hidden" }}>
-      <div style={{ position: "relative", width: "100%", maxWidth: anchoMaximo, margin: "0 auto" }}>
+      <div style={{ position: "relative", width: "100%" }}>
         <div style={{ paddingTop: `${proporcion100}%` }} />
         {ancha !== null && (
           <video
@@ -86,7 +85,7 @@ export const Animacion: FC<{
             playsInline
             preload="metadata"
             aria-label={descripcion}
-            style={{ position: "absolute", top: 0, left: 0, right: 0, bottom: 0, width: "100%", height: "100%", objectFit: "contain", display: "block", background: "var(--ink-900)" }}
+            style={{ position: "absolute", top: 0, left: 0, right: 0, bottom: 0, width: "100%", height: "100%", objectFit: "cover", display: "block", background: "var(--ink-900)" }}
           />
         )}
       </div>
