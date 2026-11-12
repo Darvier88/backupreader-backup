@@ -6,6 +6,7 @@ const resources = {
   en: {
     translation: {
       /* Rediseño, revisión de flujos (rondas 1–9) */
+      "Exportar chat": "Export chat",
       "Borrar búsqueda": "Clear search",
       "Personas o mensajes en tus {{n}} chats": "People or messages in your {{n}} chats",
       "Todo · {{n}}": "All · {{n}}",
@@ -493,7 +494,7 @@ const resources = {
       "Consentimiento del Usuario":"User Consent",
       "Al utilizar Backup Reader, consientes el acceso, uso, almacenamiento y compartición de tus datos de Google Drive según se describe en esta política de privacidad.":"By using Backup Reader, you consent to the access, use, storage, and sharing of your Google Drive data as described in this privacy policy.",
       "¿Qué ocurre si WhatsApp se cae o te roban el teléfono?":"What happens if WhatsApp goes down or you lose your phone?",
-      "No pierdas tus recuerdos. Con nuestro servicio, puedes guardar mensajes, fotos, videos, documentos y enlaces de cualquier chat o grupo, liberando espacio en tu teléfono y manteniendo tus chats fácilmente accesibles incluso si Whatsapp no está disponible.":"Don't lose your memories. With our service, you can save messages, photos, videos, documents, and links from any chat or group, freeing up space on your phone and keeping your chats easily accessible even if WhatsApp is not available.",
+      "No pierdas tus recuerdos. Con nuestro servicio, puedes guardar mensajes, fotos, videos, documentos y enlaces de cualquier chat o grupo, liberando espacio en tu teléfono y manteniendo tus chats fácilmente accesibles incluso si WhatsApp no está disponible.":"Don't lose your memories. With our service, you can save messages, photos, videos, documents, and links from any chat or group, freeing up space on your phone and keeping your chats easily accessible even if WhatsApp is not available.",
       "Comienza ahora":"Start now",
       "Respalda fotos, audios, videos, documentos y chats":"Back up photos, audios, videos, documents, and chats",
       "Con nuestro servicio de almacenamiento en la nube, respalda tus fotos, audios, videos, documentos y chats de manera segura y conveniente. No deberás preocuparte por perder tus momentos más preciados. Almacenamos tus archivos de forma segura en la nube, garantizando que tus recuerdos estén protegidos contra cualquier pérdida accidental.":"With our cloud storage service, securely and conveniently back up your photos, audios, videos, documents, and chats. You won't have to worry about losing your most precious moments. We store your files safely in the cloud, ensuring that your memories are protected against any accidental loss.",

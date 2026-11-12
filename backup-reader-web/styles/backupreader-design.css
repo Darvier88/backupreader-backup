@@ -758,8 +758,35 @@ body {
   .br-cabecera-minima > div > div > div { margin: 0 !important; }
 }
 
-/* Acciones del hero en móvil (10b): apiladas y a ancho completo. */
+/* Acciones del hero en móvil (10b): apiladas y a ancho completo. El segundo
+   botón va relleno en papel, no con borde: sobre la tinta, un botón solo con
+   borde se lee como desactivado. */
 @media (max-width: 720px) {
   .br-acciones-hero { flex-direction: column; align-items: stretch; gap: 10px; }
   .br-acciones-hero > * { width: 100%; justify-content: center; text-align: center; }
+  .br-acciones-hero .br-btn-inverse {
+    background: var(--paper-50); color: var(--ink-900); border-color: transparent;
+  }
+  .br-acciones-hero .br-btn-inverse:hover { background: var(--paper-100); }
 }
+
+/* «Conversaciones · N» en la cabecera móvil (10a): borde en tinta, icono a
+   la izquierda y el número en una pastilla. */
+.br-boton-conversaciones {
+  display: inline-flex; align-items: center; gap: 8px;
+  min-height: 44px; padding: 0 12px; white-space: nowrap;
+  background: transparent; color: var(--ink-900);
+  border: 1.5px solid var(--ink-900);
+  font-size: 14px; font-weight: 600;
+}
+.br-boton-conversaciones:hover { background: var(--paper-100); }
+
+/* «Comienza ahora» compacto en la cabecera sin sesión (10b). Se ve de unos
+   30px, pero el área que se puede tocar sigue siendo de 44px gracias al
+   ::after, que se extiende por arriba y por abajo sin ocupar sitio. */
+.br-header .br-cta-compacto,
+.br-header-inner .br-cta-compacto {
+  position: relative;
+  min-height: 0; padding: 8px 14px; font-size: 13px;
+}
+.br-cta-compacto::after { content: ""; position: absolute; inset: -7px 0; }

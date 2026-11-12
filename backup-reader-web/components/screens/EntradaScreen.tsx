@@ -525,7 +525,7 @@ export const EntradaScreen: FC = () => {
             </>
           )}
 
-          <p className="br-fineprint" style={{ marginTop: 22 }}>
+          <p className="br-fineprint" style={{ marginTop: 22, textAlign: "center", fontSize: 12.5, lineHeight: 1.5 }}>
             {t("Al continuar aceptas la")}{" "}
             <span className="br-link" style={{ cursor: "pointer" }} onClick={() => router.push("/privacyPolicy")}>
               {t("Política de privacidad")}

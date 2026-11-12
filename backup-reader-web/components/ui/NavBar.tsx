@@ -174,7 +174,7 @@ export const NavBar: FC<NavBarProps> = ({ drawerButtonOnPress }) => {
           >
             {!user && !SIN_LLAMADA_A_LA_ACCION.includes(router.pathname) && (
               <button
-                className="br-btn br-btn-primary br-btn-sm"
+                className="br-btn br-btn-primary br-btn-sm br-cta-compacto"
                 onClick={() => router.push("/auth")}
               >
                 {t("Comienza ahora")}
@@ -256,18 +256,21 @@ export const NavBar: FC<NavBarProps> = ({ drawerButtonOnPress }) => {
             {user && phone && enElPanel && cuantosChats > 0 && (
               <button
                 type="button"
-                className="br-btn br-btn-ghost br-btn-sm"
+                className="br-btn br-btn-sm br-boton-conversaciones"
                 onClick={() => drawerButtonOnPress()}
-                style={{ display: "inline-flex", alignItems: "center", gap: 8, minHeight: 40, whiteSpace: "nowrap" }}
               >
+                {/* Burbuja y borde en tinta de 1.5px, como en 10a. */}
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                  <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+                </svg>
                 {t("Conversaciones")}
                 <span
                   style={{
                     display: "inline-flex",
                     alignItems: "center",
                     justifyContent: "center",
-                    minWidth: 22,
-                    height: 22,
+                    minWidth: 20,
+                    height: 20,
                     padding: "0 6px",
                     borderRadius: 999,
                     background: "var(--ink-900)",

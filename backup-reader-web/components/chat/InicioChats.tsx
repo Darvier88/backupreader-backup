@@ -520,7 +520,21 @@ export const InicioChats: FC<{
                   {String(i + 1).padStart(2, "0")}
                 </span>
                 <span style={{ fontFamily: "var(--font-sans)", fontSize: 14, color: "var(--ink-900)", lineHeight: 1.45 }}>
-                  {paso}
+                  {/* «Exportar chat» en negrita (5c): es el nombre de la opción
+                      que hay que buscar en el menú de WhatsApp. */}
+                  {(() => {
+                    const texto = enTexto(paso);
+                    const clave = enTexto(t("Exportar chat"));
+                    const i = clave ? texto.indexOf(clave) : -1;
+                    if (i < 0) return texto;
+                    return (
+                      <>
+                        {texto.slice(0, i)}
+                        <strong style={{ fontWeight: 600 }}>{clave}</strong>
+                        {texto.slice(i + clave.length)}
+                      </>
+                    );
+                  })()}
                 </span>
               </li>
             ))}

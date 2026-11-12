@@ -78,12 +78,12 @@ export const HomeScreen: FC = () => {
       <section className="br-section-ink" style={{ overflow: "hidden" }}>
         <div style={{ maxWidth: "var(--page-max)", margin: "0 auto", padding: "clamp(56px,8vw,96px) clamp(16px,4vw,24px)", display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(320px, 1fr))", gap: "clamp(32px,5vw,64px)", alignItems: "center" }}>
           <div>
-            <span className="br-section-label br-section-label-paper">Cloud backup · WhatsApp</span>
+            <span className="br-section-label" style={{ color: "var(--brass-300)" }}>Cloud backup · WhatsApp</span>
             <h1 style={{ margin: "18px 0 0", fontFamily: serif, fontWeight: 500, fontSize: "clamp(32px,5.2vw,52px)", lineHeight: 1.1, letterSpacing: "-0.02em", color: "var(--paper-50)" }}>
               {t("¿Qué ocurre si WhatsApp se cae o te roban el teléfono?")}
             </h1>
             <p style={{ margin: "22px 0 0", fontSize: "clamp(16px,1.6vw,17.5px)", lineHeight: 1.65, color: "var(--ink-100)", maxWidth: "52ch" }}>
-              {t("No pierdas tus recuerdos. Con nuestro servicio, puedes guardar mensajes, fotos, videos, documentos y enlaces de cualquier chat o grupo, liberando espacio en tu teléfono y manteniendo tus chats fácilmente accesibles incluso si Whatsapp no está disponible.")}
+              {t("No pierdas tus recuerdos. Con nuestro servicio, puedes guardar mensajes, fotos, videos, documentos y enlaces de cualquier chat o grupo, liberando espacio en tu teléfono y manteniendo tus chats fácilmente accesibles incluso si WhatsApp no está disponible.")}
             </p>
             {/* Apilados y a lo ancho en móvil (10b).
                 Con `flex-wrap`, el segundo botón caía debajo pero con el

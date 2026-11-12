@@ -177,7 +177,7 @@ export const BrandHeader: FC<{ minimal?: boolean; app?: boolean; wide?: boolean;
                 <LangToggle />
               </>
             )}
-            <button className="br-btn br-btn-primary br-btn-sm" onClick={() => go("/auth")} style={{ whiteSpace: "nowrap" }}>
+            <button className="br-btn br-btn-primary br-btn-sm br-cta-compacto" onClick={() => go("/auth")} style={{ whiteSpace: "nowrap" }}>
               {t("Comienza ahora")}
             </button>
             {phone && (

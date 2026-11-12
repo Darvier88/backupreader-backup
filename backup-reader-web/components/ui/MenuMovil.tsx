@@ -116,7 +116,7 @@ export const MenuMovil: FC<{ abierto: boolean; onCerrar: () => void }> = ({
         overflowY: "auto",
       }}
     >
-      <div style={{ height: 60, display: "flex", alignItems: "center", padding: "0 20px", flexShrink: 0 }}>
+      <div style={{ height: 60, display: "flex", alignItems: "center", padding: "0 8px 0 20px", flexShrink: 0, borderBottom: "1px solid var(--border)" }}>
         <Logo compact onClick={() => ir("/")} />
         <div style={{ flex: 1 }} />
         <button
@@ -175,8 +175,11 @@ export const MenuMovil: FC<{ abierto: boolean; onCerrar: () => void }> = ({
           </button>
           <button
             type="button"
-            className="br-btn br-btn-ghost br-btn-lg br-btn-block"
+            className="br-btn br-btn-lg br-btn-block"
             onClick={() => ir("/login")}
+            /* Enlace de texto, no botón con borde (10c): la acción principal
+               es una sola. */
+            style={{ background: "transparent", border: "1px solid transparent", color: "var(--ink-800)" }}
           >
             {t("Ya tengo cuenta · Entrar")}
           </button>
