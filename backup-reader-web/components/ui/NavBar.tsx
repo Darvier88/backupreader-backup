@@ -1,6 +1,6 @@
 import { FC, useContext, useEffect, useRef } from "react";
 
-import { Spacer, Grid } from "@nextui-org/react";
+import { Spacer } from "@nextui-org/react";
 import { AuthContext, FirestoreContext } from "../../context";
 import { User } from "firebase/auth";
 import { onAuthStateChanged } from "firebase/auth";
@@ -19,7 +19,6 @@ import { useRouter } from "next/router";
 import { useTranslation } from "react-i18next";
 import { useState } from "react";
 import { StorageContext } from "../../context/StorageContext";
-import { SystemMessage } from "../alerts";
 import { isWithinTrial } from "../../config/trial";
 
 /**
@@ -326,18 +325,22 @@ export const NavBar: FC<NavBarProps> = ({ drawerButtonOnPress }) => {
 
       {
         (!user?.plan && isWithinTrial(daysLeft)) && router.pathname == '/dashboard' ?
-          <Grid xs={12}>
-            <SystemMessage
-              image="/images/alert.svg"
-              text={t("Tienes")+" "+daysLeft +" "+t("días de prueba gratuitos")}
-              /* Vacío a propósito: el icono es decorativo y el texto de al
-                 lado ya dice lo mismo. Un lector de pantalla que lea las dos
-                 cosas repite el aviso dos veces seguidas. */
-              alt=""
-              width={36}
-              height={36}
-            />
-        </Grid>
+          /* Franja de la prueba gratuita con la misma forma que la de «Tus
+             chats están bloqueados» (4d): a todo el ancho bajo la cabecera,
+             icono a la izquierda, una línea. En verde y no en ocre, porque
+             informa, no avisa de un problema. Sustituye al aviso viejo, que
+             llevaba un icono azul ajeno a la paleta. */
+          <div role="status" style={{ width: "100%", background: "var(--brass-100)", borderBottom: "1px solid rgba(47,126,108,0.2)" }}>
+            <div style={{ maxWidth: 1360, margin: "0 auto", display: "flex", alignItems: "center", gap: 12, padding: "12px clamp(16px, 4vw, 24px)" }}>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--brass-600)" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" style={{ flexShrink: 0 }}>
+                <circle cx="12" cy="12" r="9" />
+                <path d="M12 7v5l3 2" />
+              </svg>
+              <span style={{ fontFamily: "var(--font-sans)", fontSize: 14, lineHeight: 1.4, color: "var(--ink-900)" }}>
+                {t("Tienes")+" "+daysLeft +" "+t("días de prueba gratuitos")}
+              </span>
+            </div>
+          </div>
       : null
       }
 
