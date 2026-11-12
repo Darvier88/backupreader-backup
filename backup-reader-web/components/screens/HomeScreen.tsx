@@ -1,4 +1,5 @@
 import { FC, useState } from "react";
+import { Animacion } from "../help/Animacion";
 import { useRouter } from "next/router";
 import { useTranslation } from "react-i18next";
 
@@ -63,8 +64,8 @@ const accordionData = (t: (k: string) => string) => [
 ];
 
 const tutorialSteps = (t: (k: string) => string) => [
-  { index: "Paso 01", video: "videos/Backup Reader - Primer Paso.mp4", title: t("Primer paso - Exportar el chat desde WhatsApp"), body: t("1) Abre Whatsapp, 2) Presiona sobre el chat que quieres hacer backup, 3) Presiona sobre el nombre (en la parte de superior), 4) En la parte de abajo encontrarás la opción 'Exportar chat', 5) Selecciona 'Adjuntar archivos', 6) Selecciona en la parte inferior (Guardar en archivos)") },
-  { index: "Paso 02", video: "videos/Backup Reader - Segundo Paso.mp4", title: t("Segundo paso - Sube tu backup"), body: t("1) Subir chat, 2) Seleccionar archivos, 3) Busca el chat que subimos en el paso 1, 4) Presiona sobre el chat, 5) Presiona 'Abrir' en la parte superior derecha, listo, ya tienes tu primer backup.") },
+  { index: "Paso 01", video: "paso1-exportar", title: t("Primer paso - Exportar el chat desde WhatsApp"), body: t("1) Abre Whatsapp, 2) Presiona sobre el chat que quieres hacer backup, 3) Presiona sobre el nombre (en la parte de superior), 4) En la parte de abajo encontrarás la opción 'Exportar chat', 5) Selecciona 'Adjuntar archivos', 6) Selecciona en la parte inferior (Guardar en archivos)") },
+  { index: "Paso 02", video: "paso2-subir", title: t("Segundo paso - Sube tu backup"), body: t("1) Subir chat, 2) Seleccionar archivos, 3) Busca el chat que subimos en el paso 1, 4) Presiona sobre el chat, 5) Presiona 'Abrir' en la parte superior derecha, listo, ya tienes tu primer backup.") },
 ];
 
 export const HomeScreen: FC = () => {
@@ -164,9 +165,11 @@ export const HomeScreen: FC = () => {
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(320px, 1fr))", gap: 24 }}>
             {tutorialSteps(t).map((s, i) => (
               <article key={i} className="br-card" style={{ overflow: "hidden", display: "flex", flexDirection: "column" }}>
-                <div style={{ aspectRatio: "16 / 10", background: "var(--ink-900)", borderBottom: "1px solid var(--border)" }}>
-                  <video src={s.video} controls style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
-                </div>
+                {/* Las mismas animaciones que en Ayuda (paso1-exportar y
+                    paso2-subir, en su idioma y proporción). Aquí seguían los
+                    vídeos viejos, que se borraron de public/videos en adc2dc3,
+                    así que la portada pedía archivos que ya no existen (404). */}
+                <Animacion base={s.video} descripcion={s.title} />
                 <div style={{ padding: "26px 26px 30px", display: "flex", flexDirection: "column", gap: 12 }}>
                   <span style={{ fontFamily: mono, fontSize: 11, letterSpacing: "0.14em", textTransform: "uppercase", color: "var(--brass-600)" }}>{s.index}</span>
                   <h3 style={{ margin: 0, fontFamily: serif, fontWeight: 500, fontSize: 22, lineHeight: 1.25, color: "var(--ink-900)" }}>{s.title}</h3>
