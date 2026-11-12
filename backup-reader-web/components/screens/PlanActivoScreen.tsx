@@ -34,7 +34,16 @@ export const PlanActivoScreen: FC = () => {
   const { t, i18n } = useTranslation();
   const router = useRouter();
   const { user } = useContext(AuthContext);
-  const { subscription, planId } = useContext(FirestoreContext);
+  const { subscription, planId, user: usuarioGuardado } = useContext(FirestoreContext);
+
+  /* El correo, del contexto de sesión y, si no, del perfil de Firestore.
+     `AuthContext` solo lo rellena la acción de entrar o registrarse, así que
+     sobrevive al `router.push` que trae aquí desde el pago, pero no a una
+     recarga: quien refrescaba esta pantalla, o volvía a ella desde un
+     marcador, veía «Te enviamos el recibo por correo» sin el correo, que es
+     justo el dato por el que se vuelve. El perfil de Firestore sí se carga
+     en cada arranque. */
+  const correo = (user?.email || (usuarioGuardado as any)?.email || "") as string;
 
   const plan = subscription?.find((it: any) => it.id === planId);
 
@@ -119,10 +128,10 @@ export const PlanActivoScreen: FC = () => {
           <IconoPaso tipo="check" tono="suave" redondo />
           <h1 className="br-page-title" style={{ marginTop: 24 }}>{t("Tu plan está activo")}</h1>
           <p style={{ margin: "0 0 24px", fontSize: 15.5, color: "var(--slate-700)" }}>
-            {user?.email
+            {correo
               ? /* El correo en negrita (6b): es donde hay que ir a buscar el recibo. */
                 (() => {
-                  const c = user.email as string;
+                  const c = correo;
                   const frase = enTexto(t("Te enviamos el recibo a {{correo}}.", { correo: c }));
                   const i = frase.indexOf(c);
                   if (i < 0) return frase;

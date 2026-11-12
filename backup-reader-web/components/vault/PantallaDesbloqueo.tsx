@@ -346,7 +346,14 @@ export const PantallaDesbloqueo: FC<{ onOmitir: () => void }> = ({ onOmitir }) =
                     <span className="br-solo-escritorio-inline">{t("Olvidé mi clave de cifrado")}</span>
                   </>
                 ) : (
-                  t("Usar mi clave")
+                  /* El mismo reparto que arriba: en móvil «contraseña» (4c),
+                     en escritorio «clave» (8a). Sin esto, el móvil pedía una
+                     «contraseña de cifrado» y el enlace de volver ofrecía
+                     «usar mi clave», como si fueran dos cosas distintas. */
+                  <>
+                    <span className="br-solo-movil-inline">{t("Usar mi contraseña")}</span>
+                    <span className="br-solo-escritorio-inline">{t("Usar mi clave")}</span>
+                  </>
                 )}
               </button>
             </div>
