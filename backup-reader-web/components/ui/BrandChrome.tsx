@@ -129,7 +129,8 @@ export const BrandHeader: FC<{ minimal?: boolean; app?: boolean; wide?: boolean;
        número de la tarjeta, «Cerrar sesión» a un dedo del campo solo puede
        acabar mal, y el idioma se cambia antes de llegar aquí. */
     const esPlan = router.pathname === "/plans";
-    const esPago = router.pathname === "/payment";
+    /* /plan-activo (6b) igual que el pago: en móvil, solo el logo. */
+    const esPago = router.pathname === "/payment" || router.pathname === "/plan-activo";
     return (
       <header className={esPlan ? "br-header br-cabecera-app br-solo-movil" : "br-header br-cabecera-app"}>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(340px, 100%), 1fr))", alignItems: "center" }}>

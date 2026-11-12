@@ -80,7 +80,10 @@ export const Layout: FC<LayoutProps> = ({ children }) => {
           <BrandHeader />
         ) : ["/auth", "/login"].includes(router.pathname) ? (
           <BrandHeader minimal />
-        ) : ["/plans", "/payment"].includes(router.pathname) ? (
+        ) : ["/plans", "/payment", "/plan-activo"].includes(router.pathname) ? (
+          /* /plan-activo (6b) va con la misma cabecera que planes y pago: antes
+             caía en la NavBar del panel, con «Conversaciones · 0» en mitad del
+             alta. */
           <BrandHeader app />
         ) : router.pathname === "/dashboard" && !phone ? (
           /* Sin cabecera en el dashboard de escritorio (8b): el panel
