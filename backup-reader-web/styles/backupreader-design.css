@@ -748,14 +748,19 @@ body {
    La rejilla de dos columnas de escritorio se parte en dos filas por debajo
    de 720 px y la cabecera pasa de 56 a 123 px, pegajosa, tapando el título de
    la pantalla que hay debajo. */
+/* `br-cabecera-app` es lo mismo para planes y pago (6a, 6b): allí la rejilla
+   se partía igual y dejaba 123 px de cabecera sobre «Activa tu plan». */
 @media (max-width: 720px) {
-  .br-cabecera-minima > div {
+  .br-cabecera-minima > div,
+  .br-cabecera-app > div {
     display: flex !important;
     align-items: center;
     justify-content: space-between;
   }
-  .br-cabecera-minima > div > div { padding: 8px 16px !important; }
-  .br-cabecera-minima > div > div > div { margin: 0 !important; }
+  .br-cabecera-minima > div > div,
+  .br-cabecera-app > div > div { padding: 8px 16px !important; }
+  .br-cabecera-minima > div > div > div,
+  .br-cabecera-app > div > div > div { margin: 0 !important; }
 }
 
 /* Acciones del hero en móvil (10b): apiladas y a ancho completo. El segundo

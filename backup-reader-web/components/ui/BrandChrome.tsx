@@ -107,20 +107,46 @@ export const BrandHeader: FC<{ minimal?: boolean; app?: boolean; wide?: boolean;
         </header>
       );
     }
-    // Planes / Pago: espejo del contenido (logo sobre el formulario centrado).
+    /* Planes / Pago: espejo del contenido (logo sobre el formulario centrado).
+
+       EN ESCRITORIO, EN /plans NO SE PINTA (7c)
+       -----------------------------------------
+       Esa pantalla ya trae su propia columna en tinta con el logo, los tres
+       pasos y «Ayuda · Salir». Con esta barra encima, el logo y los dos
+       enlaces salían DOS veces a cuatro dedos de distancia, y el de arriba
+       era el que no pertenecía a la pantalla.
+
+       EN MÓVIL, UNA SOLA FILA (6a)
+       ----------------------------
+       La rejilla de dos columnas se partía en dos filas por debajo de 720 px:
+       123 px de cabecera pegajosa tapando el título. `br-cabecera-app` la
+       vuelve una fila de 60, con «Salir» en vez de «Cerrar sesión» porque es
+       lo que cabe al lado de «Ayuda» sin volver a partirla.
+
+       Y EN EL PAGO, SOLO EL LOGO (6b)
+       -------------------------------
+       El formulario ya lleva «Cambiar plan» para volver. A mitad de meter el
+       número de la tarjeta, «Cerrar sesión» a un dedo del campo solo puede
+       acabar mal, y el idioma se cambia antes de llegar aquí. */
+    const esPlan = router.pathname === "/plans";
+    const esPago = router.pathname === "/payment";
     return (
-      <header className="br-header">
+      <header className={esPlan ? "br-header br-cabecera-app br-solo-movil" : "br-header br-cabecera-app"}>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(340px, 100%), 1fr))", alignItems: "center" }}>
           <div style={{ padding: "12px clamp(16px, 4vw, 24px)" }}>
             <div style={{ maxWidth: 460, margin: "0 auto", display: "flex", alignItems: "center" }}>
-              <Logo onClick={() => go("/")} />
+              <Logo compact={phone} onClick={() => go("/")} />
             </div>
           </div>
           <div style={{ padding: "12px clamp(16px, 4vw, 24px)" }}>
             <div style={{ maxWidth: 400, margin: "0 auto", display: "flex", alignItems: "center", justifyContent: "flex-end", gap: "clamp(14px,2.2vw,24px)" }}>
-              <span className="br-navlink" style={{ cursor: "pointer" }} onClick={() => go("/help")}>{t("Ayuda")}</span>
-              <span className="br-navlink" style={{ cursor: "pointer" }} onClick={onLogout}>{t("Cerrar sesión")}</span>
-              <LangToggle />
+              {!(phone && esPago) && (
+                <>
+                  <span className="br-navlink" style={{ cursor: "pointer" }} onClick={() => go("/help")}>{t("Ayuda")}</span>
+                  <span className="br-navlink" style={{ cursor: "pointer" }} onClick={onLogout}>{phone ? t("Salir") : t("Cerrar sesión")}</span>
+                </>
+              )}
+              {!phone && <LangToggle />}
             </div>
           </div>
         </div>
