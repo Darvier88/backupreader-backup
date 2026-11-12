@@ -82,7 +82,9 @@ export const PlansScreen: FC = () => {
           <div className="br-solo-movil" style={{ marginBottom: 22 }}>
             <BarraProgreso hechos={1} />
           </div>
-          <div style={{ marginBottom: 10 }}>
+          {/* Solo en móvil (6a). En escritorio la columna en tinta ya dice en
+              qué paso se está, y el diseño (7c) no repite la línea. */}
+          <div className="br-solo-movil" style={{ marginBottom: 10 }}>
             <PasosOnboarding actual={1} variante="linea" />
           </div>
           <h1 className="br-page-title">{t("Activa tu plan")}</h1>

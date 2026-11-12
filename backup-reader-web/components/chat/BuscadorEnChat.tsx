@@ -198,12 +198,12 @@ export const BuscadorEnChat: FC<{
             display: "flex",
             alignItems: "center",
             justifyContent: "space-between",
-            height: 48,
-            marginTop: 8,
-            padding: "0 4px 0 12px",
-            background: "var(--paper-100)",
-            border: "1px solid var(--border)",
-            borderRadius: 8,
+            /* Franja plana bajo el buscador (1c), no una tarjeta: la línea
+               de abajo la pone el área de mensajes. */
+            height: 44,
+            marginTop: 6,
+            marginBottom: -6,
+            padding: "0 0 0 2px",
           }}
         >
           <span

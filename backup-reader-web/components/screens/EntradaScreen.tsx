@@ -443,11 +443,25 @@ export const EntradaScreen: FC = () => {
                 {esNueva ? t("Crea tu cuenta") : t("Hola de nuevo")}
               </h1>
               <p style={{ margin: "0 0 22px", fontSize: 15, color: "var(--slate-700)" }}>
-                {esNueva
-                  ? enTexto(t("Es tu primera vez con {{correo}}.", { correo: correo.trim() }))
-                  : correo.trim()}{" "}
+                {/* El correo en negrita (4b/7b): es lo que hay que comprobar. */}
+                {(() => {
+                  const c = correo.trim();
+                  if (!esNueva) return <strong style={{ fontWeight: 600, color: "var(--ink-900)" }}>{c}.</strong>;
+                  const frase = enTexto(t("Es tu primera vez con {{correo}}.", { correo: c }));
+                  const i = c ? frase.indexOf(c) : -1;
+                  if (i < 0) return frase;
+                  return (
+                    <>
+                      {frase.slice(0, i)}
+                      <strong style={{ fontWeight: 600, color: "var(--ink-900)" }}>{c}</strong>
+                      {frase.slice(i + c.length)}
+                    </>
+                  );
+                })()}{" "}
+                {/* «Cambiar» solo en escritorio (7b). En el móvil (4b) la flecha
+                    de atrás ya vuelve al correo. */}
                 <span
-                  className="br-link"
+                  className="br-link br-solo-escritorio-inline"
                   style={{ cursor: "pointer" }}
                   onClick={() => {
                     setPaso("correo");
@@ -525,6 +539,9 @@ export const EntradaScreen: FC = () => {
             </>
           )}
 
+          {/* El aviso legal va con la elección de cómo entrar (4a/7a); en el
+              paso de la contraseña (4b/7b) ya se aceptó. */}
+          {paso !== "clave" && (
           <p className="br-fineprint" style={{ marginTop: 22, textAlign: "center", fontSize: 12.5, lineHeight: 1.5 }}>
             {t("Al continuar aceptas la")}{" "}
             <span className="br-link" style={{ cursor: "pointer" }} onClick={() => router.push("/privacyPolicy")}>
@@ -536,6 +553,7 @@ export const EntradaScreen: FC = () => {
             </span>
             .
           </p>
+          )}
         </div>
       </div>
 

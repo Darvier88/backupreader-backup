@@ -71,16 +71,19 @@ export const PasosOnboarding: FC<{
       <h2
         style={{
           fontFamily: "var(--font-serif)",
-          fontSize: 22,
+          fontSize: 24,
+          lineHeight: 1.2,
           fontWeight: 500,
           color: "var(--paper-50)",
-          margin: "8px 0 22px",
+          margin: "8px 0 24px",
         }}
       >
         {t("Te faltan tres pasos.")}
       </h2>
 
-      <ol style={{ listStyle: "none", margin: 0, padding: 0 }}>
+      {/* Pasos separados por líneas, con una arriba y otra abajo (7c), igual
+          que la columna de 7d/7e. */}
+      <ol style={{ listStyle: "none", margin: 0, padding: 0, maxWidth: 320, borderTop: "1px solid var(--border-on-ink, rgba(255,255,255,0.12))" }}>
         {pasos.map((paso, i) => {
           const numero = i + 1;
           const hecho = numero < actual;
@@ -90,12 +93,14 @@ export const PasosOnboarding: FC<{
               key={paso.titulo}
               style={{
                 display: "flex",
+                alignItems: "center",
                 gap: 12,
-                marginBottom: 18,
+                padding: "14px 0",
+                borderBottom: "1px solid var(--border-on-ink, rgba(255,255,255,0.12))",
                 /* Los pasos que aún no tocan se atenúan, pero se leen. Si se
                    escondieran, se perdería lo único que este bloque aporta:
                    saber qué viene después. */
-                opacity: activo ? 1 : hecho ? 0.65 : 0.45,
+                opacity: activo ? 1 : hecho ? 0.75 : 0.85,
               }}
             >
               <span
@@ -121,7 +126,7 @@ export const PasosOnboarding: FC<{
                   style={{
                     display: "block",
                     fontFamily: "var(--font-sans)",
-                    fontSize: 15,
+                    fontSize: 14,
                     fontWeight: 600,
                     color: "var(--paper-50)",
                   }}
@@ -133,7 +138,7 @@ export const PasosOnboarding: FC<{
                     display: "block",
                     marginTop: 2,
                     fontFamily: "var(--font-sans)",
-                    fontSize: 13,
+                    fontSize: 12.5,
                     color: "rgba(255,255,255,0.6)",
                   }}
                 >

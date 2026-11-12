@@ -184,6 +184,8 @@ export const ConversationsDrawerMobile: FC<ConversationsDrawerMobileProps> = ({
     }
   };
 
+  const [confirmando, setConfirmando] = useState(false);
+
   return (
     <Drawer
       anchor={"left"}
@@ -192,7 +194,10 @@ export const ConversationsDrawerMobile: FC<ConversationsDrawerMobileProps> = ({
       /* El velo va en tinta y no en el gris del navegador: el gris de serie
          enfria toda la pantalla y rompe el papel calido del resto. */
       slotProps={{ backdrop: { style: { backgroundColor: "rgba(15,24,38,0.55)" } } }}
-      PaperProps={{ style: { width: 322, background: "var(--paper-50)" } }}
+      /* Mientras se confirma un borrado el panel se aparta y queda solo la
+         hoja de confirmar sobre el velo (9b). Se esconde, no se cierra:
+         cerrarlo desmontaría el diálogo, que vive dentro. */
+      PaperProps={{ style: { width: 322, background: "var(--paper-50)", visibility: confirmando ? "hidden" : "visible" } }}
     >
       <Container style={{ width: 322, padding: 0, minHeight: "100%", display: "flex", flexDirection: "column" }}>
         <Box
@@ -366,7 +371,7 @@ export const ConversationsDrawerMobile: FC<ConversationsDrawerMobileProps> = ({
               {!item.cifrado && (
                 <BotonCifrar fullPath={item.fullPath} name={item.name} />
               )}
-              <BotonBorrarChat fullPath={item.fullPath} name={item.name} />
+              <BotonBorrarChat fullPath={item.fullPath} name={item.name} onConfirmando={setConfirmando} />
             </div>
           )
         })}

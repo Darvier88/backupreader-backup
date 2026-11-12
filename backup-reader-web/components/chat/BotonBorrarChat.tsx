@@ -1,4 +1,4 @@
-import { useContext, useState } from "react";
+import { useEffect, useContext, useState } from "react";
 import { AvisoCaja, IconoPaso } from "../ui/Paso";
 import { nombreDelContacto } from "../../lib/nombres-de-chat";
 import { useTranslation } from "react-i18next";
@@ -40,13 +40,21 @@ const enTexto = (traducido: unknown): string =>
 export const BotonBorrarChat = ({
   fullPath,
   name,
+  onConfirmando,
 }: {
   fullPath: string;
   name: string;
+  /** Avisa cuando se abre o se cierra la confirmación (9b: el panel móvil se
+      aparta mientras tanto). */
+  onConfirmando?: (abierto: boolean) => void;
 }) => {
   const { t } = useTranslation();
   const { borrarChatDelUsuario, borrandoChat } = useContext(StorageContext);
   const [abierto, setAbierto] = useState(false);
+  useEffect(() => {
+    onConfirmando?.(abierto);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [abierto]);
   const [aviso, setAviso] = useState<string | null>(null);
   const [hecho, setHecho] = useState(false);
 
