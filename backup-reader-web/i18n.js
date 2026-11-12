@@ -592,6 +592,8 @@ const resources = {
       /* Ventajas de los planes. El texto vive en Firestore y llega en
          español; esto lo traduce al pintarlo. */
       "Respalda tus conversaciones en la nube": "Back up your conversations in the cloud",
+      "Hasta 20 conversaciones con fotos, videos y audios": "Up to 20 conversations with photos, videos and audio",
+      "Hasta 20 conversaciones con fotos, videos y audios.": "Up to 20 conversations with photos, videos and audio.",
       "Más espacio para tus conversaciones": "More room for your conversations",
       "Todo el espacio que necesites": "All the room you need",
       "Cifrado con una clave que solo tú conoces":
