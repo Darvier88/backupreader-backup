@@ -132,8 +132,15 @@ export const PlansScreen: FC = () => {
                   pantalla, y lo que hay que poder ver de una vez es el precio
                   junto a lo que incluye. `br-ventajas-plan` las apila otra
                   vez por debajo de 720px. */}
+              {/* La ventaja del plan pasa por t().
+                  Viene de Firestore, así que el texto está en español
+                  venga de donde venga: en inglés, la tarjeta mezclaba
+                  «Respalda tus conversaciones en la nube» con el resto de
+                  la lista traducida. i18next devuelve la propia cadena
+                  cuando no hay traducción, así que un plan nuevo con otra
+                  frase sigue saliendo tal cual en vez de romperse. */}
               <ul className="br-ventajas-plan" style={{ margin: 0, padding: "22px 26px", listStyle: "none" }}>
-                <li style={{ display: "flex", gap: 12, alignItems: "flex-start" }}><Check /><span style={{ fontSize: 15.5, lineHeight: 1.55, color: "var(--slate-700)" }}>{plan.details.benefit}</span></li>
+                <li style={{ display: "flex", gap: 12, alignItems: "flex-start" }}><Check /><span style={{ fontSize: 15.5, lineHeight: 1.55, color: "var(--slate-700)" }}>{enTexto(t(plan.details.benefit))}</span></li>
                 <li style={{ display: "flex", gap: 12, alignItems: "flex-start" }}><Check /><span style={{ fontSize: 15.5, lineHeight: 1.55, color: "var(--slate-700)" }}>{enTexto(t("Hasta {{n}} MB por conversación", { n: plan.details.storage }))}</span></li>
                 <li style={{ display: "flex", gap: 12, alignItems: "flex-start" }}><Check /><span style={{ fontSize: 15.5, lineHeight: 1.55, color: "var(--slate-700)" }}>{t("Lee tus chats sin conexión, cuando quieras")}</span></li>
                 {/* El cifrado es la razón por la que alguien elige esto en

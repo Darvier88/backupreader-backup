@@ -132,7 +132,7 @@ export const Preguntas: FC = () => {
      se quedaría vieja sin que nadie se diera cuenta. */
   const plan = subscription?.[0];
   const cuota = plan
-    ? `${plan.details.benefit}. ${enTexto(
+    ? `${enTexto(t(plan.details.benefit))}. ${enTexto(
         t("Cada conversación puede ocupar hasta {{n}} MB.", { n: plan.details.storage })
       )}`
     : enTexto(t("Lo verás en la pantalla de planes, con el precio al lado."));

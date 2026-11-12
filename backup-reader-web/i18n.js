@@ -589,6 +589,11 @@ const resources = {
       "Sitio libre en el teléfono": "Free space on your phone",
       "Guarda la conversación aquí y bórrala del móvil sin perderla.":
         "Keep the conversation here and delete it from your phone without losing it.",
+      /* Ventajas de los planes. El texto vive en Firestore y llega en
+         español; esto lo traduce al pintarlo. */
+      "Respalda tus conversaciones en la nube": "Back up your conversations in the cloud",
+      "Más espacio para tus conversaciones": "More room for your conversations",
+      "Todo el espacio que necesites": "All the room you need",
       "Cifrado con una clave que solo tú conoces":
         "Encrypted with a password only you know",
       "Ni nosotros podemos leer lo que subes.": "Not even we can read what you upload.",
