@@ -325,7 +325,12 @@ export const DashboardScreen: FC = () => {
         {chat ? (
           <>
             <ManageFileCard isFirstFile={ fileList && fileList.length > 0 ? false : true } chat={true} />
-            <Container style={{ marginTop: 15 }}  key={new Date().getTime()}>
+            {/* La clave es el chat abierto, no la hora. Con `new Date().getTime()`
+                la cabecera se recreaba en CADA render, y como el buscador del
+                chat vive aquí dentro, cada letra tecleada desmontaba el campo:
+                perdía el foco tras la primera (en móvil ni esa se quedaba).
+                Con el nombre del chat se recrea solo al cambiar de chat. */}
+            <Container style={{ marginTop: 15 }} key={chatName || "chat"}>
 
               {/* Cabecera del chat (1a): inicial en tinta, nombre limpio y el
                   archivo en mono; debajo el buscador a ancho completo y
