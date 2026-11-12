@@ -471,11 +471,16 @@ export const ConversationsDrawer: FC<ConversationsDrawerProps> = ({
             <span style={{ display: "block", fontFamily: "var(--font-sans)", fontSize: 13.5, fontWeight: 600, color: "var(--ink-900)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
               {userName || userEmail}
             </span>
-            {userName && userEmail && (
-              <span style={{ display: "block", fontFamily: "var(--font-mono)", fontSize: 10.5, letterSpacing: "0.04em", color: "var(--slate-500)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                {userEmail}
-              </span>
-            )}
+            {/* Debajo del nombre, el plan y no el correo (8b).
+                El correo ya está arriba del todo en «Mi cuenta», que es
+                donde se va a buscarlo, y aquí se cortaba con puntos
+                suspensivos a los veinte caracteres, así que ni siquiera
+                servía para distinguir dos cuentas. El plan, en cambio, es lo
+                único de la cuenta que cambia solo (se acaba la prueba, se
+                cancela) y no se ve en ninguna otra parte del panel. */}
+            <span style={{ display: "block", fontFamily: "var(--font-mono)", fontSize: 10.5, letterSpacing: "0.04em", color: "var(--slate-500)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+              {t("Plan personal")}
+            </span>
           </span>
           <LangToggle />
         </div>

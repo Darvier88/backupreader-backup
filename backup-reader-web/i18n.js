@@ -389,6 +389,7 @@ const resources = {
       "Bloqueado":"Locked",
       "Tus chats están bloqueados.":"Your chats are locked.",
       "Salir":"Log out",
+      "Plan personal":"Personal plan",
       "Tus chats están cifrados con una contraseña que solo tú conoces. La necesitamos para abrirlos y para subir nuevos.":"Your chats are encrypted with a password only you know. We need it to open them and to upload new ones.",
       "Es distinta a la de tu cuenta de Apple o Google.":"It's different from your Apple or Google account password.",
       "Esa contraseña no abre tus chats. Inténtalo de nuevo.":"That password doesn't open your chats. Try again.",
