@@ -130,7 +130,8 @@ export const CarruselIlustraciones: FC<{ compacto?: boolean; pie?: string }> = (
        frase en serif abajo y los puntos debajo. */
     return (
       <div style={{ display: "flex", flexDirection: "column", height: "100%", minHeight: 420 }}>
-        <div style={{ flex: 1, display: "flex", alignItems: "center" }}>{imagen(240, 300)}</div>
+        {/* Centrada en la columna, como en 7a. */}
+        <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", width: "100%" }}>{imagen(300, 380)}</div>
         {pie && (
           <p style={{ margin: "0 0 16px", fontFamily: "var(--font-serif)", fontWeight: 500, fontSize: 22, lineHeight: 1.3, color: "var(--ink-900)" }}>
             {pie}

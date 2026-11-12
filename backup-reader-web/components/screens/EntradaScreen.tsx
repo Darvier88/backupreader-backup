@@ -5,7 +5,6 @@ import { useTranslation } from "react-i18next";
 import { CarruselIlustraciones } from "../ui/CarruselIlustraciones";
 import { ENTRAR_CON_APPLE, RECUPERAR_CONTRASENA } from "../../lib/funciones-activas";
 import { BotonAtras, Trazo } from "../ui/Paso";
-import { Logo } from "../ui/BrandChrome";
 
 import { AuthContext } from "../../context";
 import { checkIfRegistered } from "../../config/providersAuth";
@@ -60,14 +59,6 @@ export const EntradaScreen: FC = () => {
   }, []);
 
   const [paso, setPaso] = useState<"inicio" | "correo" | "clave">("inicio");
-
-  /* En el móvil, los pasos del correo y de la contraseña van sin la cabecera
-     del logo (4b): solo la flecha y «Paso x de 2». La regla CSS solo actúa
-     por debajo de 720 px; en escritorio la cabecera se queda. */
-  useEffect(() => {
-    document.body.classList.toggle("br-sin-cabecera", paso !== "inicio");
-    return () => document.body.classList.remove("br-sin-cabecera");
-  }, [paso]);
   const [esNueva, setEsNueva] = useState(false);
   const [correo, setCorreo] = useState("");
   const [nombre, setNombre] = useState("");
@@ -240,10 +231,10 @@ export const EntradaScreen: FC = () => {
           comparan de un vistazo, mientras que tres que giran hay que
           esperarlas. */}
       <aside className="br-aside br-solo-escritorio" style={{ borderLeft: "none", borderRight: "1px solid var(--border)" }}>
-        {/* Logo arriba, lámina en el centro y la frase abajo (7a). */}
-        <div style={{ display: "flex", flexDirection: "column", height: "100%", maxWidth: 400, margin: "0 auto" }}>
-          <Logo onClick={() => router.push("/")} />
-          <div style={{ flex: 1, marginTop: 24 }}>
+        {/* Lámina en el centro de la columna y la frase abajo (7a). Sin logo
+            aquí: ya está en la cabecera de arriba, y salía dos veces. */}
+        <div style={{ display: "flex", flexDirection: "column", height: "100%", maxWidth: 520, margin: "0 auto" }}>
+          <div style={{ flex: 1 }}>
             <CarruselIlustraciones pie={enTexto(t("Revisa fotos, textos y audios de cada conversación."))} />
           </div>
         </div>

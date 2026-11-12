@@ -663,11 +663,6 @@ body {
      todo en Android, donde la barra del navegador se come el resto. El alto
      ya lo pone `.br-movil-alto`, descontando la cabecera. */
   .br-split { min-height: 0; }
-  /* Pasos de entrar y crear cuenta (4b, 7b en móvil): sin la cabecera del
-     logo, como en el diseño, que solo lleva la flecha y «Paso x de 2». La
-     clase la pone EntradaScreen mientras se está en un paso. */
-  body.br-sin-cabecera .br-header { display: none; }
-  body.br-sin-cabecera .br-movil-alto { min-height: 100dvh; padding-top: 16px; }
 }
 
 /* Cabecera de paso en móvil: flecha y «Paso x de y» (4b, 5b, 5d, 5e). */
