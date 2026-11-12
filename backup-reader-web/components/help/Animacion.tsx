@@ -51,31 +51,45 @@ export const Animacion: FC<{
   const proporcion = ancha ? "16x10" : "9x16";
   const src = `/videos/${base}-${idioma}-${proporcion}.mp4`;
 
+  /* LA CAJA SE DIBUJA SIN `aspect-ratio` NI `max-height` JUNTOS
+     Antes era una sola caja con `aspectRatio: 9/16` y `maxHeight: 70vh`. Cada
+     navegador resuelve distinto esa mezcla cuando el tope de alto corta: Chrome
+     deja la caja a todo el ancho y rompe la proporción; Safari en iPhone
+     encoge el ANCHO para mantenerla y la deja pegada a la izquierda, con una
+     franja blanca a la derecha y el vídeo descentrado.
+
+     Ahora hay dos cajas. La de fuera ocupa todo el ancho y pone el fondo en
+     tinta, así que si sobra sitio a los lados se ve oscuro, no blanco. La de
+     dentro tiene un ancho calculado —nunca más que el disponible, ni más del
+     que cabe en el 70 % del alto de la pantalla— y está centrada; la
+     proporción la da el truco del `padding-top` en porcentaje, que funciona
+     igual en todos los navegadores, incluidos los Safari viejos que no
+     entienden `aspect-ratio`. El vídeo va encima, absoluto, ocupándola
+     entera. */
+  const vertical = ancha === false;
+  const proporcion100 = vertical ? (16 / 9) * 100 : (10 / 16) * 100;
+  const anchoMaximo = vertical ? "calc(70vh * 9 / 16)" : "none";
+
   return (
-    <div
-      style={{
-        aspectRatio: ancha === false ? "9 / 16" : "16 / 10",
-        maxHeight: ancha === false ? "70vh" : undefined,
-        background: "var(--ink-900)",
-        borderBottom: "1px solid var(--border)",
-        overflow: "hidden",
-      }}
-    >
-      {ancha !== null && (
-        <video
-          /* La clave fuerza a recrear el elemento al cambiar de archivo. Sin
-             ella, al cambiar de idioma el navegador se queda con el vídeo
-             anterior ya cargado y no pide el nuevo. */
-          key={src}
-          src={src}
-          poster={poster}
-          controls
-          playsInline
-          preload="metadata"
-          aria-label={descripcion}
-          style={{ width: "100%", height: "100%", objectFit: "contain", display: "block" }}
-        />
-      )}
+    <div style={{ width: "100%", background: "var(--ink-900)", borderBottom: "1px solid var(--border)", overflow: "hidden" }}>
+      <div style={{ position: "relative", width: "100%", maxWidth: anchoMaximo, margin: "0 auto" }}>
+        <div style={{ paddingTop: `${proporcion100}%` }} />
+        {ancha !== null && (
+          <video
+            /* La clave fuerza a recrear el elemento al cambiar de archivo. Sin
+               ella, al cambiar de idioma el navegador se queda con el vídeo
+               anterior ya cargado y no pide el nuevo. */
+            key={src}
+            src={src}
+            poster={poster}
+            controls
+            playsInline
+            preload="metadata"
+            aria-label={descripcion}
+            style={{ position: "absolute", top: 0, left: 0, right: 0, bottom: 0, width: "100%", height: "100%", objectFit: "contain", display: "block", background: "var(--ink-900)" }}
+          />
+        )}
+      </div>
     </div>
   );
 };
