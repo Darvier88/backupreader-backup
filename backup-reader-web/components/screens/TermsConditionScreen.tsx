@@ -1,4 +1,5 @@
 import { FC } from "react";
+import { VolverAMisChats } from "../ui/VolverAMisChats";
 import { useTranslation } from "react-i18next";
 
 export const TermsConditionScreen: FC = () => {
@@ -6,6 +7,7 @@ export const TermsConditionScreen: FC = () => {
   return (
     <div className="br-root">
       <div className="br-prose">
+        <VolverAMisChats />
         <h1>{t("Términos y Condiciones de Backup Reader LLC para BackupReader.com")}</h1>
         <p>{t("Fecha de Última Actualización: 23 de Enero de 2024")}</p>
         <h2>{t("1. Aceptación de los Términos")}</h2>

@@ -4,6 +4,7 @@ import { useTranslation } from "react-i18next";
 import { AuthContext, FirestoreContext } from "../../context";
 import { cambiarIdioma } from "../../i18n";
 import { useMediaQuery } from "@mui/material";
+import { useSesion } from "../../hooks/useSesion";
 import { MenuMovil } from "./MenuMovil";
 
 /* ============================================================================
@@ -28,8 +29,13 @@ export const Logo: FC<{ onClick?: () => void; compact?: boolean; oscuro?: boolea
      cabecera de móvil, donde el logo a tamaño completo junto al resto de
      controles no cabe en una línea y parte la barra en dos filas. */
   const lado = compact ? 24 : 28;
+  /* Con la sesión iniciada el logo no hace nada: llevaba al inicio público,
+     que a su vez te devolvía a los chats, y era la única forma de salir de
+     Mi cuenta. Ahora para eso está «← Mis chats» (VolverAMisChats). */
+  const { haySesion } = useSesion();
+  const clic = haySesion ? undefined : onClick;
   return (
-    <span onClick={onClick} style={{ display: "inline-flex", alignItems: "center", gap: compact ? 8 : 10, cursor: "pointer", flexShrink: 0 }}>
+    <span onClick={clic} style={{ display: "inline-flex", alignItems: "center", gap: compact ? 8 : 10, cursor: clic ? "pointer" : "default", flexShrink: 0 }}>
       <svg width={lado} height={lado} viewBox="0 0 24 24" fill="none" stroke={oscuro ? "var(--paper-50)" : "var(--brass-500)"} strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
         <circle cx="12" cy="12" r="9.5" />
         <path d="M8 12.3l2.6 2.6L16 9.5" />

@@ -4,6 +4,7 @@ import { FC } from "react";
 import { useTranslation } from "react-i18next";
 import { useRouter } from "next/router";
 import Image from 'next/image';
+import { VolverAMisChats } from "../ui/VolverAMisChats";
 import {TwoCards, SimpleCard} from '../cards';
 
 
@@ -34,6 +35,7 @@ export const ImportanceOfBackups: FC = () => {
     <div className="br-root">
 
       <div className="br-prose">
+        <VolverAMisChats />
         <h1>{t("Beneficios del respaldo de información")}</h1>
         <Spacer y={1} />
         <p>{t("Hoy, queremos resaltar la importancia de realizar copias de seguridad de tus datos con tiempo para garantizar la seguridad, privacidad y mantener tus recuerdos a salvo. Aquí te presentamos tres motivos convincentes para que tomes acción y protejas tus valiosos activos digitales:")}</p>

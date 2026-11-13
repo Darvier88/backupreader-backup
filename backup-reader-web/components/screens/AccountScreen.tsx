@@ -7,6 +7,7 @@ import { AuthContext, FirestoreContext } from "../../context";
 import { VaultPasswordSection } from "../vault";
 import { SubscriptionSection } from "../account/SubscriptionSection";
 import { useEspacioOcupado } from "../../hooks/useEspacioOcupado";
+import { VolverAMisChats } from "../ui/VolverAMisChats";
 import { tamanoLegible } from "../../lib/tamano-legible";
 
 export const AccountScreen: FC = () => {
@@ -17,6 +18,7 @@ export const AccountScreen: FC = () => {
 
   return (
     <Box sx={{ maxWidth: 720, margin: "0 auto", padding: "24px 16px 48px" }}>
+      <VolverAMisChats />
       <Typography fontFamily={"var(--font-serif)"} fontSize={26} style={{ color: "var(--ink-900)" }}>
         {t("Mi cuenta")}
       </Typography>

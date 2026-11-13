@@ -3,6 +3,7 @@ import { Grid } from "@nextui-org/react";
 import { FC } from "react";
 import { useRouter } from "next/router";
 import { useTranslation } from "react-i18next";
+import { VolverAMisChats } from "../ui/VolverAMisChats";
 import Link from 'next/link';
 
 
@@ -29,6 +30,7 @@ export const PrivacyPolicyScreen: FC = () => {
     <div className="br-root">
 
       <div className="br-prose">
+        <VolverAMisChats />
         
         <h1>{t("Política de Privacidad de Backup Reader LLC para BackupReader.com")}</h1>
         <p>{t("Fecha de Última Actualización: 27 de Junio de 2024")}</p>

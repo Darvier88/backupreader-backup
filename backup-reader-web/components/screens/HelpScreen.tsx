@@ -3,6 +3,7 @@ import { useRouter } from "next/router";
 import { useTranslation } from "react-i18next";
 import { AuthContext } from "../../context/AuthContext";
 import { Animacion } from "../help/Animacion";
+import { VolverAMisChats } from "../ui/VolverAMisChats";
 import { Preguntas } from "../help/Preguntas";
 
 /* ============================================================================
@@ -41,6 +42,7 @@ export const HelpScreen: FC = () => {
   return (
     <div className="br-root">
       <div style={{ maxWidth: "var(--page-max)", margin: "0 auto", padding: "clamp(40px,6vw,72px) clamp(16px,4vw,24px) 80px" }}>
+        <VolverAMisChats style={{ marginBottom: 16 }} />
 
         <span className="br-section-label br-section-label-accent">How it works</span>
         <h1 style={{ margin: "16px 0 40px", fontFamily: serif, fontWeight: 500, fontSize: "clamp(26px,3.6vw,38px)", lineHeight: 1.14, letterSpacing: "-0.02em", color: "var(--ink-900)" }}>
