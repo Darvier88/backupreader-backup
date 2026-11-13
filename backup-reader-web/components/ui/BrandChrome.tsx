@@ -3,7 +3,9 @@ import { useRouter } from "next/router";
 import { useTranslation } from "react-i18next";
 import { AuthContext, FirestoreContext } from "../../context";
 import { cambiarIdioma } from "../../i18n";
-import { useMediaQuery } from "@mui/material";
+import { useMediaQuery, IconButton } from "@mui/material";
+import LogoutIcon from "@mui/icons-material/Logout";
+import AccountCircleOutlinedIcon from "@mui/icons-material/AccountCircleOutlined";
 import { useSesion } from "../../hooks/useSesion";
 import { MenuMovil } from "./MenuMovil";
 
@@ -100,13 +102,30 @@ export const BrandHeader: FC<{ minimal?: boolean; app?: boolean; wide?: boolean;
       return (
         <header className="br-header">
           <div className="br-header-inner" style={{ maxWidth: 1360 }}>
-            <Logo onClick={() => go("/")} />
-            <nav style={{ display: "flex", alignItems: "center", flexWrap: "wrap", justifyContent: "flex-end", rowGap: 4, gap: "clamp(10px,2.2vw,24px)", minWidth: 0 }}>
+            <Logo compact={phone} onClick={() => go("/")} />
+            <nav style={{ display: "flex", alignItems: "center", flexWrap: phone ? "nowrap" : "wrap", justifyContent: "flex-end", rowGap: 4, gap: phone ? 6 : "clamp(10px,2.2vw,24px)", minWidth: 0 }}>
               {/* /account existía pero no se enlazaba desde ningún sitio, así
-                  que el plan y la contraseña de cifrado no se podían tocar. */}
-              <span className="br-navlink" style={{ cursor: "pointer" }} onClick={() => go("/account")}>{t("Mi cuenta")}</span>
-              <span className="br-navlink" style={{ cursor: "pointer" }} onClick={() => go("/help")}>{t("Ayuda")}</span>
-              <span className="br-navlink" style={{ cursor: "pointer" }} onClick={onLogout}>{t("Cerrar sesión")}</span>
+                  que el plan y la contraseña de cifrado no se podían tocar.
+                  En móvil, Mi cuenta y salir van como iconos, igual que en la
+                  NavBar: con texto la cabecera se partía en dos filas. El
+                  enlace a la página en la que ya estás no sale. */}
+              {router.pathname !== "/account" && (phone ? (
+                <IconButton aria-label={t("Mi cuenta") as string} title={t("Mi cuenta") as string} size="small" onClick={() => go("/account")} style={{ color: "var(--ink-900)" }}>
+                  <AccountCircleOutlinedIcon fontSize="small" />
+                </IconButton>
+              ) : (
+                <span className="br-navlink" style={{ cursor: "pointer" }} onClick={() => go("/account")}>{t("Mi cuenta")}</span>
+              ))}
+              {!phone && router.pathname !== "/help" && (
+                <span className="br-navlink" style={{ cursor: "pointer" }} onClick={() => go("/help")}>{t("Ayuda")}</span>
+              )}
+              {phone ? (
+                <IconButton aria-label={t("Cerrar sesión") as string} title={t("Cerrar sesión") as string} size="small" onClick={onLogout} style={{ color: "var(--ink-900)" }}>
+                  <LogoutIcon fontSize="small" />
+                </IconButton>
+              ) : (
+                <span className="br-navlink" style={{ cursor: "pointer" }} onClick={onLogout}>{t("Cerrar sesión")}</span>
+              )}
               <LangToggle />
             </nav>
           </div>

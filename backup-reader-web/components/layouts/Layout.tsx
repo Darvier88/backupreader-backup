@@ -12,6 +12,7 @@ import { FirestoreContext, ModalConsumer } from "../../context";
 import { ConversationsDrawerMobile } from "../drawers/ConversationsDrawerMobile";
 import { usePanelChats } from "../../context/PanelChatsContext";
 import { AvisoDeErrores } from "../ui/AvisoDeErrores";
+import { useSesion } from "../../hooks/useSesion";
 import { PasoBoveda } from "../vault/PasoBoveda";
 
 interface LayoutProps {
@@ -19,6 +20,7 @@ interface LayoutProps {
 }
 
 export const Layout: FC<LayoutProps> = ({ children }) => {
+  const { haySesion } = useSesion();
   const router = useRouter();
   const { t, i18n } = useTranslation();
   const { user } = useContext(FirestoreContext);
@@ -74,7 +76,13 @@ export const Layout: FC<LayoutProps> = ({ children }) => {
       </Head>
 
       <div style={{ display: "flex", flexDirection: "column", minHeight: "100vh", background: "var(--paper-50)" }}>
-        {["/privacyPolicy", "/termsConditions", "/importancia-de-respaldar-informacion"].includes(router.pathname) ? (
+        {/* Con la sesión iniciada, Ayuda y las páginas legales llevan la
+            cabecera de usuario (Mi cuenta · Ayuda · Cerrar sesión), no la
+            pública con «Comienza ahora», que a quien ya tiene cuenta no le
+            dice nada. */}
+        {haySesion && ["/", "/help", "/privacyPolicy", "/termsConditions", "/importancia-de-respaldar-informacion"].includes(router.pathname) ? (
+          <BrandHeader app wide />
+        ) : ["/privacyPolicy", "/termsConditions", "/importancia-de-respaldar-informacion"].includes(router.pathname) ? (
           <BrandHeader narrow />
         ) : ["/", "/help"].includes(router.pathname) ? (
           <BrandHeader />
