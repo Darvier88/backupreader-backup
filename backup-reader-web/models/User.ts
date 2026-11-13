@@ -10,7 +10,6 @@ export type User = {
    * = suscripción corriente.
    */
   planCancelAt?: number | null;
-  token?: string | null;
   firestoreId?: string;
   storageSize?: number | null;
 };

@@ -35,6 +35,8 @@ import {
   useMediaQuery
 } from "@mui/material";
 
+import { textTransforms } from "@nextui-org/react";
+
 /* Selector de Google Drive. Estos tres valores son públicos por diseño (van
    al navegador sí o sí), pero ya no se escriben aquí: salen de las variables
    de entorno, y en Google Cloud la clave va restringida a los dominios de la
@@ -43,7 +45,6 @@ const GOOGLE_CLIENT_ID = (process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || "").trim()
 const GOOGLE_PICKER_KEY = (process.env.NEXT_PUBLIC_GOOGLE_PICKER_KEY || "").trim();
 const GOOGLE_APP_ID = GOOGLE_CLIENT_ID.split("-")[0];
 const driveConfigurado = Boolean(GOOGLE_CLIENT_ID && GOOGLE_PICKER_KEY);
-import { textTransforms } from "@nextui-org/react";
 
 const styles = {
   container: {
