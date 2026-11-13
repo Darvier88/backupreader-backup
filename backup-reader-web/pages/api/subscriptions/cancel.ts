@@ -29,7 +29,7 @@ import Stripe from "stripe";
  */
 
 const CLAVE_STRIPE =
-  process.env.STRIPE_SECRET_KEY || process.env.NEXT_PUBLIC_STRIPE_KEYS;
+  process.env.STRIPE_SECRET_KEY;
 
 const stripe = new Stripe(`${CLAVE_STRIPE}`, { apiVersion: "2022-11-15" });
 

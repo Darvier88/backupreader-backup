@@ -427,6 +427,40 @@ describe("POST /api/subscriptions/create", () => {
     }
   });
 
+  it("ya no usa NEXT_PUBLIC_STRIPE_KEYS como respaldo de la clave secreta", async () => {
+    /* Con solo la variable vieja puesta, el endpoint tiene que comportarse
+       como si no hubiera clave. Si alguien vuelve a añadir el respaldo, la
+       clave secreta volvería a depender de un nombre que acaba en el
+       navegador en cuanto un componente lo menciona. */
+    const antes = process.env.STRIPE_SECRET_KEY;
+    const antesPublica = process.env.NEXT_PUBLIC_STRIPE_KEYS;
+    delete process.env.STRIPE_SECRET_KEY;
+    process.env.NEXT_PUBLIC_STRIPE_KEYS = "sk_test_vieja_no_debe_usarse";
+    vi.resetModules();
+
+    try {
+      const { default: handler } = await import("../../pages/api/subscriptions/create");
+      const res = hacerRes();
+      await handler(
+        {
+          method: "POST",
+          body: { customerId: "cus_1", paymentMethodId: "pm_1", planId: PRECIO },
+        } as any,
+        res
+      );
+
+      expect(res.codigo).toBe(500);
+      expect(res.cuerpo.error).toBe("stripe-sin-configurar");
+      expect(h.llamadas.subsCreate).toHaveLength(0);
+    } finally {
+      if (antes === undefined) delete process.env.STRIPE_SECRET_KEY;
+      else process.env.STRIPE_SECRET_KEY = antes;
+      if (antesPublica === undefined) delete process.env.NEXT_PUBLIC_STRIPE_KEYS;
+      else process.env.NEXT_PUBLIC_STRIPE_KEYS = antesPublica;
+      vi.resetModules();
+    }
+  });
+
   it("un fallo de tarjeta sigue siendo un fallo de tarjeta", async () => {
     /* El complemento del anterior: un error que NO es del cupón no debe
        disfrazarse de código rechazado, o el usuario quitaría el código y

@@ -25,7 +25,7 @@ import { importeDelPrecio, resolverCodigo } from "../../../lib/descuentos-stripe
  * sin el código.
  */
 
-const CLAVE = process.env.STRIPE_SECRET_KEY || process.env.NEXT_PUBLIC_STRIPE_KEYS;
+const CLAVE = process.env.STRIPE_SECRET_KEY;
 
 const stripe = new Stripe(`${CLAVE}`, {
     apiVersion: "2022-11-15",

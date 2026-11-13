@@ -30,7 +30,7 @@
 import Stripe from "stripe";
 
 const CLAVE =
-  process.env.STRIPE_SECRET_KEY || process.env.NEXT_PUBLIC_STRIPE_KEYS;
+  process.env.STRIPE_SECRET_KEY;
 
 export const stripeConfigurado = () => Boolean(CLAVE);
 

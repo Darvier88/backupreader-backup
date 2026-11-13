@@ -18,12 +18,11 @@ import Stripe from "stripe";
 
 import { importeDelPrecio, resolverCodigo } from "../../../lib/descuentos-stripe";
 
-/* `STRIPE_SECRET_KEY` primero. `NEXT_PUBLIC_STRIPE_KEYS` es la que usa hoy el
-   resto del flujo de pago, y se mantiene como respaldo para no romper nada,
-   pero ese nombre es peligroso: cualquier día alguien la referencia desde un
+/* Solo `STRIPE_SECRET_KEY`. El respaldo `NEXT_PUBLIC_STRIPE_KEYS` se quitó: ese
+   nombre es peligroso, porque cualquier día alguien la referencia desde un
    componente y el prefijo NEXT_PUBLIC_ mete la clave secreta en el bundle que
    descarga el navegador. */
-const CLAVE = process.env.STRIPE_SECRET_KEY || process.env.NEXT_PUBLIC_STRIPE_KEYS;
+const CLAVE = process.env.STRIPE_SECRET_KEY;
 
 const stripe = new Stripe(`${CLAVE}`, { apiVersion: "2022-11-15" });
 
