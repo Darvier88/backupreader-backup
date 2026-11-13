@@ -34,6 +34,15 @@ import {
   Theme,
   useMediaQuery
 } from "@mui/material";
+
+/* Selector de Google Drive. Estos tres valores son públicos por diseño (van
+   al navegador sí o sí), pero ya no se escriben aquí: salen de las variables
+   de entorno, y en Google Cloud la clave va restringida a los dominios de la
+   web. El número de proyecto (appId) es el prefijo del client_id. */
+const GOOGLE_CLIENT_ID = (process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || "").trim();
+const GOOGLE_PICKER_KEY = (process.env.NEXT_PUBLIC_GOOGLE_PICKER_KEY || "").trim();
+const GOOGLE_APP_ID = GOOGLE_CLIENT_ID.split("-")[0];
+const driveConfigurado = Boolean(GOOGLE_CLIENT_ID && GOOGLE_PICKER_KEY);
 import { textTransforms } from "@nextui-org/react";
 
 const styles = {
@@ -173,8 +182,9 @@ export const ManageFileCard: FC<ManageFileCardProps> = ({ isFirstFile, chat }) =
   };
 
   const gisLoaded = () => {
+    if (!driveConfigurado) return;
     tokenClient = window.google.accounts.oauth2.initTokenClient({
-      client_id: "725189668435-hcnm8nl0qqdutpddcfiqunrldav13qpc.apps.googleusercontent.com",
+      client_id: GOOGLE_CLIENT_ID,
       scope: 'https://www.googleapis.com/auth/drive.file',
       callback: (response:any) => {
         if (response.error !== undefined) {
@@ -190,9 +200,14 @@ export const ManageFileCard: FC<ManageFileCardProps> = ({ isFirstFile, chat }) =
   
 
   function handleAccessTokenRequest() {
+    if (!driveConfigurado) {
+      console.error("Google Drive sin configurar: faltan NEXT_PUBLIC_GOOGLE_CLIENT_ID o NEXT_PUBLIC_GOOGLE_PICKER_KEY.");
+      alert(t("Subir desde Google Drive no está disponible ahora mismo. Sube el .zip desde Archivos."));
+      return;
+    }
 
     tokenClient = window.google.accounts.oauth2.initTokenClient({
-      client_id: "725189668435-hcnm8nl0qqdutpddcfiqunrldav13qpc.apps.googleusercontent.com",
+      client_id: GOOGLE_CLIENT_ID,
       scope: 'https://www.googleapis.com/auth/drive.file',
       callback: (response:any) => {
         if (response.error !== undefined) {
@@ -202,10 +217,10 @@ export const ManageFileCard: FC<ManageFileCardProps> = ({ isFirstFile, chat }) =
         
         accessToken = response.access_token;
         const picker = new window.google.picker.PickerBuilder()
-          .setAppId("725189668435")
+          .setAppId(GOOGLE_APP_ID)
           .addView(window.google.picker.ViewId.DOCS)
           .setOAuthToken(accessToken)
-          .setDeveloperKey("AIzaSyA7ZkQCVF5NoDm1D2skaZh918HUKYStIIo")
+          .setDeveloperKey(GOOGLE_PICKER_KEY)
           .setCallback((data: any)=>{
             if (data[google.picker.Response.ACTION] === google.picker.Action.PICKED) {
               const fileId: string = data[google.picker.Response.DOCUMENTS][0].id;

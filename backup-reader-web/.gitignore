@@ -50,6 +50,13 @@ extensions/
 .env.*
 !.env.example
 _env.txt
+# Credenciales de Google (OAuth, cuentas de servicio). Estuvieron subidas
+# y el repo es público: nunca más en git, solo en Vercel.
+config/secret-google*.json
+*service-account*.json
+*-firebase-adminsdk-*.json
+*.pem
+*.p12
 # Caché incremental de tsc. La genera `tsc --noEmit` al comprobar tipos y no
 # aporta nada al repositorio.
 tsconfig.tsbuildinfo

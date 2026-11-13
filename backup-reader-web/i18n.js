@@ -108,6 +108,7 @@ const resources = {
       "Si tienes uno":"If you have one",
       "Aplicar":"Apply",
       "Comprobando…":"Checking…",
+      "Subir desde Google Drive no está disponible ahora mismo. Sube el .zip desde Archivos.":"Uploading from Google Drive isn't available right now. Upload the .zip from Files instead.",
       "Quitar":"Remove",
       "Descuento":"Discount",
       "Gratis":"Free",

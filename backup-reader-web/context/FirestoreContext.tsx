@@ -10,6 +10,7 @@ import {
   getDocs,
   setDoc,
   updateDoc,
+  deleteField,
 } from "firebase/firestore";
 import { useRouter } from "next/router";
 
@@ -88,6 +89,9 @@ export const FirestoreProvider = ({ children }: any) => {
         await updateDoc(ref, {
           "user.displayName": user.displayName,
           "user.photoURL": user.photoURL,
+          /* Antes se guardaba aquí el token de acceso de Google al entrar con
+             Google. Ya no se guarda; esto borra el que hubiera quedado. */
+          ...(snap.data()?.user?.token !== undefined ? { "user.token": deleteField() } : {}),
         });
         const actualizado: User = {
           ...snap.data().user,

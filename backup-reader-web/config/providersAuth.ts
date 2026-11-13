@@ -1,6 +1,5 @@
 import {
   OAuthProvider,
-  OAuthCredential,
   signInWithPopup,
   GoogleAuthProvider,
   sendPasswordResetEmail,
@@ -38,12 +37,11 @@ export const signInWithGoogle = async () => {
     const result = await signInWithPopup(FirebaseAuth, googleAuthProvider);
     // const credentials = GoogleAuthProvider.credentialFromResult(result);
     const { uid, email, displayName, photoURL } = result.user;
-    const credential = GoogleAuthProvider.credentialFromResult(result) as OAuthCredential;
-    const token = credential.accessToken;
-
-    console.log('Token '+token)
-
-
+    /* Ya no se lee el token de acceso de Google. Se escribía en la consola y
+       se guardaba en el documento del usuario en Firestore, y nada lo usa: la
+       sesión la lleva Firebase por su cuenta y el selector de Drive pide su
+       propio token. Un token de Google en la consola o en una base de datos
+       es una llave a la cuenta de Google de la persona durante una hora. */
     return {
       ok: true,
       user: {
@@ -52,7 +50,6 @@ export const signInWithGoogle = async () => {
         photoURL,
         plan: null,
         displayName,
-        token: token
       },
     };
   } catch (error) {
