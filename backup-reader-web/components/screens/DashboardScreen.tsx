@@ -87,7 +87,16 @@ export const DashboardScreen: FC = () => {
   const [toShow, setToShow] = useState<"photos" | "message">("message");
   const [state, setState] = useState<boolean>(true);
   const { fileList } = useContext(StorageContext);
-  const { objetivo, limpiarObjetivo } = usePanelChats();
+  const {
+    objetivo,
+    limpiarObjetivo,
+    desdeResultados,
+    setDesdeResultados,
+    setConsulta: setConsultaGlobal,
+    setPorChat,
+    setChatFiltro,
+    setVistaCompleta,
+  } = usePanelChats();
 
   const phone = useMediaQuery(({ breakpoints }: Theme) =>
     breakpoints.down("sm")
@@ -227,7 +236,30 @@ export const DashboardScreen: FC = () => {
 
 
   const onHandleGetFile = (fullPath: string, name: string) => {
+    /* Abrir desde el panel no viene de un resultado: sin «‹ Resultados». */
+    setDesdeResultados(false);
     getFile(fullPath, name);
+  };
+
+  /* La búsqueda general se guarda al abrir un chat SOLO si se abrió desde un
+     resultado en escritorio, para que «‹ Resultados» vuelva a ella (11b). En
+     cualquier otro caso se limpia, como antes: en el móvil el buscador se
+     queda como estaba. */
+  useEffect(() => {
+    if (!chat) return;
+    if (phone || !desdeResultados) {
+      setConsultaGlobal("");
+      setPorChat({});
+      setChatFiltro(null);
+      setVistaCompleta(false);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [chat]);
+
+  const volverAResultados = () => {
+    setVistaCompleta(true);
+    setDesdeResultados(false);
+    cerrarChat();
   };
 
   const onHandleSearch = (value: string) => {
@@ -381,6 +413,17 @@ export const DashboardScreen: FC = () => {
                 const inicial = (nombre || "?").replace(/[^\p{L}\p{N}]/gu, "").slice(0, 2).toUpperCase() || "?";
                 return (
                   <div style={{ display: "flex", alignItems: "center", gap: 12, minWidth: 0 }}>
+                    {/* «‹ Resultados» (11b): vuelve a la vista de resultados
+                        con la misma búsqueda. Solo si se llegó desde ella. */}
+                    {!phone && desdeResultados && (
+                      <>
+                        <button type="button" className="br-volver-inicio" style={{ fontSize: 13.5, flexShrink: 0 }} onClick={volverAResultados}>
+                          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="m15 18-6-6 6-6" /></svg>
+                          {t("Resultados")}
+                        </button>
+                        <span aria-hidden style={{ width: 1, height: 24, background: "var(--border)", flexShrink: 0 }} />
+                      </>
+                    )}
                     <div style={{ width: 40, height: 40, flexShrink: 0, borderRadius: 8, background: "var(--ink-900)", color: "var(--paper-50)", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "var(--font-serif)", fontSize: 17 }}>
                       {inicial}
                     </div>

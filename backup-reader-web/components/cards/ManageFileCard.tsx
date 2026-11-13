@@ -7,6 +7,7 @@ import { Button, Typography } from "@mui/material";
 
 import { BlockButton } from "../buttons";
 import { InicioChats } from "../chat/InicioChats";
+import { SugerenciasBusqueda } from "../chat/SugerenciasBusqueda";
 import { HojaSubirChat } from "../chat/HojaSubirChat";
 import { ResultadosGlobales } from "../chat/ResultadosGlobales";
 import { usePanelChats } from "../../context/PanelChatsContext";
@@ -78,9 +79,18 @@ export const ManageFileCard: FC<ManageFileCardProps> = ({ isFirstFile, chat }) =
   const router = useRouter();
   const { t } = useTranslation();
   const { saveFile, fileList, getFile: abrirChat } = useContext(StorageContext);
-  const { abrir: abrirPanel } = usePanelChats();
+  const {
+    abrir: abrirPanel,
+    consulta,
+    setConsulta,
+    vistaCompleta,
+    setVistaCompleta,
+    setDesdeResultados,
+    setPorChat,
+    setChatFiltro,
+    irAMensaje,
+  } = usePanelChats();
   const [hojaSubir, setHojaSubir] = useState(false);
-  const [consulta, setConsulta] = useState("");
   const hiddenFileInput = useRef<HTMLInputElement>(null);
   const hiddenFileInput2 = useRef<HTMLInputElement>(null);
   const { user } = useContext(FirestoreContext);
@@ -349,6 +359,17 @@ export const ManageFileCard: FC<ManageFileCardProps> = ({ isFirstFile, chat }) =
     <input aria-label="file Input" hidden ref={hiddenFileInput2} multiple accept=".zip,.rar,.7zip" type="file" onChange={(e) => onHandleSaveFile(e.target.files)} />
   );
 
+  const cambiarConsulta = (v: string) => {
+    setConsulta(v);
+    /* Por debajo de dos letras no hay búsqueda: se vuelve a las sugerencias
+       y el panel deja de enseñar recuentos. */
+    if (v.trim().length < 2) {
+      setVistaCompleta(false);
+      setPorChat({});
+      setChatFiltro(null);
+    }
+  };
+
   if (!chat) {
     return (
       <>
@@ -370,16 +391,40 @@ export const ManageFileCard: FC<ManageFileCardProps> = ({ isFirstFile, chat }) =
           onVerMisChats={abrirPanel}
           onSubir={() => setHojaSubir(true)}
           onAbrirChat={(ruta, nombre) => {
+            setDesdeResultados(false);
             abrirChat(ruta, nombre);
           }}
           consulta={consulta}
-          onConsulta={setConsulta}
+          onConsulta={cambiarConsulta}
           resultados={
-            <ResultadosGlobales
-              consulta={consulta}
-              anchoCompleto={!phone}
-              alAbrirChat={(ruta, nombre) => abrirChat(ruta, nombre)}
-            />
+            /* En escritorio, primero las sugerencias bajo el campo (11a) y,
+               al pedirlo, la vista completa (8c). En el móvil, la lista de
+               siempre (3b). */
+            !phone && !vistaCompleta ? (
+              <SugerenciasBusqueda
+                consulta={consulta}
+                alVerTodo={() => setVistaCompleta(true)}
+                alAbrirChat={(ruta, nombre) => {
+                  setDesdeResultados(true);
+                  abrirChat(ruta, nombre);
+                }}
+                alAbrirMensaje={(ruta, nombre, mensaje) => {
+                  setDesdeResultados(true);
+                  irAMensaje({ consulta: consulta.trim(), mensaje });
+                  abrirChat(ruta, nombre);
+                }}
+              />
+            ) : (
+              <ResultadosGlobales
+                consulta={consulta}
+                anchoCompleto={!phone}
+                onConsulta={cambiarConsulta}
+                alAbrirChat={(ruta, nombre) => {
+                  setDesdeResultados(!phone);
+                  abrirChat(ruta, nombre);
+                }}
+              />
+            )
           }
         />
         {inputArchivos}

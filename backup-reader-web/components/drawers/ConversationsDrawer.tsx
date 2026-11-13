@@ -105,7 +105,7 @@ export const ConversationsDrawer: FC<ConversationsDrawerProps> = ({
   const { t, i18n } = useTranslation();
   /* Cuántas coincidencias tiene cada chat en la búsqueda en curso (8c).
      Lo escribe la lista de resultados del centro. */
-  const { porChat, chatFiltro, setChatFiltro } = usePanelChats();
+  const { porChat, setPorChat, chatFiltro, setChatFiltro, setConsulta, setVistaCompleta, setDesdeResultados } = usePanelChats();
   const { status: estadoBoveda } = useContext(VaultContext);
   /* Hay una búsqueda con resultados en curso: el panel filtra en vez de abrir. */
   const buscando = Object.keys(porChat).length > 0;
@@ -128,6 +128,12 @@ export const ConversationsDrawer: FC<ConversationsDrawerProps> = ({
     if (/Mac|iPhone|iPad/.test(navigator.platform || navigator.userAgent)) setAtajo("⌘ K");
   }, []);
   const irAlInicio = () => {
+    /* El inicio sin búsqueda a medias: «Inicio» es empezar de cero. */
+    setConsulta("");
+    setPorChat({});
+    setChatFiltro(null);
+    setVistaCompleta(false);
+    setDesdeResultados(false);
     cerrarChat();
     if (router.pathname !== "/dashboard") router.push("/dashboard");
   };
@@ -436,7 +442,9 @@ export const ConversationsDrawer: FC<ConversationsDrawerProps> = ({
                    limita los resultados a ese chat (8c); pulsarlo otra vez
                    vuelve a todos. Sin búsqueda, abre el chat como siempre. */
                 const id = backupIdDeHandle(item.fullPath) ?? "";
-                if (buscando && coincidencias) {
+                /* Con un chat abierto (11b) no hay resultados a la vista que
+                   filtrar: pulsar otro chat lo abre. */
+                if (buscando && coincidencias && !selected) {
                   setChatFiltro(chatFiltro === id ? null : id);
                   return;
                 }

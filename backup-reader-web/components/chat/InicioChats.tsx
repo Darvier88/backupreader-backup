@@ -4,6 +4,7 @@ import { useTranslation } from "react-i18next";
 import { iniciales, nombreDelContacto } from "../../lib/nombres-de-chat";
 import { useAtajoDeBusqueda } from "../../hooks/useAtajoDeBusqueda";
 import { alPedirBusqueda, tomarBusquedaPendiente } from "../../lib/pedir-busqueda";
+import { usePanelChats } from "../../context/PanelChatsContext";
 import { etiquetaDeGuardado } from "../../lib/fecha-de-guardado";
 
 /**
@@ -129,6 +130,11 @@ export const InicioChats: FC<{
     document.body.classList.toggle("br-buscando", buscando);
     return () => document.body.classList.remove("br-buscando");
   }, [buscando]);
+  /* En escritorio el campo sube y se ensancha solo con la vista completa de
+     resultados (8c/11c). Con las sugerencias (11a) se queda donde estaba,
+     bajo «¿Qué estás buscando?», con el panel justo debajo. */
+  const { vistaCompleta } = usePanelChats();
+  const arriba = ancho ? buscando && vistaCompleta && consulta.trim().length >= 2 : buscando;
   const salirDeBusqueda = () => {
     onConsulta("");
     setEnfocado(false);
@@ -194,10 +200,10 @@ export const InicioChats: FC<{
     <div
       style={{
         width: "100%",
-        maxWidth: ancho ? (buscando ? 1040 : 688) : 520,
+        maxWidth: ancho ? (arriba ? 1040 : 688) : 520,
         margin: "0 auto",
-        padding: ancho ? (buscando ? "24px 24px 56px" : "96px 24px 48px") : buscando ? "12px 16px 40px" : "24px 20px 40px",
-        minHeight: ancho && !buscando ? "100vh" : undefined,
+        padding: ancho ? (arriba ? "24px 24px 56px" : "96px 24px 48px") : buscando ? "12px 16px 40px" : "24px 20px 40px",
+        minHeight: ancho && !arriba ? "100vh" : undefined,
         display: "flex",
         flexDirection: "column",
       }}
@@ -209,7 +215,7 @@ export const InicioChats: FC<{
       {/* El buscador es lo primero cuando ya hay chats (3a/8b). */}
       {hayChats && (
         <div style={{ display: "flex", flexDirection: "column", gap: ancho ? 18 : 14 }}>
-          {!buscando && !bloqueada && (
+          {!arriba && !bloqueada && (
             <h2
               style={{
                 margin: 0,
@@ -233,7 +239,7 @@ export const InicioChats: FC<{
               style={{
                 flex: 1,
                 minWidth: 0,
-                height: ancho ? (buscando ? 48 : 56) : buscando ? 44 : 52,
+                height: ancho ? (arriba ? 48 : 56) : buscando ? 44 : 52,
                 display: "flex",
                 alignItems: "center",
                 gap: 12,

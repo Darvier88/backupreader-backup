@@ -853,3 +853,11 @@ body {
   .br-cuenta-campos { max-width: none; }
   .br-cuenta-acciones { flex-direction: column; align-items: stretch; text-align: center; }
 }
+
+/* Sugerencias del buscador del inicio, escritorio (11a). */
+.br-sugerencias { margin-top: 8px; background: #fff; border: 1px solid var(--border); border-radius: 12px; box-shadow: 0 10px 30px rgba(22,35,59,.10); overflow: hidden; }
+.br-sugerencia { display: flex; align-items: center; gap: 12px; width: 100%; padding: 10px; border: 0; border-radius: 8px; font-family: var(--font-sans); text-align: left; cursor: pointer; }
+.br-sugerencia-tile { width: 32px; height: 32px; flex-shrink: 0; border-radius: 8px; background: #fff; border: 1px solid var(--border); display: flex; align-items: center; justify-content: center; font-family: var(--font-serif); font-size: 13px; color: var(--ink-900); }
+.br-sugerencias-pie { display: flex; align-items: center; justify-content: space-between; gap: 12px; width: 100%; padding: 12px 18px; border: 0; border-top: 1px solid var(--border); background: var(--paper-50); font-family: var(--font-sans); font-size: 13.5px; font-weight: 600; color: var(--brass-600); text-align: left; cursor: pointer; }
+.br-sugerencias > .br-sugerencias-pie:first-child { border-top: 0; }
+.br-consejo { padding: 12px 0; border-bottom: 1px solid var(--border); font-family: var(--font-sans); font-size: 14px; line-height: 1.45; color: var(--slate-700); }

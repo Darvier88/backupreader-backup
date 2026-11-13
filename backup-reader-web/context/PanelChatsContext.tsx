@@ -58,6 +58,14 @@ type PanelChats = {
   objetivo: ObjetivoBusqueda | null;
   irAMensaje: (objetivo: ObjetivoBusqueda) => void;
   limpiarObjetivo: () => void;
+  /** Escritorio: la vista completa de resultados (8c) en vez de las
+   *  sugerencias bajo el campo (11a). */
+  vistaCompleta: boolean;
+  setVistaCompleta: (v: boolean) => void;
+  /** El chat abierto se abrió desde un resultado: su cabecera ofrece
+   *  «‹ Resultados» para volver sin perder la búsqueda (11b). */
+  desdeResultados: boolean;
+  setDesdeResultados: (v: boolean) => void;
 };
 
 const Contexto = createContext<PanelChats>({
@@ -74,6 +82,10 @@ const Contexto = createContext<PanelChats>({
   objetivo: null,
   irAMensaje: () => {},
   limpiarObjetivo: () => {},
+  vistaCompleta: false,
+  setVistaCompleta: () => {},
+  desdeResultados: false,
+  setDesdeResultados: () => {},
 });
 
 export const PanelChatsProvider: FC<{ children: ReactNode }> = ({ children }) => {
@@ -82,6 +94,8 @@ export const PanelChatsProvider: FC<{ children: ReactNode }> = ({ children }) =>
   const [consulta, setConsulta] = useState("");
   const [porChat, setPorChat] = useState<Record<string, number>>({});
   const [chatFiltro, setChatFiltro] = useState<string | null>(null);
+  const [vistaCompleta, setVistaCompleta] = useState(false);
+  const [desdeResultados, setDesdeResultados] = useState(false);
 
   const valor = useMemo(
     () => ({
@@ -103,8 +117,12 @@ export const PanelChatsProvider: FC<{ children: ReactNode }> = ({ children }) =>
         setAbierto(false);
       },
       limpiarObjetivo: () => setObjetivo(null),
+      vistaCompleta,
+      setVistaCompleta,
+      desdeResultados,
+      setDesdeResultados,
     }),
-    [abierto, objetivo, consulta, porChat, chatFiltro]
+    [abierto, objetivo, consulta, porChat, chatFiltro, vistaCompleta, desdeResultados]
   );
 
   return <Contexto.Provider value={valor}>{children}</Contexto.Provider>;

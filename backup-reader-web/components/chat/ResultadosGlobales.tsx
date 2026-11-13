@@ -6,7 +6,7 @@ import { usePanelChats } from "../../context/PanelChatsContext";
 import { avisoDeBusqueda } from "../../lib/busqueda/indexador";
 import type { ResultadoEnChat } from "../../lib/busqueda/indice";
 import { fragmentoAlrededor } from "../../lib/busqueda/resaltar";
-import { handleDeBackup } from "../../lib/backupreader-crypto";
+import { backupIdDeHandle, handleDeBackup } from "../../lib/backupreader-crypto";
 import { iniciales, nombreDelContacto } from "../../lib/nombres-de-chat";
 import { TextoResaltado } from "./TextoResaltado";
 
@@ -57,14 +57,19 @@ export const ResultadosGlobales = ({
   consulta,
   alAbrirChat,
   anchoCompleto = false,
+  onConsulta,
 }: {
   consulta: string;
+  /** Para «Borrar búsqueda» y la palabra sugerida de 11c. */
+  onConsulta?: (valor: string) => void;
   alAbrirChat: (handle: string, nombre: string) => void;
   /** En escritorio hay sitio para dos columnas: mensajes y personas (8c). */
   anchoCompleto?: boolean;
 }) => {
   const { t } = useTranslation();
-  const { buscarEnTodos, fragmentosDeChat, estadoIndexado } = useContext(StorageContext);
+  const { buscarEnTodos, fragmentosDeChat, estadoIndexado, fileList } = useContext(StorageContext);
+  /* Sin coincidencias (11c): la palabra de la búsqueda que sí tiene, si la hay. */
+  const [sugerida, setSugerida] = useState<{ palabra: string; total: number } | null>(null);
   const { irAMensaje, setPorChat, chatFiltro, setChatFiltro } = usePanelChats();
   /* «Más recientes primero» (8c). El índice devuelve los mensajes en el orden
      del chat, del más antiguo al más nuevo; lo que se busca suele ser reciente,
@@ -106,10 +111,36 @@ export const ResultadosGlobales = ({
 
         setResultados(r.resultados);
         setSinIndexar(r.sinIndexar);
-        /* El panel lateral enseña estos números junto a cada chat (8c). */
-        setPorChat(
-          Object.fromEntries(r.resultados.map((x) => [x.backupId, x.total]))
-        );
+        setSugerida(null);
+        /* El panel lateral enseña estos números junto a cada chat (8c). Los
+           chats sin nada salen con 0, no en blanco: así se ve que también se
+           buscó en ellos (11c). */
+        const ceros: Record<string, number> = {};
+        for (const f of (fileList || []) as any[]) {
+          if (f?.bloqueado) continue;
+          const id = backupIdDeHandle(f.fullPath);
+          if (id) ceros[id] = 0;
+        }
+        setPorChat({
+          ...ceros,
+          ...Object.fromEntries(r.resultados.map((x) => [x.backupId, x.total])),
+        });
+        /* Nada con la frase entera: se prueba cada palabra y se sugiere la
+           que más coincidencias tiene (11c). Solo en escritorio, que es
+           donde se enseña. */
+        if (anchoCompleto && r.resultados.length === 0) {
+          const palabras = Array.from(new Set(texto.split(/\s+/).filter((p) => p.length >= 2)));
+          if (palabras.length > 1) {
+            let mejor: { palabra: string; total: number } | null = null;
+            for (const palabra of palabras) {
+              const rp = await buscarEnTodos(palabra);
+              if (!vigente) return;
+              const n = rp.resultados.reduce((a, x) => a + x.total + x.contactos.length, 0);
+              if (n > 0 && (!mejor || n > mejor.total)) mejor = { palabra, total: n };
+            }
+            if (vigente) setSugerida(mejor);
+          }
+        }
         setMarcado(null);
         setDesplegados({});
         setFragmentos({});
@@ -278,8 +309,66 @@ export const ResultadosGlobales = ({
         <p style={etiqueta}>{enTexto(t("Buscando…"))}</p>
       )}
 
-      {!buscando && resultados.length === 0 && !hayQueAvisar && (
+      {!buscando && resultados.length === 0 && !hayQueAvisar && !anchoCompleto && (
         <p style={etiqueta}>{enTexto(t("Sin coincidencias en otros chats."))}</p>
+      )}
+
+      {/* Sin coincidencias en escritorio (11c): los filtros en cero, sin
+          ocultarse, para que quede claro que se buscó en todo; qué probar; y
+          las dos salidas. */}
+      {!buscando && resultados.length === 0 && anchoCompleto && (
+        <div>
+          <div style={{ display: "flex", gap: 8, marginBottom: 14, flexWrap: "wrap" }}>
+            {botonFiltro("todo", enTexto(t("Todo · {{n}}", { n: 0 })))}
+            {botonFiltro("personas", enTexto(t("Personas · {{n}}", { n: 0 })))}
+            {botonFiltro("mensajes", enTexto(t("Mensajes · {{n}}", { n: 0 })))}
+          </div>
+          <div style={{ maxWidth: 480, margin: "56px auto 0", display: "flex", flexDirection: "column", gap: 24 }}>
+            <span aria-hidden style={{ width: 52, height: 52, borderRadius: 12, background: "var(--paper-100)", border: "1px solid var(--border)", display: "flex", alignItems: "center", justifyContent: "center", color: "var(--slate-500)" }}>
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" aria-hidden="true">
+                <circle cx="11" cy="11" r="7" />
+                <path d="m20 20-3.5-3.5M8.5 8.5l5 5M13.5 8.5l-5 5" />
+              </svg>
+            </span>
+            <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+              <h2 style={{ margin: 0, fontFamily: "var(--font-serif)", fontWeight: 500, fontSize: 30, lineHeight: 1.15, letterSpacing: "-0.015em", color: "var(--ink-900)", overflowWrap: "anywhere" }}>
+                {enTexto(t("No encontramos «{{q}}»", { q: consulta.trim() }))}
+              </h2>
+              <p style={{ margin: 0, fontFamily: "var(--font-sans)", fontSize: 15, color: "var(--slate-700)" }}>
+                {(fileList?.length ?? 0) === 1
+                  ? enTexto(t("Buscamos en tu chat, en nombres y mensajes."))
+                  : enTexto(t("Buscamos en tus {{n}} chats, en nombres y mensajes.", { n: fileList?.length ?? 0 }))}
+              </p>
+            </div>
+            <div style={{ borderTop: "1px solid var(--border)" }}>
+              {sugerida && (
+                <div className="br-consejo">
+                  {enTexto(t("Prueba con una sola palabra:"))}{" "}
+                  <button type="button" onClick={() => onConsulta?.(sugerida.palabra)} style={{ padding: 0, border: 0, background: "transparent", fontFamily: "var(--font-sans)", fontSize: 14, fontWeight: 600, color: "var(--brass-600)", cursor: "pointer" }}>
+                    {sugerida.palabra}
+                  </button>{" "}
+                  {sugerida.total === 1
+                    ? enTexto(t("tiene 1 coincidencia."))
+                    : enTexto(t("tiene {{n}} coincidencias.", { n: sugerida.total }))}
+                </div>
+              )}
+              <div className="br-consejo">{enTexto(t("Revisa la ortografía. No distinguimos tildes ni mayúsculas."))}</div>
+              <div className="br-consejo">{enTexto(t("¿Está en otro chat? Súbelo y lo incluimos en la búsqueda."))}</div>
+            </div>
+            <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+              <button type="button" className="br-btn br-btn-ghost br-btn-md" style={{ border: "1.5px solid var(--ink-900)" }} onClick={() => onConsulta?.("")}>
+                {enTexto(t("Borrar búsqueda"))}
+              </button>
+              <button
+                type="button"
+                className="br-btn br-btn-ghost br-btn-md"
+                onClick={() => window.dispatchEvent(new CustomEvent("br:subir-chat", { detail: "archivos" }))}
+              >
+                {enTexto(t("Agregar chat"))}
+              </button>
+            </div>
+          </div>
+        </div>
       )}
 
       {resultados.length > 0 && (
