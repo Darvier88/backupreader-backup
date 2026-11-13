@@ -67,7 +67,6 @@ function mediaMeta(message: string): { kind: string; filename: string } {
 const styles = {
   chatContainer: {
     display: "flex",
-    maxHeight: "85vh",
     backgroundColor: "var(--paper-50)",
   },
   drawerContainer: {
@@ -296,6 +295,35 @@ export const DashboardScreen: FC = () => {
   const [buscando, setBuscando] = useState(false);
   const ocultarCabecera = phone && buscando;
 
+  /* Alto del chat abierto: desde donde empieza la columna hasta el borde de
+     abajo de la pantalla, igual que el panel de chats, que ocupa la pantalla
+     entera. Antes era un 85vh fijo: en escritorio quedaba un hueco debajo del
+     chat (680 px frente a los 800 del panel) y en móvil sobraban ~60 px.
+     Se mide en vez de restar la cabecera a mano porque esa cabecera cambia:
+     en escritorio no hay, en móvil sí, y al buscar en el chat se esconde. */
+  const inicioColumna = useRef<HTMLDivElement>(null);
+  const [altoChat, setAltoChat] = useState<number | null>(null);
+  useEffect(() => {
+    if (!chat) return;
+    const medir = () => {
+      const marca = inicioColumna.current;
+      if (!marca) return;
+      const arriba = marca.getBoundingClientRect().top + window.scrollY;
+      setAltoChat(Math.max(320, Math.round(window.innerHeight - arriba)));
+    };
+    medir();
+    /* Un fotograma después también: la cabecera móvil se esconde o aparece
+       justo al cambiar `ocultarCabecera`, y hay que medir ya colocada. */
+    const fotograma = requestAnimationFrame(medir);
+    window.addEventListener("resize", medir);
+    window.addEventListener("orientationchange", medir);
+    return () => {
+      cancelAnimationFrame(fotograma);
+      window.removeEventListener("resize", medir);
+      window.removeEventListener("orientationchange", medir);
+    };
+  }, [chat, ocultarCabecera, phone]);
+
   return (
     <Grid.Container style={{ minHeight: "100vh", background: "var(--paper-50)", maxWidth: 1360, margin: "0 auto", width: "100%" }}>
       
@@ -319,14 +347,16 @@ export const DashboardScreen: FC = () => {
         md={8}
         style={{
           ...styles.chatContainer,
-          /* El tope de 85vh es para el chat abierto, que tiene su propio
+          /* El alto fijo es solo para el chat abierto, que tiene su propio
              scroll de mensajes dentro. En el inicio (lista de chats, 3a/4d)
-             no hay scroll interno: con el tope, una lista larga se salía de
+             no hay scroll interno: con un tope, una lista larga se salía de
              la columna y se pintaba encima del pie y por debajo de él. */
-          maxHeight: chat ? styles.chatContainer.maxHeight : "none",
+          height: chat && altoChat ? altoChat : undefined,
+          maxHeight: chat ? (altoChat ? altoChat : "100dvh") : "none",
           flexDirection: "column",
         }}
       >
+        <div ref={inicioColumna} aria-hidden style={{ height: 0, width: "100%" }} />
         {chat ? (
           <>
             <ManageFileCard isFirstFile={ fileList && fileList.length > 0 ? false : true } chat={true} />
