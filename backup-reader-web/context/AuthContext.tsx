@@ -25,8 +25,9 @@ type AuthContextProps = {
   signInApple: () => void;
   signInGoogle: () => void;
   resetPassword: (email: string) => Promise<boolean>;
-  signIn: (email: string, password: string) => void;
-  signUp: (email: string, password: string, nombre?: string) => void;
+  /** Devuelven si entró, para que la pantalla sepa cuándo dejar de esperar. */
+  signIn: (email: string, password: string) => Promise<boolean>;
+  signUp: (email: string, password: string, nombre?: string) => Promise<boolean>;
 };
 
 export const authInitialState: AuthState = {
@@ -69,7 +70,7 @@ export const AuthProvider = ({ children }: any) => {
   const { saveUser, saveUserFromProviders } = useContext(FirestoreContext);
   const [state, dispatch] = useReducer(authReducer, authInitialState);
 
-  const signUp = async (email: string, password: string, nombre?: string) => {
+  const signUp = async (email: string, password: string, nombre?: string): Promise<boolean> => {
     dispatch({
       type: "loading",
     });
@@ -82,6 +83,7 @@ export const AuthProvider = ({ children }: any) => {
         type: "signUp",
         payload: { user },
       });
+      return true;
     } else {
       /* Antes este modal decía SIEMPRE "el correo ya se encuentra registrado",
          fallara lo que fallara. Si el registro se caía por otro motivo
@@ -106,10 +108,11 @@ export const AuthProvider = ({ children }: any) => {
       dispatch({
         type: "notAuthenticated",
       });
+      return false;
     }
   };
 
-  const signIn = async (email: string, password: string) => {
+  const signIn = async (email: string, password: string): Promise<boolean> => {
     dispatch({
       type: "loading",
     });
@@ -120,6 +123,7 @@ export const AuthProvider = ({ children }: any) => {
         type: "signUp",
         payload: { user },
       });
+      return true;
     } else {
       dispatch({
         type: "addError",
@@ -137,6 +141,7 @@ export const AuthProvider = ({ children }: any) => {
           />
         ),
       });
+      return false;
     }
   };
 

@@ -65,6 +65,13 @@ export const EntradaScreen: FC = () => {
   const [clave, setClave] = useState("");
   const [verla, setVerla] = useState(false);
   const [comprobando, setComprobando] = useState(false);
+  /* Entrando: desde que se pulsa «Entrar» hasta que Firebase contesta. En
+     producción esa llamada ha llegado a tardar 10 s, y sin nada que lo dijera
+     el botón parecía muerto: la gente recargaba y, al recargar a mitad, el
+     inicio de sesión se perdía. Ahora el botón cambia al instante y, si tarda
+     más de lo normal, se pide que no se recargue. */
+  const [entrando, setEntrando] = useState(false);
+  const [tarda, setTarda] = useState(false);
 
   /* Los errores van por campo y no en un bloque al final. Un mensaje debajo
      del botón obliga a releer el formulario entero para saber a qué campo se
@@ -97,7 +104,18 @@ export const EntradaScreen: FC = () => {
     }
   };
 
-  const enviar = () => {
+  /* «Está tardando más de lo normal» a los 6 s de esperar a Firebase. */
+  useEffect(() => {
+    if (!entrando) {
+      setTarda(false);
+      return;
+    }
+    const temporizador = setTimeout(() => setTarda(true), 6000);
+    return () => clearTimeout(temporizador);
+  }, [entrando]);
+
+  const enviar = async () => {
+    if (entrando) return;
     if (clave.length === 0) {
       setErrorClave(enTexto(t("Escribe tu contraseña.")));
       return;
@@ -107,8 +125,18 @@ export const EntradaScreen: FC = () => {
       return;
     }
     setErrorClave("");
-    if (esNueva) signUp(correo.trim(), clave, nombre);
-    else signIn(correo.trim(), clave);
+    setEntrando(true);
+    try {
+      const ok = esNueva
+        ? await signUp(correo.trim(), clave, nombre)
+        : await signIn(correo.trim(), clave);
+      /* Si entró, se sigue «Entrando…» hasta que llegue el cambio de
+         pantalla: volver a «Entrar» un instante invitaría a pulsar otra vez. */
+      if (!ok) setEntrando(false);
+    } catch (error) {
+      console.error("Fallo al entrar:", error);
+      setEntrando(false);
+    }
   };
 
   const campo = (
@@ -525,13 +553,22 @@ export const EntradaScreen: FC = () => {
                   campo que lo causa. */}
               {/* Abajo, al alcance del pulgar (4b). */}
               <div className="br-movil-abajo">
+              {tarda && (
+                <p role="status" aria-live="polite" style={{ margin: "0 0 10px", fontFamily: "var(--font-sans)", fontSize: 13.5, lineHeight: 1.45, color: "var(--slate-700)", textAlign: "center" }}>
+                  {t("Está tardando más de lo normal. No cierres ni recargues la página.")}
+                </p>
+              )}
               <button
                 type="button"
                 onClick={enviar}
+                disabled={entrando}
+                aria-busy={entrando}
                 className="br-btn br-btn-primary br-btn-lg"
-                style={{ width: "100%", minHeight: 52, cursor: "pointer" }}
+                style={{ width: "100%", minHeight: 52, cursor: entrando ? "default" : "pointer", opacity: entrando ? 0.75 : 1 }}
               >
-                {esNueva ? t("Crear cuenta") : t("Entrar")}
+                {entrando
+                  ? esNueva ? t("Creando cuenta…") : t("Entrando…")
+                  : esNueva ? t("Crear cuenta") : t("Entrar")}
               </button>
               </div>
 
