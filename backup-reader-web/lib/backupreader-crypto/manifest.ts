@@ -133,11 +133,38 @@ export function indexByName(manifest: BackupManifest): Map<string, PieceMeta> {
   return map;
 }
 
-/** La pieza del chat (el `_chat.txt` o el JSON de Instagram). */
-export function findChatPiece(manifest: BackupManifest): PieceMeta | undefined {
+/** ¿Es basura del sistema que mete un zip rehecho en Mac o Windows? */
+export function esArchivoBasura(nombre: string): boolean {
+  const n = nombre.replace(/\\/g, "/");
+  const base = n.split("/").pop() || "";
   return (
-    manifest.pieces.find((p) => p.kind === "chat") ??
-    manifest.pieces.find((p) => normalizeName(p.name).endsWith(".json"))
+    n.includes("__MACOSX/") || // copias de recursos de macOS
+    base.startsWith("._") || // AppleDouble: binario, aunque acabe en .txt
+    base === ".DS_Store" ||
+    base.toLowerCase() === "thumbs.db" ||
+    base.toLowerCase() === "desktop.ini"
+  );
+}
+
+/**
+ * La pieza del chat (el texto del export, o el JSON de Instagram).
+ *
+ * Antes era «el primer .txt». Eso fallaba con zips que traen otros .txt: un
+ * documento .txt que se mandó en el chat, o el «._chat.txt» que mete macOS al
+ * volver a comprimir. El nombre también cambia según de dónde venga:
+ * «_chat.txt» en iPhone, «Chat de WhatsApp con Ana.txt» / «WhatsApp Chat with
+ * Ana.txt» en Android y en WhatsApp Web / Windows. Orden de preferencia:
+ * `_chat.txt`, luego un .txt cuyo nombre diga WhatsApp/chat, luego el .txt
+ * más grande (el texto de un chat casi siempre pesa más que una nota).
+ */
+export function findChatPiece(manifest: BackupManifest): PieceMeta | undefined {
+  const textos = manifest.pieces.filter((p) => p.kind === "chat" && !esArchivoBasura(p.name));
+  const base = (p: PieceMeta) => normalizeName(p.name).split("/").pop() || "";
+  return (
+    textos.find((p) => base(p) === "_chat.txt") ??
+    textos.find((p) => /whats\s*app|chat/i.test(base(p))) ??
+    [...textos].sort((a, b) => b.size - a.size)[0] ??
+    manifest.pieces.find((p) => normalizeName(p.name).endsWith(".json") && !esArchivoBasura(p.name))
   );
 }
 

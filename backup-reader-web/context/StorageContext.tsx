@@ -78,6 +78,7 @@ import {
   indexByName,
 } from "../lib/backupreader-crypto";
 import type { BackupAbierto, ArchivoV1 } from "../lib/backupreader-crypto";
+import { parsearTextoChat } from "../lib/parsear-chat";
 import { prepararAudio } from "../lib/audio/opusFallback";
 
 
@@ -179,131 +180,8 @@ export const StorageProvider = ({ children }: any) => {
 
 
  
-/**
- * Convierte el texto crudo de un export de WhatsApp en filas
- * [fecha, remitente, mensaje].
- *
- * Antes esto vivía dentro de una función que además descargaba el archivo por
- * XHR. Se separó en la Etapa 6 porque con E2EE el texto ya no llega de una URL,
- * sino de descifrar una pieza: cambia de dónde vienen los bytes, no cómo se
- * parsean. Toda la lógica de abajo (los dos formatos, iOS y Android) es la
- * misma de siempre.
- */
-const parsearTextoChat = (result: string): string[][] => {
-
-  // Regular expression pattern for date and time stamps
-  const pattern = /\[\d{1,2}\/\d{1,2}\/\d{2,4}(, | )\d{1,2}:\d{2}:\d{2}( [AP]M)?\]|\[\d{1,2}\/\d{1,2}\/\d{2,4} \d{1,2}:\d{2}:\d{2}\]|\d{1,2}\/\d{1,2}\/\d{2,4}(, | )\d{1,2}:\d{2}( [ap]\. m\.|)/g;
-
-  const dateIndices = [];
-  
-
-  type MessagePart = string;
-  type Message = MessagePart[];
-  const messages: string[] = [];
-  
-
-  let match;
-
-  if (typeof result === 'string') {
-    while ((match = pattern.exec(result)) !== null) {
-      dateIndices.push(match.index);
-    }
-    for (let i = 0; i < dateIndices.length; i++) {
-        const start = dateIndices[i];
-        let end = i < dateIndices.length - 1 ? dateIndices[i + 1] : result.length;
-        
-        // Trim trailing characters that are not part of the next date stamp
-        const conversationSegment = result.substring(start, end).trim();
-        const lastIndex = conversationSegment.lastIndexOf('[');
-        const cleanSegment = lastIndex > 0 ? conversationSegment.substring(0, lastIndex) : conversationSegment;
-        messages.push(cleanSegment.trim());
-    }
-  }else{
-    console.log('it is not a string...')
-  }
-
-  
-  const cleanedMessages = messages.map(message => 
-    message
-        .replace(/\u200E/g, '')
-        .replace(/[\u200B-\u200D\uFEFF]/g, '')
-  );
-
- 
-  const dataFormatted = cleanedMessages?.map((i) =>
-    i.split(/(.*?)\](.*?)\:/).filter((i) => {
-      return i != "";
-    })
-  );
-
-  function findDateInString(inputString: string): string {
-    // Updated regex to match both yyyy-mm-dd and m/d/yy formats.
-    // The new pattern is added to capture dates in the "m/d/yy" and "d/m/yy" formats.
-    const dateRegex = /\b(20\d{2})-(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01])\b|(\b\d{1,2}\/\d{1,2}\/\d{2}\b)/;
-    const match = inputString.match(dateRegex);
-    if (match) {
-      return match[0];
-    }
-    return "";
-  }
-  
-
-  function findHourInString(inputString: string): string {
-    // Regular expression for matching hours in 24-hour format (HH:mm) or 12-hour format (hh:mm AM/PM)
-    const hourRegex = /\b((?:[01]?\d|2[0-3]):[0-5]\d\b)|(?:\b(1[0-2]|0?\d):[0-5]\d\s?(AM|PM))\b/i;
-    const match = inputString.match(hourRegex);
-    return match ? match[0] : "";
-  }
-
-  // Parser robusto para dos formatos de exportación de WhatsApp:
-  //   Android:  "9/8/26 08:10 - Nombre: mensaje"
-  //   iOS:      "[9/8/26, 08:10:00] Nombre: mensaje"
-  function parseSegment(rawSeg: string): string[] {
-    const seg = (rawSeg || "")
-      .replace(/\u200E/g, "")
-      .replace(/[\u200B-\u200D\uFEFF\u200F]/g, "");
-
-    const dateTime = `${findDateInString(seg)} ${findHourInString(seg)}`.trim();
-
-    // Quitar el prefijo de fecha/hora hasta el separador del nombre.
-    let rest = seg;
-    if (rest.trimStart().startsWith("[")) {
-      // iOS: cortar tras el primer "]"
-      const close = rest.indexOf("]");
-      if (close !== -1) rest = rest.slice(close + 1);
-    } else {
-      // Android: cortar tras "HH:MM - " o "HH:MM:SS - "
-      const sep = rest.match(/\d{1,2}:\d{2}(?::\d{2})?\s*-\s*/);
-      if (sep && sep.index !== undefined) {
-        rest = rest.slice(sep.index + sep[0].length);
-      }
-    }
-    rest = rest.trim();
-
-    // rest = "Nombre: mensaje"  o un mensaje de sistema (sin "Nombre:")
-    let name = "";
-    let content = rest;
-    const colon = rest.indexOf(":");
-    if (colon !== -1) {
-      const candidate = rest.slice(0, colon).trim();
-      // Un nombre real es corto y no tiene saltos de línea.
-      if (candidate.length > 0 && candidate.length <= 60 && !candidate.includes("\n")) {
-        name = candidate;
-        content = rest.slice(colon + 1).trim();
-      }
-    }
-
-    return [dateTime, name, content];
-  }
-
-  function processMessages(messages: string[]): string[][] {
-    return messages.map(parseSegment);
-  }
-
-  const processedMessages = processMessages(messages);
-
-  return processedMessages;
-};
+/* El parseo del texto del chat vive en lib/parsear-chat.ts (Android, iPhone y
+   WhatsApp Web/Windows, en varios idiomas), con sus tests. */
 
 /** Camino v1: el texto llega de una URL de descarga. */
 const formatingTxtFile = (url: string) => {

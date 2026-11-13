@@ -1,4 +1,5 @@
 import { ZipReader, BlobReader, BlobWriter, configure } from "@zip.js/zip.js";
+import { esArchivoBasura } from "./manifest";
 import type { FileKind } from "./types";
 
 /**
@@ -36,7 +37,10 @@ export async function openZip(zipFile: Blob): Promise<OpenZip> {
   const raw = await reader.getEntries();
 
   const entries: ZipEntry[] = raw
-    .filter((e) => !e.directory)
+    /* Fuera carpetas y la basura que meten macOS y Windows al rehacer el zip
+       (__MACOSX, ._archivo, .DS_Store, Thumbs.db): no son del chat y alguna
+       acaba en .txt, que se confundía con el texto del chat. */
+    .filter((e) => !e.directory && !esArchivoBasura(e.filename))
     .map((entry) => {
       const mime = mimeFor(entry.filename);
       return {

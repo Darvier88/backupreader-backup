@@ -27,8 +27,11 @@
  * revela más estructura que un blob opaco si alguien lograse descifrarlo.
  */
 
-/** Versión del formato. Si cambia, los índices viejos se reconstruyen. */
-export const VERSION_INDICE = 1;
+/** Versión del formato. Si cambia, los índices viejos se reconstruyen.
+ *  2: el texto del chat se parte en mensajes con lib/parsear-chat.ts, que solo
+ *     empieza un mensaje en una línea con fecha. Los números de mensaje de los
+ *     índices hechos con el parseo anterior pueden no coincidir. */
+export const VERSION_INDICE = 2;
 
 /**
  * Id de la pieza donde vive el índice.

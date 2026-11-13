@@ -12,7 +12,7 @@ import { StorageContext } from '../../context/StorageContext';
 
 import useInView from '../../hooks/useInView';
 import { TarjetaDocumento } from "./TarjetaDocumento";
-import { documentoAdjunto, nombreDelAdjunto } from "../../lib/nombre-de-adjunto";
+import { documentoAdjunto, esAdjuntoOmitido, nombreDelAdjunto } from "../../lib/nombre-de-adjunto";
 import { useTranslation } from "react-i18next";
 
 const styles = {
@@ -225,7 +225,11 @@ export const ChatView: FC<ChatViewProps> = ({
 
   const documento = documentoAdjunto(message);
   const archivoDocumento = documento?.archivo ?? null;
-  const isMedia = isAudioUri(message) || isImageUri(message) || isVideoUri(message) || !!archivoDocumento;
+  /* «<Multimedia omitido>», «imagen omitida»…: el adjunto existía pero no
+     viene en el export (export sin archivos, o el de WhatsApp Web / Windows,
+     que nunca los incluye). */
+  const omitido = esAdjuntoOmitido(message);
+  const isMedia = isAudioUri(message) || isImageUri(message) || isVideoUri(message) || !!archivoDocumento || omitido;
   /* Solo la burbuja con la coincidencia actual lleva aro ocre (1c); el resto
      de coincidencias se marcan dentro del texto, sin tocar la burbuja. */
   const enEsta = chatSearch && chatSearch.trim().length >= 2 && !isMedia ? cuantasVeces(message || "", chatSearch) : 0;
@@ -318,6 +322,13 @@ export const ChatView: FC<ChatViewProps> = ({
           <div style={{ ...styles.imageContainer }} ref={videoRef}>
             {renderChatVideo()}
           </div>
+        ) : omitido ? (
+          <span style={{ display: "inline-flex", alignItems: "center", gap: 6, fontFamily: "var(--font-sans)", fontSize: 13.5, fontStyle: "italic", color: "var(--slate-500)" }}>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+              <path d="M21.4 11.6l-9.2 9.2a6 6 0 0 1-8.5-8.5l9.2-9.2a4 4 0 0 1 5.7 5.7l-9.2 9.2a2 2 0 0 1-2.8-2.8l8.5-8.5" />
+            </svg>
+            {t("Archivo no incluido en la exportación")}
+          </span>
         ) : archivoDocumento ? (
           <>
             <TarjetaDocumento archivo={archivoDocumento} ancho={!!gallery} />

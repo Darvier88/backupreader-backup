@@ -108,6 +108,7 @@ const resources = {
       "Si tienes uno":"If you have one",
       "Aplicar":"Apply",
       "Comprobando…":"Checking…",
+      "Archivo no incluido en la exportación":"File not included in the export",
       "No se pudo abrir el documento":"Couldn't open the document",
       "Archivo demasiado grande para abrirlo aquí":"File too large to open here",
       "Abrir":"Open",
