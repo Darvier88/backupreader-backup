@@ -1,0 +1,160 @@
+{
+  "namespace": "fwc_consent",
+  "consentVersion": "2026-11",
+  "defaultLanguage": "es",
+  "languages": [
+    "es",
+    "en"
+  ],
+  "activeDeletion": true,
+  "manageScripts": false,
+  "policyUrl": "/privacyPolicy",
+  "policyNewTab": false,
+  "showAlwaysPill": true,
+  "colors": {
+    "ink": "#16233B",
+    "inkSoft": "#21344F",
+    "accent": "#2F7E6C",
+    "accentHover": "#2A7062",
+    "accentSoft": "#DCEEE9",
+    "accentPale": "#8FD3C2",
+    "text": "#16233B",
+    "textBright": "#FBF8F1",
+    "heading": "#16233B",
+    "body": "#3B4652",
+    "border": "#D3D8DE",
+    "borderStrong": "#8A94A0",
+    "switchOff": "#E7EAEE",
+    "pillFg": "#5A6673",
+    "pillBg": "transparent",
+    "cream": "#FBF8F1",
+    "panelBg": "#FBF8F1"
+  },
+  "fonts": {
+    "heading": "'IBM Plex Serif', Georgia, serif",
+    "body": "'IBM Plex Sans', system-ui, -apple-system, 'Segoe UI', sans-serif",
+    "mono": "'IBM Plex Mono', ui-monospace, SFMono-Regular, Menlo, monospace"
+  },
+  "webfont": false,
+  "cookiePatterns": [
+    "_ga",
+    "_gid",
+    "_gat",
+    "__utm",
+    "_gcl"
+  ],
+  "autoBlock": [],
+  "banner": {
+    "layout": "card",
+    "position": "bottom",
+    "align": "left",
+    "cardWidth": "460px",
+    "radius": "14px",
+    "padding": "22px 24px",
+    "gap": "16px",
+    "background": "#FBF8F1",
+    "color": "#16233B",
+    "shadow": "0 10px 30px rgba(22,35,59,.14)",
+    "border": "1px solid #D3D8DE",
+    "backdropOn": false,
+    "animate": true
+  },
+  "panel": {
+    "placement": "center",
+    "maxWidth": "480px",
+    "radius": "14px",
+    "showClose": true,
+    "background": "#FBF8F1",
+    "animate": true
+  },
+  "chip": {
+    "enabled": false
+  },
+  "trigger": {
+    "hash": "cookies",
+    "safety": true
+  },
+  "texts": {
+    "es": {
+      "eyebrow": "Usamos cookies",
+      "body": "Las necesarias mantienen tu sesión abierta. Con tu permiso, usamos otras para entender cómo se usa el sitio. Nunca leen tus chats.",
+      "policy": "Política de cookies",
+      "manage": "Elegir cuáles",
+      "reject": "Solo las necesarias",
+      "accept": "Aceptar todas",
+      "rejectOptional": "Solo las necesarias",
+      "panelEyebrow": "",
+      "panelTitle": "Elige tus cookies",
+      "panelIntro": "",
+      "always": "Siempre",
+      "save": "Guardar mi elección",
+      "chip": "Cookies",
+      "close": "Cerrar"
+    },
+    "en": {
+      "eyebrow": "We use cookies",
+      "body": "The necessary ones keep you signed in. With your permission, we use others to understand how the site is used. They never read your chats.",
+      "policy": "Cookie policy",
+      "manage": "Choose which",
+      "reject": "Necessary only",
+      "accept": "Accept all",
+      "rejectOptional": "Necessary only",
+      "panelEyebrow": "",
+      "panelTitle": "Choose your cookies",
+      "panelIntro": "",
+      "always": "Always",
+      "save": "Save my choice",
+      "chip": "Cookies",
+      "close": "Close"
+    }
+  },
+  "categories": [
+    {
+      "id": "esenciales",
+      "locked": true,
+      "label": {
+        "es": "Necesarias",
+        "en": "Necessary"
+      },
+      "desc": {
+        "es": "Mantienen tu sesión y recuerdan tu idioma.",
+        "en": "Keep you signed in and remember your language."
+      },
+      "signals": [
+        "functionality_storage",
+        "security_storage"
+      ]
+    },
+    {
+      "id": "analitica",
+      "locked": false,
+      "label": {
+        "es": "Analítica",
+        "en": "Analytics"
+      },
+      "desc": {
+        "es": "Cuántas personas visitan cada página. Datos agregados.",
+        "en": "How many people visit each page. Aggregated data."
+      },
+      "signals": [
+        "analytics_storage"
+      ]
+    },
+    {
+      "id": "preferencias",
+      "locked": false,
+      "label": {
+        "es": "Preferencias",
+        "en": "Preferences"
+      },
+      "desc": {
+        "es": "Recuerdan ajustes como el tema o el último chat abierto.",
+        "en": "Remember settings like the theme or the last chat you opened."
+      },
+      "signals": [
+        "personalization_storage"
+      ]
+    }
+  ],
+  "customCss": "/* BackupReader · 12a–12c. Tarjeta clara, título en serif, «Aceptar» y\n   «Solo las necesarias» del mismo tamaño y «Elegir cuáles» como enlace. */\n.cb-inner{background:#FBF8F1;color:#16233B;border:1px solid #D3D8DE;box-shadow:0 10px 30px rgba(22,35,59,.14)}\n.cb-eyebrow{color:#16233B;font-family:'IBM Plex Serif',Georgia,serif;font-size:19px;font-weight:500;letter-spacing:-.005em;text-transform:none;margin:0 0 4px}\n.cb-body{color:#3B4652;font-size:14px;line-height:1.5}\n.cb-body a{color:#2A7062}\n.cb-actions{display:flex;flex-wrap:wrap;gap:10px;justify-content:flex-start;align-items:center}\n.cb-actions [data-a='accept']{order:1;background:#2F7E6C;color:#FBF8F1;border:0;border-radius:8px;padding:11px 20px;font-weight:600}\n.cb-actions [data-a='accept']:hover{background:#2A7062}\n.cb-actions [data-a='reject']{order:2;background:transparent;color:#16233B;border:1.5px solid #16233B;border-radius:8px;padding:10px 20px;font-weight:500}\n.cb-actions [data-a='manage'].cb-ghost{order:3;flex-basis:100%;text-align:left;background:transparent !important;color:#2A7062 !important;border:0 !important;padding:4px 0 !important;font-weight:600}\n/* Móvil: hoja inferior pegada al borde, botones apilados a ancho completo. */\n@media (max-width:720px){\n  .cb-banner{left:0 !important;right:0 !important;bottom:0 !important;transform:none !important;width:100% !important}\n  .cb-inner{border-radius:18px 18px 0 0;border-left:0;border-right:0;border-bottom:0;padding:22px 20px 24px}\n  .cb-actions{flex-direction:column;align-items:stretch}\n  .cb-actions .cb-btn{width:100%;text-align:center;padding:14px 18px;font-size:15px}\n  .cb-actions [data-a='manage']{text-align:center;padding:8px 0}\n}\n/* 12b: «Elige tus cookies». Diálogo centrado en escritorio; hoja inferior en\n   móvil. Solo el botón «Guardar mi elección» abajo. */\n.cb-panel{background:#FBF8F1;border-radius:14px}\n.cb-eyebrow2,.cb-intro{display:none}\n.cb-head{padding:22px 24px 14px;border-bottom:1px solid #D3D8DE}\n.cb-panel h2{font-family:'IBM Plex Serif',Georgia,serif;font-size:21px;font-weight:500;color:#16233B}\n.cb-row{padding:16px 24px;border-bottom:1px solid #E7EAEE}\n.cb-row strong{font-size:15px;font-weight:600;color:#16233B}\n.cb-row span{color:#3B4652}\n.cb-pill{background:transparent;color:#5A6673;font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.1em}\n.cb-foot{background:transparent;padding:18px 24px 22px}\n.cb-foot .cb-outline,.cb-foot .cb-text{display:none}\n.cb-foot-right{width:100%}\n.cb-save{width:100%;padding:14px 18px;font-size:15px;border-radius:8px}\n@media (max-width:720px){\n  .cb-overlay{align-items:flex-end;padding:0}\n  .cb-panel{width:100%;max-width:100%;border-radius:18px 18px 0 0;max-height:88vh}\n  .cb-panel:before{content:'';display:block;width:40px;height:4px;border-radius:2px;background:#D3D8DE;margin:10px auto 0}\n}"
+}

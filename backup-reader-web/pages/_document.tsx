@@ -8,6 +8,7 @@ import Document, {
 } from "next/document";
 import Script from 'next/script';
 import { CssBaseline } from "@nextui-org/react";
+import { OPTWARD_ACTIVO, OPTWARD_BUNDLE, bloqueConfig, bloqueConsentMode } from "../lib/optward";
 
 class MyDocument extends Document {
   static async getInitialProps(ctx: DocumentContext) {
@@ -26,6 +27,18 @@ class MyDocument extends Document {
     return (
       <Html lang="es">
         <Head>
+          {/* Aviso de cookies de Optward (lib/optward.ts). Va ANTES que Google
+              Tag Manager: el Consent Mode denegado por defecto tiene que estar
+              puesto cuando GTM arranca, o las etiquetas salen sin saber nada
+              del consentimiento. Sin NEXT_PUBLIC_OPTWARD_SITE_ID no se emite. */}
+          {OPTWARD_ACTIVO && (
+            <>
+              <script dangerouslySetInnerHTML={{ __html: bloqueConsentMode() }} />
+              <script dangerouslySetInnerHTML={{ __html: bloqueConfig() }} />
+              <script async src={OPTWARD_BUNDLE}></script>
+            </>
+          )}
+
           {/* Google Tag Manager. Va lo más arriba posible del <head> para que
               cargue antes que el resto y no se pierdan las primeras visitas.
               El script en línea usa dangerouslySetInnerHTML porque JSX no

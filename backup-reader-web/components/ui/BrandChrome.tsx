@@ -7,6 +7,7 @@ import { useMediaQuery, IconButton } from "@mui/material";
 import LogoutIcon from "@mui/icons-material/Logout";
 import AccountCircleOutlinedIcon from "@mui/icons-material/AccountCircleOutlined";
 import { useSesion } from "../../hooks/useSesion";
+import { OPTWARD_ACTIVO, abrirPreferenciasDeCookies } from "../../lib/optward";
 import { MenuMovil } from "./MenuMovil";
 
 /* ============================================================================
@@ -274,9 +275,23 @@ export const BrandFooter: FC = () => {
         <span style={{ fontFamily: serif, fontWeight: 600, fontSize: 18, color: "var(--ink-900)" }}>
           Backup<span style={{ color: "var(--ink-500)", fontWeight: 500 }}>Reader</span>
         </span>
-        <div style={{ display: "flex", gap: 24, alignItems: "center" }}>
+        <div style={{ display: "flex", gap: "8px 24px", alignItems: "center", flexWrap: "wrap", justifyContent: "center" }}>
           <span className="br-navlink" style={{ cursor: "pointer" }} onClick={() => router.push("/privacyPolicy")}>{t("Política de Privacidad")}</span>
           <span className="br-navlink" style={{ cursor: "pointer" }} onClick={() => router.push("/termsConditions")}>{t("Términos del Servicio")}</span>
+          {/* «Cookies» (12b): reabre el panel de Optward para cambiar la
+              elección. El banner escucha los clics en data-consent-open; el
+              onClick es por si ese oyente aún no está. */}
+          {OPTWARD_ACTIVO && (
+            <button
+              type="button"
+              data-consent-open=""
+              className="br-navlink"
+              onClick={abrirPreferenciasDeCookies}
+              style={{ cursor: "pointer", background: "none", border: 0, padding: 0, font: "inherit", color: "inherit" }}
+            >
+              {t("Cookies")}
+            </button>
+          )}
         </div>
         <span className="br-footer-mark">Backup Reader, LLC</span>
       </div>

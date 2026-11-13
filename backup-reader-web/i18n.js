@@ -1,6 +1,7 @@
 import i18n from "i18next";
 import { initReactI18next } from "react-i18next";
 import LanguageDetector from "i18next-browser-languagedetector"; 
+import { idiomaDelAviso } from "./lib/optward";
 
 const resources = {
   en: {
@@ -962,6 +963,9 @@ export function cambiarIdioma(valor) {
     document.documentElement.lang = idioma;
   }
   if (idioma !== i18n.language) i18n.changeLanguage(idioma);
+  /* El aviso de cookies de Optward tiene sus propios textos: hay que decirle
+     también que cambie, o se queda en el idioma anterior hasta recargar. */
+  idiomaDelAviso(idioma);
   return idioma;
 }
 
