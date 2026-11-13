@@ -36,6 +36,8 @@ const h = vi.hoisted(() => {
     attach: [] as any[],
     pricesRetrieve: [] as string[],
     promoList: [] as any[],
+    customersCreate: [] as any[],
+    intentsCreate: [] as any[],
   },
   /* Lo que `subscriptions.create` va a devolver. */
   facturaDevuelta: { amount_due: 299, currency: "usd" } as any,
@@ -73,6 +75,18 @@ vi.mock("stripe", () => {
       attach: async (pm: string, opts: any) => {
         h.llamadas.attach.push({ pm, opts });
         return {};
+      },
+    };
+    customers = {
+      create: async (params: any) => {
+        h.llamadas.customersCreate.push(params);
+        return { id: "cus_nuevo" };
+      },
+    };
+    paymentIntents = {
+      create: async (params: any) => {
+        h.llamadas.intentsCreate.push(params);
+        return { id: "pi_1", client_secret: "pi_1_secret" };
       },
     };
     subscriptions = {
@@ -140,7 +154,7 @@ beforeEach(() => {
       coupon: { percent_off: 50, valid: true, duration: "once" },
     },
   };
-  h.llamadas = { subsCreate: [], attach: [], pricesRetrieve: [], promoList: [] };
+  h.llamadas = { subsCreate: [], attach: [], pricesRetrieve: [], promoList: [], customersCreate: [], intentsCreate: [] };
   h.facturaDevuelta = { amount_due: 299, currency: "usd" };
   h.errorAlCrear = null;
 });
@@ -479,5 +493,53 @@ describe("POST /api/subscriptions/create", () => {
     expect(res.codigo).toBe(500);
     expect(res.cuerpo.success).toBe(false);
     expect(res.cuerpo.codigoRechazado).toBeUndefined();
+  });
+
+  it("customer/create y payment/intents no llaman a Stripe sin STRIPE_SECRET_KEY", async () => {
+    /* Antes se construía Stripe con la cadena "undefined", se le llamaba
+       igual y el error de Stripe llegaba entero al navegador. */
+    const antes = process.env.STRIPE_SECRET_KEY;
+    delete process.env.STRIPE_SECRET_KEY;
+    vi.resetModules();
+    try {
+      const { default: crearCliente } = await import("../../pages/api/customer/create");
+      const r1 = hacerRes();
+      await crearCliente({ method: "POST", body: { name: "Ana", email: "a@b.com", uid: "u1" } } as any, r1);
+      expect(r1.codigo).toBe(500);
+      expect(r1.cuerpo.error).toBe("stripe-sin-configurar");
+
+      const { default: intents } = await import("../../pages/api/payment/intents");
+      const r2 = hacerRes();
+      await intents({ method: "POST", body: JSON.stringify({ amount: 299, description: "x" }) } as any, r2);
+      expect(r2.codigo).toBe(500);
+      expect(r2.cuerpo.error).toBe("stripe-sin-configurar");
+
+      expect(h.llamadas.customersCreate).toHaveLength(0);
+      expect(h.llamadas.intentsCreate).toHaveLength(0);
+    } finally {
+      if (antes === undefined) delete process.env.STRIPE_SECRET_KEY;
+      else process.env.STRIPE_SECRET_KEY = antes;
+      vi.resetModules();
+    }
+  });
+
+  it("payment/intents devuelve un error limpio, sin el objeto de Stripe", async () => {
+    const antes = process.env.STRIPE_SECRET_KEY;
+    process.env.STRIPE_SECRET_KEY = "sk_test_x";
+    vi.resetModules();
+    try {
+      const { default: intents } = await import("../../pages/api/payment/intents");
+      const r = hacerRes();
+      /* Cuerpo que no es JSON: JSON.parse lanza un error SIN statusCode, que
+         antes acababa en res.status(undefined). */
+      await intents({ method: "POST", body: "{no es json" } as any, r);
+      expect(r.codigo).toBe(500);
+      expect(r.cuerpo.ok).toBe(false);
+      expect(Object.keys(r.cuerpo).sort()).toEqual(["error", "mensaje", "ok"]);
+    } finally {
+      if (antes === undefined) delete process.env.STRIPE_SECRET_KEY;
+      else process.env.STRIPE_SECRET_KEY = antes;
+      vi.resetModules();
+    }
   });
 });

@@ -1,7 +1,11 @@
 import { NextApiRequest, NextApiResponse } from 'next';
 import Stripe from 'stripe';
 
-const stripe = new Stripe(`${process.env.STRIPE_SECRET_KEY}`, {
+/* Misma guarda que discounts/validate y subscriptions/create: sin clave no se
+   llama a Stripe. */
+const CLAVE = process.env.STRIPE_SECRET_KEY;
+
+const stripe = new Stripe(`${CLAVE}`, {
     apiVersion: "2022-11-15",
 });
 
@@ -9,6 +13,11 @@ const createCustomer = async (
   req: NextApiRequest,
   res: NextApiResponse
 ) => {
+  if (!CLAVE) {
+    console.error("Stripe sin configurar: falta STRIPE_SECRET_KEY.");
+    return res.status(500).json({ error: "stripe-sin-configurar" });
+  }
+
   const { name, email, uid } = req.body;
 
   try {

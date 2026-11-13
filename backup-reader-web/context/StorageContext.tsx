@@ -13,7 +13,7 @@ import {
   ListResult,
 } from "firebase/storage";
 
-import { storage } from "../config/firebase";
+import { storage, BUCKET_GS } from "../config/firebase";
 import { FirestoreContext } from "./FirestoreContext";
 import { Chat, FileDetail, FileList } from "../models/Files";
 import { storageReducer, StorageState } from "./StorageReducer";
@@ -408,7 +408,7 @@ function parsearJsonInstagram(texto: string): string[][] {
 
   async function fetchBucketSize(): Promise<number> {
     
-    const bucketURL = "gs://backup-reader.appspot.com/";
+    const bucketURL = BUCKET_GS;
     const folderPathWs =  "backups/" + user?.uid + "/whatsapp"; 
   
     const url: string = `https://us-central1-backup-reader.cloudfunctions.net/bucketSizeFunction?bucketName=${bucketURL}&folderPath=${folderPathWs}`;
@@ -765,6 +765,9 @@ function parsearJsonInstagram(texto: string): string[][] {
    * nombres opacos ya no se puede armar la ruta, hay que preguntarle al
    * manifiesto.
    */
+  /* Archivos de chats v1 que ya se sabe que no están en Storage (ver abajo). */
+  const faltanEnV1 = useRef<Set<string>>(new Set());
+
   const getMediaUrl = async (nombreArchivo: string): Promise<MediaResuelta> => {
     const handle = state.fullPath;
     if (!handle || !nombreArchivo) return { estado: "no-encontrada" };
@@ -786,10 +789,21 @@ function parsearJsonInstagram(texto: string): string[][] {
         nombre = nombre.slice(0, -5) + ".mp3";
       }
 
+      /* Sin pasar por getAsset: ese guarda un error GLOBAL en el estado
+         cuando el archivo no existe, y eso volvía a pintar el chat entero.
+         Cada mensaje con media volvía a pedir su archivo, volvía a fallar, y
+         así sin parar (4129 errores 404 en 20 s con un adjunto perdido). Un
+         adjunto que falta es cosa de su mensaje, que ya enseña «No se pudo
+         cargar el archivo». Además se recuerda que falta, para no volver a
+         preguntar mientras se mira este chat. */
+      const clave = handle + "|" + nombre;
+      if (faltanEnV1.current.has(clave)) return { estado: "no-encontrada" };
       try {
-        const url = await getAsset(base + "/" + nombre);
+        const completo = cleanString(BUCKET_GS + (base + "/" + nombre).replace(/\/\s+/g, "/").trimEnd());
+        const url = await getDownloadURL(ref(storage, completo));
         return { estado: "ok", url, revocar: false };
       } catch {
+        faltanEnV1.current.add(clave);
         return { estado: "no-encontrada" };
       }
     }
@@ -982,7 +996,7 @@ function parsearJsonInstagram(texto: string): string[][] {
   */
     const getAsset = async (assetName: string): Promise<string> => {
       try {
-          const bucketURL = "gs://backup-reader.appspot.com/";
+          const bucketURL = BUCKET_GS;
           const completeUrl = cleanString(bucketURL + assetName.replace(/\/\s+/g, '/').trimEnd());
           const refFinal = ref(storage, completeUrl);
           const urlFinal = await getDownloadURL(refFinal);
@@ -1016,7 +1030,7 @@ function parsearJsonInstagram(texto: string): string[][] {
 
     try {
       let fileDetail: FileDetail[] = [];
-      const bucketURL = "gs://backup-reader.appspot.com/";
+      const bucketURL = BUCKET_GS;
 
       /*
         Restarting the state due to inconsistencies in the Lazy loading implementation with previous data selection.

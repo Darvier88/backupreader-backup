@@ -20,7 +20,17 @@ export const FirebaseAuth = getAuth(FirebaseApp);
 export const FirebaseDB = getFirestore(FirebaseApp);
 
 const app = getApp();
-export const storage = getStorage(app, "gs://backup-reader.appspot.com/");
+
+/* El bucket sale de NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET, igual que el resto de
+   la config. Antes estaba escrito a mano aquí y en StorageContext, y pisaba la
+   variable: quien la apuntara a otro bucket (pruebas, staging) veía que
+   Storage seguía yendo al de producción. El respaldo es el de producción,
+   para que sin la variable todo siga como estaba. */
+export const BUCKET =
+  (process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET || "backup-reader.appspot.com").replace(/^gs:\/\//, "").replace(/\/+$/, "");
+export const BUCKET_GS = `gs://${BUCKET}/`;
+
+export const storage = getStorage(app, BUCKET_GS);
 
 /**
  * Emuladores en desarrollo.

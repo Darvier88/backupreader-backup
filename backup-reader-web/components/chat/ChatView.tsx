@@ -169,6 +169,11 @@ export const ChatView: FC<ChatViewProps> = ({
   useEffect(() => {
     const enPantalla = isImageInView || isVideoInView || isAudioInView;
     if (!enPantalla || !message || !fullPath) return;
+    /* Si ya se sabe que el archivo falta o es demasiado grande, no se vuelve
+       a pedir. Este efecto se repite cada vez que cambia `getMediaUrl` (en
+       cada render del contexto), y sin esta salida un adjunto perdido se
+       pedía una y otra vez. */
+    if (mediaError || tooLarge) return;
 
     const nombre = extractFilename(message);
     if (!nombre) return;
@@ -214,7 +219,7 @@ export const ChatView: FC<ChatViewProps> = ({
       cancelado = true;
       if (urlAsignada && hayQueRevocar) URL.revokeObjectURL(urlAsignada);
     };
-  }, [message, fullPath, getMediaUrl, isImageInView, isVideoInView, isAudioInView]);
+  }, [message, fullPath, getMediaUrl, isImageInView, isVideoInView, isAudioInView, mediaError, tooLarge]);
   
 
 
