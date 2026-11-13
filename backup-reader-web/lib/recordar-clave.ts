@@ -19,8 +19,9 @@
  *  - Un script que se colara en la página mientras la bóveda está abierta ya
  *    podría leer la DEK en memoria; esto no lo empeora.
  *
- * Se borra al cerrar sesión, al vencer, desde «Olvidar este dispositivo» en
- * Mi cuenta, y si el registro de la bóveda deja de existir.
+ * Se borra al vencer, desde «Olvidar este dispositivo» en Mi cuenta, y si el
+ * registro de la bóveda deja de existir. Cerrar sesión NO la borra: va
+ * guardada por uid, así que otra cuenta en el mismo navegador no la ve.
  *
  * Todo lo que falla aquí (navegación privada, IndexedDB bloqueado, WebCrypto
  * ausente) se trata como «no hay nada recordado»: lo peor que pasa es que se
@@ -148,7 +149,7 @@ export async function olvidarClave(uid: string): Promise<void> {
   }
 }
 
-/** Borra todo lo recordado en este navegador. Se usa al cerrar sesión. */
+/** Borra todo lo recordado en este navegador (de todas las cuentas). */
 export async function olvidarTodo(): Promise<void> {
   if (!disponible()) return;
   try {

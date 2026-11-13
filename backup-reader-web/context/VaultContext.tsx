@@ -8,7 +8,6 @@ import {
   claveRecordada,
   hayClaveRecordada,
   olvidarClave,
-  olvidarTodo,
   recordarClave,
 } from "../lib/recordar-clave";
 
@@ -21,8 +20,10 @@ import {
  *    recargar la página se pierde y hay que volver a desbloquear.
  *    La única excepción es OPCIONAL: «Recordar en este dispositivo por 30
  *    días» (8a). Entonces se guarda en IndexedDB CIFRADA con una llave del
- *    navegador no extraíble (ver lib/recordar-clave.ts), y se borra al cerrar
- *    sesión. Sin esa casilla, todo sigue como antes.
+ *    navegador no extraíble (ver lib/recordar-clave.ts). Sobrevive a cerrar
+ *    sesión (va por uid: otra cuenta en el mismo navegador no la ve) y solo
+ *    se borra al vencer o con «Olvidar este dispositivo». Mientras esté
+ *    vigente no hay autobloqueo. Sin esa casilla, todo sigue como antes.
  *
  *  - Este contexto escucha `onAuthStateChanged` por su cuenta en vez de
  *    depender de AuthContext. Así no hay que ordenar providers ni crear una
@@ -81,9 +82,11 @@ export const VaultProvider = ({ children }: any) => {
     const unsub = onAuthStateChanged(FirebaseAuth, async (user) => {
       if (!user) {
         await wipeDek();
-        /* Cerrar sesión olvida también la clave recordada: «recordar» es
-           para la sesión de este navegador, no para quien entre después. */
-        await olvidarTodo();
+        /* Cerrar sesión ya NO olvida la clave recordada. «Recordar en este
+           dispositivo por 30 días» se entiende como eso: 30 días en este
+           navegador, aunque se salga y se vuelva a entrar. Va guardada por
+           uid, así que otra cuenta que entre aquí no la ve ni la usa. Se
+           borra al vencer o con «Olvidar este dispositivo» en Mi cuenta. */
         setRecordada(false);
         dispatch({ type: "noSession" });
         return;
@@ -128,8 +131,12 @@ export const VaultProvider = ({ children }: any) => {
   };
 
   // --- Auto-bloqueo por inactividad ---
+  /* Con la clave recordada no hay autobloqueo. Antes, a los 20 minutos sin
+     tocar nada la bóveda se cerraba y pedía la clave aunque se hubiera
+     marcado «Recordar 30 días», porque la clave recordada solo se usaba al
+     cargar la página. Para quien marcó la casilla, eso era «no funciona». */
   useEffect(() => {
-    if (state.status !== "unlocked") return;
+    if (state.status !== "unlocked" || recordadaEnEsteDispositivo) return;
     if (typeof window === "undefined") return;
 
     let timer: ReturnType<typeof setTimeout>;
@@ -146,7 +153,7 @@ export const VaultProvider = ({ children }: any) => {
       clearTimeout(timer);
       eventos.forEach((e) => window.removeEventListener(e, reiniciar));
     };
-  }, [state.status]);
+  }, [state.status, recordadaEnEsteDispositivo]);
 
   // --- Operaciones ---
 
