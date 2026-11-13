@@ -26,8 +26,7 @@ import { AuthContext, FirestoreContext } from "../../context";
 import { Logo, LangToggle } from "../ui/BrandChrome";
 import { storage } from "../../config/firebase";
 
-import { BuscadorDelPanel } from "../chat/BuscadorDelPanel";
-import { ResultadosGlobales } from "../chat/ResultadosGlobales";
+import { pedirBusqueda } from "../../lib/pedir-busqueda";
 import { VaultContext } from "../../context/VaultContext";
 import {
   ref,
@@ -107,14 +106,11 @@ export const ConversationsDrawer: FC<ConversationsDrawerProps> = ({
   /* Cuántas coincidencias tiene cada chat en la búsqueda en curso (8c).
      Lo escribe la lista de resultados del centro. */
   const { porChat, chatFiltro, setChatFiltro } = usePanelChats();
-  /* Lo que se escribe en «Buscar en todos los chats» del panel. */
-  const [consultaPanel, setConsultaPanel] = useState("");
-  const buscandoEnPanel = consultaPanel.trim().length > 0;
   const { status: estadoBoveda } = useContext(VaultContext);
   /* Hay una búsqueda con resultados en curso: el panel filtra en vez de abrir. */
   const buscando = Object.keys(porChat).length > 0;
   const { show } = useContext(ModalContext);
-  const { fileList, fetchBucketSize } = useContext(StorageContext);
+  const { fileList, fetchBucketSize, cerrarChat } = useContext(StorageContext);
   const espacio = useEspacioOcupado();
   const [state, setState] = useState<FileList[] | null>();
   const [bucketSize, setBucketSize] = useState<number>(0);
@@ -125,6 +121,36 @@ export const ConversationsDrawer: FC<ConversationsDrawerProps> = ({
   const [agregando, setAgregando] = useState(false);
   const router = useRouter();
   const { logOut } = useContext(AuthContext);
+  /* «⌘ K» en Mac, «Ctrl K» en el resto. Tras montar, para que servidor y
+     cliente pinten lo mismo. */
+  const [atajo, setAtajo] = useState("Ctrl K");
+  useEffect(() => {
+    if (/Mac|iPhone|iPad/.test(navigator.platform || navigator.userAgent)) setAtajo("⌘ K");
+  }, []);
+  const irAlInicio = () => {
+    cerrarChat();
+    if (router.pathname !== "/dashboard") router.push("/dashboard");
+  };
+  const buscarEnTusChats = () => {
+    pedirBusqueda();
+    irAlInicio();
+  };
+  /* ⌘K desde cualquier pantalla con este panel (Mi cuenta): en el inicio ya
+     lo atiende el propio buscador, y con un chat abierto, DashboardScreen. */
+  useEffect(() => {
+    if (router.pathname === "/dashboard") return;
+    const alPulsar = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") {
+        const el = e.target as HTMLElement | null;
+        if (el && (el.tagName === "INPUT" || el.tagName === "TEXTAREA" || el.isContentEditable)) return;
+        e.preventDefault();
+        buscarEnTusChats();
+      }
+    };
+    window.addEventListener("keydown", alPulsar);
+    return () => window.removeEventListener("keydown", alPulsar);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [router.pathname]);
   /* Para la línea bajo el nombre: quien está en la prueba gratuita no tiene
      `plan` todavía, y llamarle «Plan personal» le diría que ya paga. */
   const { user: perfil } = useContext(FirestoreContext);
@@ -267,6 +293,32 @@ export const ConversationsDrawer: FC<ConversationsDrawerProps> = ({
           <Logo compact />
         </div>
 
+        {/* «Inicio» y «Buscar en tus chats ⌘K» (12d). El buscador general
+            vive en el inicio: estos dos llevan allí desde un chat abierto o
+            desde Mi cuenta. El campo «Buscar en todos los chats» que había
+            aquí se quita en escritorio para no tener dos buscadores. */}
+        <nav style={{ display: "flex", flexDirection: "column", gap: 2, marginBottom: 16 }}>
+          <button type="button" className="br-fila-panel" onClick={irAlInicio}>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <path d="M4 10.5 12 4l8 6.5V20a1 1 0 0 1-1 1h-5v-6h-4v6H5a1 1 0 0 1-1-1z" />
+            </svg>
+            <span style={{ flex: 1 }}>{t("Inicio")}</span>
+          </button>
+          <button
+            type="button"
+            className="br-fila-panel"
+            onClick={buscarEnTusChats}
+            disabled={estadoBoveda === "locked"}
+          >
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" aria-hidden="true">
+              <circle cx="11" cy="11" r="7" />
+              <path d="m20 20-3.5-3.5" />
+            </svg>
+            <span style={{ flex: 1 }}>{t("Buscar en tus chats")}</span>
+            <kbd className="br-kbd">{atajo}</kbd>
+          </button>
+        </nav>
+
         <button
           type="button"
           className="br-btn br-btn-ghost br-btn-md"
@@ -305,22 +357,7 @@ export const ConversationsDrawer: FC<ConversationsDrawerProps> = ({
 
       </div>
 
-      {/* Buscar en todos los chats, encima de la lista (como estaba antes de
-          la ronda 8). Con texto, la lista se cambia por los resultados. */}
-      <BuscadorDelPanel
-        consulta={consultaPanel}
-        onConsulta={setConsultaPanel}
-        bloqueado={estadoBoveda === "locked"}
-        style={{ margin: "-6px 0 -6px" }}
-      />
-
-      {buscandoEnPanel && (
-        <div style={{ flex: 1, minHeight: 0, overflowY: "auto", overflowX: "hidden", padding: "0 2px" }}>
-          <ResultadosGlobales consulta={consultaPanel} alAbrirChat={onPress} />
-        </div>
-      )}
-
-      <div style={{ flex: 1, minHeight: 0, overflowY: "auto", display: buscandoEnPanel ? "none" : "flex", flexDirection: "column", gap: 2 }}>
+      <div style={{ flex: 1, minHeight: 0, overflowY: "auto", display: "flex", flexDirection: "column", gap: 2 }}>
         <p style={{ fontFamily: "var(--font-mono)", fontSize: 11, letterSpacing: "0.14em", textTransform: "uppercase", color: "var(--slate-500)", margin: 0, padding: "0 8px 6px" }}>
           {enTexto(t("Tus chats · {{n}}", { n: state?.length ?? 0 }))}
         </p>

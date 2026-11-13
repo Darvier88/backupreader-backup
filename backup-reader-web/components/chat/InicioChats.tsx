@@ -3,6 +3,7 @@ import { useTranslation } from "react-i18next";
 
 import { iniciales, nombreDelContacto } from "../../lib/nombres-de-chat";
 import { useAtajoDeBusqueda } from "../../hooks/useAtajoDeBusqueda";
+import { alPedirBusqueda, tomarBusquedaPendiente } from "../../lib/pedir-busqueda";
 import { etiquetaDeGuardado } from "../../lib/fecha-de-guardado";
 
 /**
@@ -106,6 +107,17 @@ export const InicioChats: FC<{
      el panel lateral; se muda con él. */
   const campo = useRef<HTMLInputElement>(null);
   useAtajoDeBusqueda(campo);
+  /* «Buscar en tus chats» del panel (12d): si se pidió antes de que este
+     campo existiera, se atiende al montarse; si ya estaba, al momento. */
+  useEffect(() => {
+    const enfocar = () => {
+      if (!tomarBusquedaPendiente()) return;
+      campo.current?.focus();
+      campo.current?.select();
+    };
+    enfocar();
+    return alPedirBusqueda(enfocar);
+  }, []);
 
   /* Al enfocar o escribir, el buscador toma la cabecera (3b/8c): se va el
      título y aparece «Cancelar» (móvil) o la pista ESC (escritorio). */

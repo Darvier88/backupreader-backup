@@ -18,6 +18,7 @@ import { cuantasVeces } from "../../lib/busqueda/resaltar";
 import { claveDeDia, etiquetaDeDia } from "../../lib/fechas-de-chat";
 import { nombreDelContacto } from "../../lib/nombres-de-chat";
 import { usePanelChats } from "../../context/PanelChatsContext";
+import { pedirBusqueda } from "../../lib/pedir-busqueda";
 
 /** `t()` puede devolver null segun sus tipos; esto lo deja en string. */
 const enTexto = (traducido: unknown): string =>
@@ -287,6 +288,7 @@ export const DashboardScreen: FC = () => {
         !!el && (el.tagName === "INPUT" || el.tagName === "TEXTAREA" || el.isContentEditable);
       if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k" && !escribiendo) {
         e.preventDefault();
+        pedirBusqueda();
         cerrarChat();
       }
     };

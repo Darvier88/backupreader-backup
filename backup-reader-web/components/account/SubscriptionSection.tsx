@@ -1,8 +1,8 @@
 import React, { useContext, useEffect, useState } from "react";
-import { Box, Typography } from "@mui/material";
 import { useTranslation } from "react-i18next";
 import { useRouter } from "next/router";
-import { Button, Loading } from "@nextui-org/react";
+import { Loading } from "@nextui-org/react";
+import { SeccionCuenta } from "./SeccionCuenta";
 
 import { FirestoreContext } from "../../context";
 import { FirebaseAuth } from "../../config/firebase";
@@ -107,132 +107,86 @@ export const SubscriptionSection: React.FC = () => {
 
   // --- Sin plan -------------------------------------------------------------
 
+  const titulo = { fontFamily: "var(--font-sans)", fontSize: 15, fontWeight: 600, color: "var(--ink-900)" } as const;
+  const detalle = { fontFamily: "var(--font-sans)", fontSize: 13.5, color: "var(--slate-700)" } as const;
+
   if (!user?.plan) {
     return (
-      <Box sx={{ marginTop: 3 }}>
-        <Typography fontFamily={"var(--font-serif)"} fontSize={18} style={{ color: "var(--ink-900)" }}>
-          {t("Suscripción")}
-        </Typography>
-        <Typography
-          fontFamily={"var(--font-sans)"}
-          fontSize={15}
-          style={{ color: "var(--ink-900)", margin: "8px 0" }}
-        >
-          {t("No tienes una suscripción activa.")}
-        </Typography>
-        <Button auto bordered onPress={() => router.push("/plans")}>
-          {t("Ver planes")}
-        </Button>
-      </Box>
+      <SeccionCuenta etiqueta={t("Suscripción")}>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, flexWrap: "wrap" }}>
+          <span style={detalle}>{t("No tienes una suscripción activa.")}</span>
+          <button type="button" className="br-btn br-btn-ghost br-btn-sm" onClick={() => router.push("/plans")}>
+            {t("Ver planes")}
+          </button>
+        </div>
+      </SeccionCuenta>
     );
   }
 
   // --- Con plan -------------------------------------------------------------
 
+  /* «Cancelar suscripción» en arcilla y como enlace, no como botón rojo
+     (12d): es una salida, no la acción principal de la página. */
+  const accion = vencido ? (
+    /* Ya no hay nada que reactivar en Stripe: la suscripción se cerró al
+       llegar la fecha. Lo honesto es mandarle a contratar de nuevo. */
+    <button type="button" className="br-btn br-btn-ghost br-btn-sm" onClick={() => router.push("/plans")}>
+      {t("Ver planes")}
+    </button>
+  ) : cancelado ? (
+    <button type="button" className="br-btn br-btn-ghost br-btn-sm" onClick={() => llamar("reactivar")} disabled={ocupado}>
+      {ocupado ? <Loading type="points" color="currentColor" size="sm" /> : t("Reactivar suscripción")}
+    </button>
+  ) : confirmando ? null : (
+    <button type="button" className="br-enlace-arcilla" onClick={() => setConfirmando(true)}>
+      {t("Cancelar suscripción")}
+    </button>
+  );
+
   return (
-    <Box sx={{ marginTop: 3 }}>
-      <Typography fontFamily={"var(--font-serif)"} fontSize={18} style={{ color: "var(--ink-900)" }}>
-        {t("Suscripción")}
-      </Typography>
+    <SeccionCuenta etiqueta={t("Suscripción")}>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, flexWrap: "wrap" }}>
+        <div style={{ display: "flex", flexDirection: "column", gap: 3 }}>
+          <span style={titulo}>
+            {plan?.details?.name ? `${t("Plan")} ${plan.details.name}` : t("Tienes un plan activo.")}
+          </span>
+          <span style={detalle}>
+            {cancelado && user.planCancelAt
+              ? `${t("Cancelada. Mantienes el acceso hasta el")} ${fecha(user.planCancelAt)}.`
+              : vencido && user.planCancelAt
+              ? `${t("Tu suscripción terminó el")} ${fecha(user.planCancelAt)}.`
+              : t("Se renueva cada mes. Puedes cancelar cuando quieras.")}
+          </span>
+        </div>
+        {accion}
+      </div>
 
-      <Typography
-        fontFamily={"var(--font-sans)"}
-        fontSize={15}
-        style={{ color: "var(--ink-900)", margin: "8px 0 2px" }}
-      >
-        {plan?.details?.name
-          ? `${t("Plan")} ${plan.details.name}`
-          : t("Tienes un plan activo.")}
-      </Typography>
+      {aviso && <span style={{ ...detalle, color: "var(--clay-600)" }}>{aviso}</span>}
+      {exito && <span style={{ ...detalle, color: "var(--brass-600)" }}>{exito}</span>}
 
-      {cancelado && user.planCancelAt ? (
-        <Typography
-          fontFamily={"var(--font-sans)"}
-          fontSize={14}
-          style={{ color: "var(--slate-500)", margin: "0 0 12px" }}
-        >
-          {t("Cancelada. Mantienes el acceso hasta el")} {fecha(user.planCancelAt)}.
-        </Typography>
-      ) : vencido && user.planCancelAt ? (
-        <Typography
-          fontFamily={"var(--font-sans)"}
-          fontSize={14}
-          style={{ color: "var(--slate-500)", margin: "0 0 12px" }}
-        >
-          {t("Tu suscripción terminó el")} {fecha(user.planCancelAt)}.
-        </Typography>
-      ) : (
-        <Typography
-          fontFamily={"var(--font-sans)"}
-          fontSize={14}
-          style={{ color: "var(--slate-500)", margin: "0 0 12px" }}
-        >
-          {t("Se renueva cada mes. Puedes cancelar cuando quieras.")}
-        </Typography>
-      )}
-
-      {aviso && (
-        <Typography
-          fontFamily={"var(--font-sans)"}
-          fontSize={14}
-          style={{ color: "var(--clay-600)", marginBottom: 8 }}
-        >
-          {aviso}
-        </Typography>
-      )}
-      {exito && (
-        <Typography
-          fontFamily={"var(--font-sans)"}
-          fontSize={14}
-          style={{ color: "var(--brass-600)", marginBottom: 8 }}
-        >
-          {exito}
-        </Typography>
-      )}
-
-      {vencido ? (
-        /* Ya no hay nada que reactivar en Stripe: la suscripción se cerró al
-           llegar la fecha. Lo honesto es mandarle a contratar de nuevo. */
-        <Button auto bordered onPress={() => router.push("/plans")}>
-          {t("Ver planes")}
-        </Button>
-      ) : cancelado ? (
-        <Button auto bordered onPress={() => llamar("reactivar")} disabled={ocupado}>
-          {ocupado ? (
-            <Loading type="points" color="currentColor" size="sm" />
-          ) : (
-            t("Reactivar suscripción")
-          )}
-        </Button>
-      ) : confirmando ? (
+      {confirmando && (
         /* Paso de confirmación en la propia página: cancelar es algo que no se
            debería disparar con un solo clic despistado. */
-        <Box>
-          <Typography
-            fontFamily={"var(--font-sans)"}
-            fontSize={14}
-            style={{ color: "var(--ink-900)", marginBottom: 8 }}
-          >
+        <div style={{ display: "flex", flexDirection: "column", gap: 10, padding: "14px 16px", border: "1px solid var(--border)", borderRadius: 10, background: "var(--paper-100)" }}>
+          <span style={{ ...detalle, color: "var(--ink-900)" }}>
             {t("Dejaremos de cobrarte, y mantendrás el acceso hasta el final del periodo que ya pagaste. Tus chats no se borran.")}
-          </Typography>
-          <Box sx={{ display: "flex", gap: 1, flexWrap: "wrap" }}>
-            <Button auto color="error" onPress={() => llamar("cancelar")} disabled={ocupado}>
-              {ocupado ? (
-                <Loading type="points" color="currentColor" size="sm" />
-              ) : (
-                t("Sí, cancelar")
-              )}
-            </Button>
-            <Button auto light onPress={() => setConfirmando(false)} disabled={ocupado}>
+          </span>
+          <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+            <button
+              type="button"
+              className="br-btn br-btn-sm"
+              style={{ background: "var(--clay-600)", color: "var(--paper-50)", border: 0 }}
+              onClick={() => llamar("cancelar")}
+              disabled={ocupado}
+            >
+              {ocupado ? <Loading type="points" color="currentColor" size="sm" /> : t("Sí, cancelar")}
+            </button>
+            <button type="button" className="br-btn br-btn-ghost br-btn-sm" onClick={() => setConfirmando(false)} disabled={ocupado}>
               {t("Ahora no")}
-            </Button>
-          </Box>
-        </Box>
-      ) : (
-        <Button auto bordered color="error" onPress={() => setConfirmando(true)}>
-          {t("Cancelar suscripción")}
-        </Button>
+            </button>
+          </div>
+        </div>
       )}
-    </Box>
+    </SeccionCuenta>
   );
 };

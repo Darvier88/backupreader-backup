@@ -819,3 +819,37 @@ body {
 }
 .br-volver-chats:hover { color: var(--brass-700); background: var(--brass-100); }
 .br-volver-chats:focus-visible { outline: 2px solid var(--brass-500); outline-offset: 2px; }
+
+/* Filas «Inicio» y «Buscar en tus chats ⌘K» del panel lateral (12d). */
+.br-fila-panel {
+  display: flex; align-items: center; gap: 10px; width: 100%; height: 38px;
+  padding: 0 10px; border: 0; border-radius: 8px; background: transparent;
+  font-family: var(--font-sans); font-size: 14px; font-weight: 600;
+  color: var(--ink-900); text-align: left; cursor: pointer;
+}
+.br-fila-panel:hover { background: var(--paper-200); }
+.br-fila-panel:focus-visible { outline: none; box-shadow: var(--focus-ring); }
+.br-fila-panel:disabled { opacity: .5; cursor: default; background: transparent; }
+.br-kbd {
+  flex-shrink: 0; padding: 3px 7px; border: 1px solid var(--border); border-radius: 4px;
+  background: var(--paper-50); font-family: var(--font-mono); font-size: 11px; color: var(--slate-500);
+}
+
+/* Mi cuenta (12d/12e). */
+.br-cuenta-seccion { display: flex; flex-direction: column; gap: 12px; padding: 28px 0; border-bottom: 1px solid var(--border); }
+.br-cuenta-seccion:last-child { border-bottom: 0; }
+.br-cuenta-etiqueta { font-family: var(--font-mono); font-size: 11px; letter-spacing: .14em; text-transform: uppercase; color: var(--slate-500); }
+.br-enlace-arcilla { padding: 0; border: 0; background: transparent; font-family: var(--font-sans); font-size: 14px; font-weight: 600; color: var(--clay-600); cursor: pointer; }
+.br-enlace-arcilla:hover { text-decoration: underline; text-underline-offset: 3px; }
+.br-enlace-texto { padding: 0; border: 0; background: transparent; font-family: var(--font-sans); font-size: 13.5px; color: var(--brass-600); cursor: pointer; text-decoration: underline; text-underline-offset: 3px; }
+.br-migas { flex-shrink: 0; height: 56px; display: flex; align-items: center; gap: 10px; padding: 0 40px; border-bottom: 1px solid var(--border); font-family: var(--font-sans); font-size: 14px; }
+.br-volver-inicio { display: inline-flex; align-items: center; gap: 4px; padding: 0; border: 0; background: transparent; font-family: var(--font-sans); font-weight: 600; font-size: 14px; color: var(--brass-600); cursor: pointer; }
+.br-volver-inicio:hover { text-decoration: underline; text-underline-offset: 3px; }
+.br-barra-cuenta { position: sticky; top: 0; z-index: 5; height: 56px; display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; padding: 0 8px; background: var(--paper-50); border-bottom: 1px solid var(--border); }
+.br-barra-cuenta .br-volver-inicio { height: 44px; padding: 0 8px; font-size: 15px; justify-self: start; }
+.br-cuenta-campos { display: flex; flex-direction: column; gap: 8px; max-width: 420px; }
+.br-cuenta-acciones { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
+@media (max-width: 720px) {
+  .br-cuenta-campos { max-width: none; }
+  .br-cuenta-acciones { flex-direction: column; align-items: stretch; text-align: center; }
+}

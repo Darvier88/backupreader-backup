@@ -93,6 +93,11 @@ export const Layout: FC<LayoutProps> = ({ children }) => {
              caía en la NavBar del panel, con «Conversaciones · 0» en mitad del
              alta. */
           <BrandHeader app />
+        ) : router.pathname === "/account" ? (
+          /* Mi cuenta pinta su propia barra (12d/12e): en escritorio el panel
+             lateral y las migas «‹ Inicio / Mi cuenta», en el móvil «‹ Inicio».
+             La cabecera de antes repetía Ayuda / Cerrar sesión. */
+          null
         ) : router.pathname === "/dashboard" && !phone ? (
           /* Sin cabecera en el dashboard de escritorio (8b): el panel
              lateral lleva el logo, «Agregar chat», la cuenta y el idioma.
