@@ -8,6 +8,8 @@ import { FileList } from "../../models/Files";
 import { AlertModal } from "../modals/AlertModal";
 import { ModalContext } from "../../context/ModalContext";
 import { StorageContext } from "../../context/StorageContext";
+import { useEspacioOcupado } from "../../hooks/useEspacioOcupado";
+import { tamanoLegible } from "../../lib/tamano-legible";
 import { InformationModal } from "../modals/InformationModal";
 import { BotonCifrar } from "../vault/BotonCifrar";
 import { BotonBorrarChat } from "../chat/BotonBorrarChat";
@@ -98,7 +100,7 @@ export const ConversationsDrawer: FC<ConversationsDrawerProps> = ({
   onPress,
   selected,
 }) => {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   /* Cuántas coincidencias tiene cada chat en la búsqueda en curso (8c).
      Lo escribe la lista de resultados del centro. */
   const { porChat, chatFiltro, setChatFiltro } = usePanelChats();
@@ -106,6 +108,7 @@ export const ConversationsDrawer: FC<ConversationsDrawerProps> = ({
   const buscando = Object.keys(porChat).length > 0;
   const { show } = useContext(ModalContext);
   const { fileList, fetchBucketSize } = useContext(StorageContext);
+  const espacio = useEspacioOcupado();
   const [state, setState] = useState<FileList[] | null>();
   const [bucketSize, setBucketSize] = useState<number>(0);
   const [userEmail,setUserEmail] = useState<string | null>();
@@ -488,6 +491,13 @@ export const ConversationsDrawer: FC<ConversationsDrawerProps> = ({
             {perfil?.plan && (
               <span style={{ display: "block", fontFamily: "var(--font-mono)", fontSize: 10.5, letterSpacing: "0.04em", color: "var(--slate-500)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                 {t("Plan personal")}
+              </span>
+            )}
+            {/* Debajo, lo que ocupan sus chats. Va en su propia línea: junto
+                al plan no cabe en el ancho del panel. */}
+            {espacio && (
+              <span style={{ display: "block", fontFamily: "var(--font-mono)", fontSize: 10.5, letterSpacing: "0.04em", color: "var(--slate-500)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                {t("{{tam}} usados", { tam: tamanoLegible(espacio.bytes, i18n.language) })}
               </span>
             )}
           </span>

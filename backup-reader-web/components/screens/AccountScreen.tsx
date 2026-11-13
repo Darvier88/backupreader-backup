@@ -6,10 +6,13 @@ import { Button } from "@nextui-org/react";
 import { AuthContext, FirestoreContext } from "../../context";
 import { VaultPasswordSection } from "../vault";
 import { SubscriptionSection } from "../account/SubscriptionSection";
+import { useEspacioOcupado } from "../../hooks/useEspacioOcupado";
+import { tamanoLegible } from "../../lib/tamano-legible";
 
 export const AccountScreen: FC = () => {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const { user } = useContext(FirestoreContext);
+  const espacio = useEspacioOcupado();
   const { logOut } = useContext(AuthContext);
 
   return (
@@ -27,6 +30,28 @@ export const AccountScreen: FC = () => {
         <Typography fontFamily={"var(--font-sans)"} fontSize={15} style={{ color: "var(--slate-500)" }}>
           {user?.email}
         </Typography>
+      </Box>
+
+      <Divider sx={{ margin: "20px 0" }} />
+
+      {/* Cuánto ocupan los chats guardados. Mientras carga no se enseña
+          nada: mejor un hueco un instante que un «0 B» que no es verdad. */}
+      <Box sx={{ minHeight: 64 }}>
+        <Typography fontFamily={"var(--font-serif)"} fontSize={18} style={{ color: "var(--ink-900)" }}>
+          {t("Almacenamiento")}
+        </Typography>
+        {espacio && (
+          <>
+            <Typography fontFamily={"var(--font-sans)"} fontSize={15} style={{ color: "var(--ink-900)", margin: "8px 0 2px" }}>
+              {t("Tus chats ocupan {{tam}}", { tam: tamanoLegible(espacio.bytes, i18n.language) })}
+            </Typography>
+            <Typography fontFamily={"var(--font-sans)"} fontSize={14} style={{ color: "var(--slate-500)" }}>
+              {espacio.chats === 1
+                ? t("1 chat guardado")
+                : t("{{n}} chats guardados", { n: espacio.chats })}
+            </Typography>
+          </>
+        )}
       </Box>
 
       <Divider sx={{ margin: "20px 0" }} />
