@@ -4,7 +4,6 @@ import { useTranslation } from "react-i18next";
 import { AuthContext, FirestoreContext } from "../../context";
 import { cambiarIdioma } from "../../i18n";
 import { useMediaQuery } from "@mui/material";
-import { OPTWARD_ACTIVO, abrirPreferenciasDeCookies } from "../../lib/optward";
 import { MenuMovil } from "./MenuMovil";
 
 /* ============================================================================
@@ -250,24 +249,9 @@ export const BrandFooter: FC = () => {
         <span style={{ fontFamily: serif, fontWeight: 600, fontSize: 18, color: "var(--ink-900)" }}>
           Backup<span style={{ color: "var(--ink-500)", fontWeight: 500 }}>Reader</span>
         </span>
-        <div style={{ display: "flex", gap: "8px 24px", alignItems: "center", flexWrap: "wrap", justifyContent: "center" }}>
+        <div style={{ display: "flex", gap: 24, alignItems: "center" }}>
           <span className="br-navlink" style={{ cursor: "pointer" }} onClick={() => router.push("/privacyPolicy")}>{t("Política de Privacidad")}</span>
           <span className="br-navlink" style={{ cursor: "pointer" }} onClick={() => router.push("/termsConditions")}>{t("Términos del Servicio")}</span>
-          {/* Reabre el panel de Optward. El banner escucha los clics en
-              cualquier elemento con data-consent-open; el onClick es por si
-              ese oyente no estuviera aún. Retirar el consentimiento tiene que
-              ser tan fácil como darlo, así que va en el pie, a la vista. */}
-          {OPTWARD_ACTIVO && (
-            <button
-              type="button"
-              data-consent-open=""
-              className="br-navlink"
-              onClick={abrirPreferenciasDeCookies}
-              style={{ cursor: "pointer", background: "none", border: 0, padding: 0, font: "inherit", color: "inherit" }}
-            >
-              {t("Preferencias de cookies")}
-            </button>
-          )}
         </div>
         <span className="br-footer-mark">Backup Reader, LLC</span>
       </div>

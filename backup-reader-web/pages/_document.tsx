@@ -8,7 +8,6 @@ import Document, {
 } from "next/document";
 import Script from 'next/script';
 import { CssBaseline } from "@nextui-org/react";
-import { OPTWARD_ACTIVO, OPTWARD_BUNDLE, bloqueConfig, bloqueConsentMode } from "../lib/optward";
 
 class MyDocument extends Document {
   static async getInitialProps(ctx: DocumentContext) {
@@ -27,30 +26,17 @@ class MyDocument extends Document {
     return (
       <Html lang="es">
         <Head>
-          {/* Aviso de cookies de Optward (lib/optward.ts). Va ANTES que Google
-              Tag Manager: el Consent Mode denegado por defecto tiene que estar
-              puesto cuando GTM arranca, o las etiquetas salen sin saber nada
-              del consentimiento. Sin NEXT_PUBLIC_OPTWARD_SITE_ID no se emite. */}
-          {OPTWARD_ACTIVO && (
-            <>
-              <script dangerouslySetInnerHTML={{ __html: bloqueConsentMode() }} />
-              <script dangerouslySetInnerHTML={{ __html: bloqueConfig() }} />
-              <script async src={OPTWARD_BUNDLE}></script>
-            </>
-          )}
-
-          {/* Google Tag Manager, con el fragmento oficial. El de antes cargaba
-              gtm.js a pelo, sin el evento «gtm.js» que es lo que dispara los
-              activadores de «Vista de página» del contenedor. El script en
-              línea usa dangerouslySetInnerHTML porque JSX no admite código
-              como hijo de <script>. */}
+          {/* Google Tag Manager. Va lo más arriba posible del <head> para que
+              cargue antes que el resto y no se pierdan las primeras visitas.
+              El script en línea usa dangerouslySetInnerHTML porque JSX no
+              admite código como hijo de <script>. */}
+          <script async src="https://www.googletagmanager.com/gtm.js?id=GTM-PKCTCNJC"></script>
           <script
             dangerouslySetInnerHTML={{
               __html: `
   window.dataLayer = window.dataLayer || [];
   function gtag(){dataLayer.push(arguments);}
   gtag('js', new Date());
-  (function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src='https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);})(window,document,'script','dataLayer','GTM-PKCTCNJC');
 `,
             }}
           />

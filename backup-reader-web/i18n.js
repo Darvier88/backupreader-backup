@@ -1,7 +1,6 @@
 import i18n from "i18next";
 import { initReactI18next } from "react-i18next";
 import LanguageDetector from "i18next-browser-languagedetector"; 
-import { idiomaDelAviso } from "./lib/optward";
 
 const resources = {
   en: {
@@ -392,7 +391,6 @@ const resources = {
       "Tus chats están bloqueados.":"Your chats are locked.",
       "Salir":"Log out",
       "Plan personal":"Personal plan",
-      "Preferencias de cookies":"Cookie preferences",
       "Almacenamiento":"Storage",
       "Tus chats ocupan {{tam}}":"Your chats take up {{tam}}",
       "1 chat guardado":"1 chat saved",
@@ -953,9 +951,6 @@ export function cambiarIdioma(valor) {
     document.documentElement.lang = idioma;
   }
   if (idioma !== i18n.language) i18n.changeLanguage(idioma);
-  /* El aviso de cookies de Optward tiene sus propios textos: hay que decirle
-     también que cambie, o se queda en el idioma anterior hasta recargar. */
-  idiomaDelAviso(idioma);
   return idioma;
 }
 
