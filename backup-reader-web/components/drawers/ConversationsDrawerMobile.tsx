@@ -12,6 +12,9 @@ import { Logo } from "../ui/BrandChrome";
 import { nombreDelContacto, iniciales } from "../../lib/nombres-de-chat";
 import { Box, Container, Drawer, Typography } from "@mui/material";
 import { storage } from "../../config/firebase";
+import { BuscadorDelPanel } from "../chat/BuscadorDelPanel";
+import { ResultadosGlobales } from "../chat/ResultadosGlobales";
+import { VaultContext } from "../../context/VaultContext";
 import {
   ref,
   list,
@@ -104,6 +107,10 @@ export const ConversationsDrawerMobile: FC<ConversationsDrawerMobileProps> = ({
   const router = useRouter();
   const { logOut } = useContext(AuthContext);
   const { fileList, chatName } = useContext(StorageContext);
+  /* Lo que se escribe en «Buscar en todos los chats» del panel. */
+  const [consultaPanel, setConsultaPanel] = useState("");
+  const buscandoEnPanel = consultaPanel.trim().length > 0;
+  const { status: estadoBoveda } = useContext(VaultContext);
   const { getFile } = useContext(StorageContext);
   const onHandleGetFile = (fullPath: string, name: string) => {
     getFile(fullPath, name);
@@ -242,6 +249,24 @@ export const ConversationsDrawerMobile: FC<ConversationsDrawerMobileProps> = ({
         {/* Cuantos chats hay (1b). Sin el contador, una lista larga no dice
             si estan todos: el usuario que subio diez y ve seis en pantalla no
             sabe si faltan cuatro o si hay que desplazarse. */}
+        {/* Buscar en todos los chats, encima de la lista, como en WhatsApp.
+            Con texto, la lista se cambia por contactos y mensajes; al tocar
+            un resultado se abre el chat y el panel se cierra (onHandleGetFile). */}
+        {(fileList?.length ?? 0) > 0 && (
+          <BuscadorDelPanel
+            consulta={consultaPanel}
+            onConsulta={setConsultaPanel}
+            bloqueado={estadoBoveda === "locked"}
+            style={{ margin: "16px 16px 0" }}
+          />
+        )}
+
+        {buscandoEnPanel && (
+          <div style={{ padding: "12px 16px 16px" }}>
+            <ResultadosGlobales consulta={consultaPanel} alAbrirChat={onHandleGetFile} />
+          </div>
+        )}
+
         <p
           style={{
             margin: 0,
@@ -251,12 +276,13 @@ export const ConversationsDrawerMobile: FC<ConversationsDrawerMobileProps> = ({
             letterSpacing: "0.14em",
             textTransform: "uppercase",
             color: "var(--slate-500)",
+            display: buscandoEnPanel ? "none" : undefined,
           }}
         >
           {enTextoM(t("Tus chats · {{n}}", { n: fileList?.length ?? 0 }))}
         </p>
 
-        <div style={{ display: "flex", flexDirection: "column", gap: 2, padding: "0 8px" }}>
+        <div style={{ display: buscandoEnPanel ? "none" : "flex", flexDirection: "column", gap: 2, padding: "0 8px" }}>
         {fileList?.map((item, i) =>{
 
           const isInstagram = item.name.includes("instagram-");

@@ -26,6 +26,9 @@ import { AuthContext, FirestoreContext } from "../../context";
 import { Logo, LangToggle } from "../ui/BrandChrome";
 import { storage } from "../../config/firebase";
 
+import { BuscadorDelPanel } from "../chat/BuscadorDelPanel";
+import { ResultadosGlobales } from "../chat/ResultadosGlobales";
+import { VaultContext } from "../../context/VaultContext";
 import {
   ref,
   list,
@@ -104,6 +107,10 @@ export const ConversationsDrawer: FC<ConversationsDrawerProps> = ({
   /* Cuántas coincidencias tiene cada chat en la búsqueda en curso (8c).
      Lo escribe la lista de resultados del centro. */
   const { porChat, chatFiltro, setChatFiltro } = usePanelChats();
+  /* Lo que se escribe en «Buscar en todos los chats» del panel. */
+  const [consultaPanel, setConsultaPanel] = useState("");
+  const buscandoEnPanel = consultaPanel.trim().length > 0;
+  const { status: estadoBoveda } = useContext(VaultContext);
   /* Hay una búsqueda con resultados en curso: el panel filtra en vez de abrir. */
   const buscando = Object.keys(porChat).length > 0;
   const { show } = useContext(ModalContext);
@@ -296,16 +303,24 @@ export const ConversationsDrawer: FC<ConversationsDrawerProps> = ({
           </div>
         )}
 
-        {/* El buscador general ya no vive aquí (8b).
-            Estaba en esta columna, y con él los resultados: una lista de
-            mensajes de 300px de ancho, al lado de una pantalla vacía. Ahora
-            está en el centro del inicio, que es donde hay sitio para leer lo
-            que encuentra. Lo que sí se queda aquí es cuántas coincidencias
-            tiene cada chat, junto a su nombre (8c).
-            ⌘K sigue funcionando: cierra el chat abierto y lleva allí. */}
       </div>
 
-      <div style={{ flex: 1, minHeight: 0, overflowY: "auto", display: "flex", flexDirection: "column", gap: 2 }}>
+      {/* Buscar en todos los chats, encima de la lista (como estaba antes de
+          la ronda 8). Con texto, la lista se cambia por los resultados. */}
+      <BuscadorDelPanel
+        consulta={consultaPanel}
+        onConsulta={setConsultaPanel}
+        bloqueado={estadoBoveda === "locked"}
+        style={{ margin: "-6px 0 -6px" }}
+      />
+
+      {buscandoEnPanel && (
+        <div style={{ flex: 1, minHeight: 0, overflowY: "auto", overflowX: "hidden", padding: "0 2px" }}>
+          <ResultadosGlobales consulta={consultaPanel} alAbrirChat={onPress} />
+        </div>
+      )}
+
+      <div style={{ flex: 1, minHeight: 0, overflowY: "auto", display: buscandoEnPanel ? "none" : "flex", flexDirection: "column", gap: 2 }}>
         <p style={{ fontFamily: "var(--font-mono)", fontSize: 11, letterSpacing: "0.14em", textTransform: "uppercase", color: "var(--slate-500)", margin: 0, padding: "0 8px 6px" }}>
           {enTexto(t("Tus chats · {{n}}", { n: state?.length ?? 0 }))}
         </p>
