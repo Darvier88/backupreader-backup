@@ -25,6 +25,7 @@ const enTexto = (traducido: unknown): string =>
 import { StorageContext } from "../../context/StorageContext";
 import { useLoading } from "../../context/LoadingContext";
 import useInView from "../../hooks/useInView";
+import { documentoAdjunto } from "../../lib/nombre-de-adjunto";
 import i18n, { t } from "i18next";
 
 
@@ -108,7 +109,9 @@ export const DashboardScreen: FC = () => {
           const isImage = /\.(jpg|jpeg|png|gif|webp|bmp|tiff|svg)\b/.test(m);
           const isVideo = /\.(mp4|mov|avi|mkv|webm|wmv|flv)\b/.test(m);
           const isAudio = /\.(opus|mp3|m4a|aac|wav|ogg)\b/.test(m);
-          return isImage || isVideo || isAudio;
+          /* Los documentos (PDF, Word, Excel…) también son media: los trae el
+             export y antes no salían en esta pestaña. */
+          return isImage || isVideo || isAudio || !!documentoAdjunto(item[2]);
         }
         return true;
       }),

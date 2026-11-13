@@ -95,6 +95,16 @@ const MIME_BY_EXT: Record<string, string> = {
   txt: "text/plain; charset=utf-8", json: "application/json",
   csv: "text/csv", pdf: "application/pdf",
   vcf: "text/vcard", html: "text/html",
+  rtf: "application/rtf",
+  doc: "application/msword",
+  docx: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+  xls: "application/vnd.ms-excel",
+  xlsx: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+  ppt: "application/vnd.ms-powerpoint",
+  pptx: "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+  odt: "application/vnd.oasis.opendocument.text",
+  ods: "application/vnd.oasis.opendocument.spreadsheet",
+  odp: "application/vnd.oasis.opendocument.presentation",
 };
 
 /** Mime type a partir de la extensión (WhatsApp no guarda metadatos de tipo). */

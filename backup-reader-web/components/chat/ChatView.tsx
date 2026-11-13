@@ -11,6 +11,8 @@ import { partirFechaHora } from "../../lib/fechas-de-chat";
 import { StorageContext } from '../../context/StorageContext';
 
 import useInView from '../../hooks/useInView';
+import { TarjetaDocumento } from "./TarjetaDocumento";
+import { documentoAdjunto, nombreDelAdjunto } from "../../lib/nombre-de-adjunto";
 import { useTranslation } from "react-i18next";
 
 const styles = {
@@ -149,29 +151,7 @@ export const ChatView: FC<ChatViewProps> = ({
     return null;
   };
 
-  function extractFilename(text: string): string | null {
-    if (!text) return null;
-    const clean = text.replace(/[\u200B-\u200D\uFEFF\u200E\u200F]/g, "");
-
-    const mediaExt =
-      "jpg|jpeg|png|gif|webp|bmp|tiff|svg|mp4|avi|mov|mkv|webm|3gp|wmv|flv|mpg|mpeg|mp3|wav|aac|flac|opus|m4a|ogg|pdf";
-
-    // 1) "NOMBRE.ext (archivo adjunto)" / "(file attached)"
-    let m = clean.match(
-      new RegExp(`([^\\s:<>]+\\.(?:${mediaExt}))\\s*\\((?:archivo adjunto|file attached)\\)`, "i")
-    );
-    if (m) return m[1].trim();
-
-    // 2) Formato con corchetes: "<...: NOMBRE>"
-    m = clean.match(/<[^:]+:\s*([^>]+)>/);
-    if (m) return m[1].trim();
-
-    // 3) Nombre de archivo suelto con extensión de media
-    m = clean.match(new RegExp(`([^\\s:<>]+\\.(?:${mediaExt}))\\b`, "i"));
-    if (m) return m[1].trim();
-
-    return null;
-  }
+  const extractFilename = nombreDelAdjunto;
 
 
   /**
@@ -238,7 +218,9 @@ export const ChatView: FC<ChatViewProps> = ({
   
 
 
-  const isMedia = isAudioUri(message) || isImageUri(message) || isVideoUri(message);
+  const documento = documentoAdjunto(message);
+  const archivoDocumento = documento?.archivo ?? null;
+  const isMedia = isAudioUri(message) || isImageUri(message) || isVideoUri(message) || !!archivoDocumento;
   /* Solo la burbuja con la coincidencia actual lleva aro ocre (1c); el resto
      de coincidencias se marcan dentro del texto, sin tocar la burbuja. */
   const enEsta = chatSearch && chatSearch.trim().length >= 2 && !isMedia ? cuantasVeces(message || "", chatSearch) : 0;
@@ -331,6 +313,15 @@ export const ChatView: FC<ChatViewProps> = ({
           <div style={{ ...styles.imageContainer }} ref={videoRef}>
             {renderChatVideo()}
           </div>
+        ) : archivoDocumento ? (
+          <>
+            <TarjetaDocumento archivo={archivoDocumento} ancho={!!gallery} />
+            {documento?.resto && (
+              <p className="br-mensaje" style={{ margin: "4px 0 0", fontFamily: "var(--font-sans)", fontSize: 15, lineHeight: 1.45, color: isMine ? "var(--ink-900)" : "var(--slate-900)" }}>
+                {documento.resto}
+              </p>
+            )}
+          </>
         ) : (
           <>
             <p className="br-mensaje" style={{ margin: 0, fontFamily: "var(--font-sans)", fontSize: 15, lineHeight: 1.45, color: isMine ? "var(--ink-900)" : "var(--slate-900)" }}>
