@@ -62,6 +62,7 @@ const resources = {
       "Generar uno nuevo invalida el anterior. Tus chats deben estar desbloqueados.": "Generating a new one invalidates the previous one. Your chats must be unlocked.",
       "Migas": "Breadcrumbs",
       "Cookies": "Cookies",
+      "Cuenta": "Account",
       "Archivos de esta computadora": "Files on this computer",
       "Este chat pesa demasiado": "This chat is too large",
       "Este .zip pesa {{peso}} y el máximo es {{max}}. Si tiene muchos vídeos, puedes exportarlo de nuevo desde WhatsApp eligiendo «Sin archivos».": "This .zip is {{peso}} and the maximum is {{max}}. If it has a lot of videos, you can export it again from WhatsApp choosing “Without media”.",
