@@ -1,4 +1,5 @@
 import axios, { AxiosResponse } from 'axios';
+import { MAX_ZIP_BYTES, codigoZipGrande } from "../lib/limite-de-subida";
 import utf8 from 'utf8';
 import { createContext, useReducer, useContext, useEffect, useRef, useState } from "react";
 
@@ -126,6 +127,7 @@ type StorageContextProps = {
   migracion: EstadoMigracion | null;
   /** Descarta el error actual. Lo usa el aviso que lo muestra al cerrarse. */
   limpiarError: () => void;
+  avisarDeError: (codigo: string) => void;
   /** Cierra el chat abierto y vuelve al inicio. */
   cerrarChat: () => void;
   chat: Chat[] | null;
@@ -319,6 +321,9 @@ function parsearJsonInstagram(texto: string): string[][] {
      podía descartar un error... entre otras cosas porque tampoco había nada
      que los mostrara. */
   const limpiarError = () => dispatch({ type: "removeError" });
+  /** Para avisos que nacen fuera del contexto (p. ej. al juntar varios
+   *  archivos en un .zip antes de subir). */
+  const avisarDeError = (codigo: string) => dispatch({ type: "uploadingError", payload: codigo });
 
   /**
    * Cierra el chat abierto y vuelve al inicio.
@@ -720,6 +725,13 @@ function parsearJsonInstagram(texto: string): string[][] {
    */
   const saveFile = async (file: File) => {
     if (!user?.uid) return;
+
+    /* Tope del .zip (ver lib/limite-de-subida): aquí, en un solo sitio, para
+       todos los caminos de subida (archivo, Drive, compartir). */
+    if (file.size > MAX_ZIP_BYTES) {
+      dispatch({ type: "uploadingError", payload: codigoZipGrande(file.size) });
+      return;
+    }
 
     if (!dek) {
       dispatch({
@@ -1400,6 +1412,7 @@ const getFiles = async (firestoreId: string) => {
         migrarBackup,
         migracion,
         limpiarError,
+        avisarDeError,
         cerrarChat,
       }}
     >

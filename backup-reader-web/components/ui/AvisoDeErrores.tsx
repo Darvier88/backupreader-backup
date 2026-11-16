@@ -3,6 +3,8 @@ import { useTranslation } from "react-i18next";
 
 import { ModalContext } from "../../context";
 import { StorageContext } from "../../context/StorageContext";
+import { MAX_ZIP_BYTES, bytesDeZipGrande } from "../../lib/limite-de-subida";
+import { tamanoLegible } from "../../lib/tamano-legible";
 import { useVault } from "../../context/VaultContext";
 import { VaultRegisterModal, VaultUnlockModal } from "../vault";
 
@@ -24,7 +26,7 @@ import { VaultRegisterModal, VaultUnlockModal } from "../vault";
  * diálogo está abierto. Así no se pisan.
  */
 export const AvisoDeErrores: React.FC = () => {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const { errorMessage, limpiarError } = useContext(StorageContext);
   const { status } = useVault();
   const { show } = useContext(ModalContext);
@@ -33,6 +35,18 @@ export const AvisoDeErrores: React.FC = () => {
 
   /** Qué contar al usuario, y qué puede hacer para arreglarlo. */
   const explicar = (): { titulo: string; texto: string; accion?: { texto: string; hacer: () => void } } => {
+    /* El .zip pasa del tope (lib/limite-de-subida). El código lleva el peso. */
+    const peso = bytesDeZipGrande(errorMessage);
+    if (peso !== null) {
+      return {
+        titulo: t("Este chat pesa demasiado"),
+        texto: t(
+          "Este .zip pesa {{peso}} y el máximo es {{max}}. Si tiene muchos vídeos, puedes exportarlo de nuevo desde WhatsApp eligiendo «Sin archivos».",
+          { peso: tamanoLegible(peso, i18n.language), max: tamanoLegible(MAX_ZIP_BYTES, i18n.language) }
+        ),
+      };
+    }
+
     switch (errorMessage) {
       case "vault-not-created":
         return {

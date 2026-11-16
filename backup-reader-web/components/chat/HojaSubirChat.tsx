@@ -1,4 +1,4 @@
-import { FC, useEffect } from "react";
+import { FC, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 
 /**
@@ -29,6 +29,13 @@ export const HojaSubirChat: FC<{
   mostrarArchivos?: boolean;
 }> = ({ abierta, onCerrar, onGoogleDrive, onArchivos, mostrarArchivos = true }) => {
   const { t } = useTranslation();
+  /* Por el dispositivo, no por el ancho: una ventana estrecha en un
+     ordenador sigue siendo un ordenador. Tras montar, para que servidor y
+     cliente pinten lo mismo. */
+  const [enTelefono, setEnTelefono] = useState(true);
+  useEffect(() => {
+    setEnTelefono(/Android|iPhone|iPod|Mobile/i.test(navigator.userAgent));
+  }, []);
 
   /* Con la hoja abierta, el fondo no debe desplazarse: en un teléfono se
      siente como si la hoja se hubiera soltado de la pantalla. */
@@ -162,7 +169,8 @@ export const HojaSubirChat: FC<{
           {mostrarArchivos && <div style={{ height: 1, background: "var(--border)" }} />}
           {mostrarArchivos &&
             fila(
-              enTexto(t("Archivos del teléfono")),
+              /* En un ordenador no hay «teléfono»: se nombra lo que es. */
+              enTexto(t(enTelefono ? "Archivos del teléfono" : "Archivos de esta computadora")),
               enTexto(t("Si lo descargaste a este dispositivo")),
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2z" />

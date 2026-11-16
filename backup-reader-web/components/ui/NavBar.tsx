@@ -73,14 +73,9 @@ export const NavBar: FC<NavBarProps> = ({ drawerButtonOnPress }) => {
 
   const onHandleSaveFile = (file: any | null) => {
 
-    const maxSize = 200 * 1024 * 1024;
-
     if (!file) return;
-    if(file.size > maxSize){
-      alert('Puedes subir hasta conversaciones de 200 Megabytes')
-    }else{
-      saveFile(file);
-    }
+    /* El tope del .zip lo comprueba saveFile (lib/limite-de-subida). */
+    saveFile(file);
   };
 
 

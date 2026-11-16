@@ -1,5 +1,6 @@
 import { FC, useContext, useRef, useEffect, useState } from "react";
 
+import { MAX_ZIP_BYTES, codigoZipGrande } from "../../lib/limite-de-subida";
 import Image from "next/image";
 import { useRouter } from "next/router";
 import { useTranslation } from "react-i18next";
@@ -78,7 +79,7 @@ type ManageFileCardProps = {
 export const ManageFileCard: FC<ManageFileCardProps> = ({ isFirstFile, chat }) => {
   const router = useRouter();
   const { t } = useTranslation();
-  const { saveFile, fileList, getFile: abrirChat } = useContext(StorageContext);
+  const { saveFile, avisarDeError, fileList, getFile: abrirChat } = useContext(StorageContext);
   const {
     abrir: abrirPanel,
     consulta,
@@ -288,7 +289,6 @@ export const ManageFileCard: FC<ManageFileCardProps> = ({ isFirstFile, chat }) =
  
 
   const onHandleSaveFile = async (files: FileList | null) => {
-    const maxSize = 200 * 1024 * 1024;
     const zip = new JSZip();
 
     //alert('file length '+files?.length)
@@ -298,12 +298,8 @@ export const ManageFileCard: FC<ManageFileCardProps> = ({ isFirstFile, chat }) =
     let chatName = 'Nombre del Chat';
   
     if (files.length === 1 && (files[0].type === 'application/zip' || files[0].name.endsWith('.zip'))) {
-      const file = files[0];
-      if (file.size > maxSize) {
-        alert('File size exceeds 200 Megabytes');
-        return;
-      }
-      saveFile(file);
+      /* El tope del .zip lo comprueba saveFile (lib/limite-de-subida). */
+      saveFile(files[0]);
     } else {
       
       let userInput = window.prompt("Please enter a name for the chat:", chatName) || chatName;
@@ -314,8 +310,10 @@ export const ManageFileCard: FC<ManageFileCardProps> = ({ isFirstFile, chat }) =
         const file = files[i];
         totalSize += file.size;
 
-        if (totalSize > maxSize) {
-          alert('Total file size exceeds 200 Megabytes');
+        /* Aquí se comprueba antes de juntarlos: el .zip se arma en
+           memoria y no tiene sentido llenarla para luego rechazarlo. */
+        if (totalSize > MAX_ZIP_BYTES) {
+          avisarDeError(codigoZipGrande(totalSize));
           return;
         }
         const fileContent = await file.arrayBuffer();
