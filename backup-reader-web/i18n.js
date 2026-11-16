@@ -53,7 +53,6 @@ const resources = {
       "Tus chats ocupan": "Your chats take up",
       "1 chat": "1 chat",
       "{{n}} chats": "{{n}} chats",
-      "De {{n}} GB incluidos en tu plan.": "Of {{n}} GB included in your plan.",
       "Cambiar clave de cifrado": "Change encryption password",
       "Clave actual": "Current password",
       "Clave nueva": "New password",

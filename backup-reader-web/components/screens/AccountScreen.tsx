@@ -64,13 +64,6 @@ export const AccountScreen: FC = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  /* La cuota total del plan, si el plan la trae. `details.storage` NO sirve
-     para esto: es el máximo por conversación, en MB. Sin cuota total no hay
-     barra que dibujar y se dice lo que sí se sabe. */
-  const plan = subscription?.find((p: any) => p.id === user?.plan);
-  const cuotaGB = Number((plan?.details as any)?.storageTotalGB) || 0;
-  const porcentaje = espacio && cuotaGB ? Math.min(100, (espacio.bytes / (cuotaGB * 1024 ** 3)) * 100) : 0;
-
   const contenido = (
     <div style={{ width: "100%", maxWidth: 640, margin: "0 auto", display: "flex", flexDirection: "column" }}>
       {!phone && (
@@ -83,7 +76,9 @@ export const AccountScreen: FC = () => {
       )}
 
       {/* Cuánto ocupan los chats guardados. Mientras carga no se enseña
-          nada: mejor un hueco un instante que un «0 B» que no es verdad. */}
+          nada: mejor un hueco un instante que un «0 B» que no es verdad.
+          Sin barra ni cuota: los planes no traen un total de GB y no hay
+          un límite real por plan que enseñar. */}
       <SeccionCuenta etiqueta={t("Almacenamiento")}>
         <div style={{ minHeight: 22, display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 12 }}>
           {espacio && (
@@ -97,21 +92,6 @@ export const AccountScreen: FC = () => {
             </>
           )}
         </div>
-        {cuotaGB > 0 && (
-          <>
-            <div style={{ height: 6, borderRadius: 3, background: "var(--paper-200)", overflow: "hidden" }}>
-              <div style={{ width: `${porcentaje}%`, minWidth: 4, height: "100%", background: "var(--ink-900)" }} />
-            </div>
-            <span style={{ fontFamily: "var(--font-sans)", fontSize: 13, color: "var(--slate-500)" }}>
-              {enTexto(t("De {{n}} GB incluidos en tu plan.", { n: cuotaGB }))}
-            </span>
-          </>
-        )}
-        {!cuotaGB && plan?.details?.storage ? (
-          <span style={{ fontFamily: "var(--font-sans)", fontSize: 13, color: "var(--slate-500)" }}>
-            {enTexto(t("Hasta {{n}} MB por conversación", { n: plan.details.storage }))}.
-          </span>
-        ) : null}
       </SeccionCuenta>
 
       <SubscriptionSection />
