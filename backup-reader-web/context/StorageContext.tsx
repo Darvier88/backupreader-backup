@@ -1,5 +1,6 @@
 import axios, { AxiosResponse } from 'axios';
 import { MAX_ZIP_BYTES, codigoZipGrande } from "../lib/limite-de-subida";
+import { hastaQueSePuedaSeguir } from "../lib/esperar-pestana";
 import utf8 from 'utf8';
 import { createContext, useReducer, useContext, useEffect, useRef, useState } from "react";
 
@@ -349,7 +350,7 @@ function parsearJsonInstagram(texto: string): string[][] {
    * Lo usan la subida normal y la migración: las dos escriben las mismas rutas
    * opacas con el mismo content-type, que es lo único que aceptan las reglas.
    */
-  const subir = (ruta: string, blob: Blob) =>
+  const subirUnaVez = (ruta: string, blob: Blob) =>
     new Promise<void>((resolve, reject) => {
       const tarea = uploadBytesResumable(ref(storage, ruta), blob, {
         contentType: BLOB_CONTENT_TYPE,
@@ -357,6 +358,32 @@ function parsearJsonInstagram(texto: string): string[][] {
       });
       tarea.on("state_changed", undefined, reject, () => resolve());
     });
+
+  /**
+   * Sube una pieza y, si falla, la reintenta cuando se pueda.
+   *
+   * En el móvil, cambiar de app o apagar la pantalla congela la pestaña; al
+   * volver, la petición que estaba en vuelo suele haber muerto. Sin esto, un
+   * chat de 3 GB se perdía entero por una sola pieza. Aquí se espera a que la
+   * pestaña vuelva a estar visible y haya conexión, y se reintenta la misma
+   * pieza (la ruta es la misma: se sobrescribe, no se duplica). Si la pestaña
+   * se cierra, no hay nada que hacer, y así se le dice al usuario.
+   */
+  const subir = async (ruta: string, blob: Blob) => {
+    const INTENTOS = 4;
+    for (let intento = 1; ; intento++) {
+      try {
+        await subirUnaVez(ruta, blob);
+        return;
+      } catch (error: any) {
+        /* Sin permiso o sin sitio no se arregla reintentando. */
+        const codigo = String(error?.code ?? "");
+        if (intento >= INTENTOS || /unauthorized|unauthenticated|quota-exceeded|canceled/.test(codigo)) throw error;
+        await hastaQueSePuedaSeguir();
+        await new Promise((r) => setTimeout(r, 1500 * intento));
+      }
+    }
+  };
 
   /**
    * Manifiestos ya descifrados en esta sesión, por backupId.

@@ -6,11 +6,14 @@
  * entrada a entrada (zip.js lee el archivo por trozos, no lo carga entero) y
  * cada archivo de dentro se cifra por bloques; el único tope real es
  * MAX_ENCRYPT_BYTES (1 GiB por archivo de dentro), que también aplican las
- * reglas de Storage. 2 GB deja entrar casi cualquier export de WhatsApp sin
- * dejar que un archivo enorme se quede a medias en un móvil con poca memoria.
+ * reglas de Storage.
  */
-/* En bytes decimales, para que el aviso diga «2 GB» y no «2,1 GB». */
-export const MAX_ZIP_BYTES = 2_000_000_000;
+/* En bytes decimales, para que el aviso diga «3 GB» y no «3,2 GB».
+   Subir de 2 a 3 GB no cambia la memoria: el pico lo marca el archivo más
+   grande de dentro (tope de 1 GiB), no el .zip entero. Lo que crece es el
+   tiempo de subida; para eso están el wake lock y los reintentos al volver
+   a la pestaña (StorageContext `subir`, LoadingComponent). */
+export const MAX_ZIP_BYTES = 3_000_000_000;
 
 const PREFIJO = "zip-too-big:";
 

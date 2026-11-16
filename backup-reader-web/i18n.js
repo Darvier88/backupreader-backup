@@ -62,6 +62,7 @@ const resources = {
       "Generar uno nuevo invalida el anterior. Tus chats deben estar desbloqueados.": "Generating a new one invalidates the previous one. Your chats must be unlocked.",
       "Migas": "Breadcrumbs",
       "Cookies": "Cookies",
+      "Si cambias de app un momento, vuelve aquí para que siga.": "If you switch apps for a moment, come back here so it can continue.",
       "Cuenta": "Account",
       "Archivos de esta computadora": "Files on this computer",
       "Este chat pesa demasiado": "This chat is too large",

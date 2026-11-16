@@ -1,5 +1,6 @@
 import { FC, useEffect, useContext, useState } from "react";
 
+import { mantenerPantallaEncendida } from "../../lib/esperar-pestana";
 import { useRouter } from "next/router";
 import { onAuthStateChanged } from "firebase/auth";
 import { Container, Loading } from "@nextui-org/react";
@@ -94,7 +95,14 @@ export const LoadingComponent: FC<LoadingComponentProps> = ({ children }) => {
       return "";
     };
     window.addEventListener("beforeunload", avisar);
-    return () => window.removeEventListener("beforeunload", avisar);
+    /* Y la pantalla encendida mientras sube: en el móvil, que se apague la
+       pantalla congela la pestaña. Si aun así se cambia de app, al volver
+       la subida sigue (reintentos de `subir` en StorageContext). */
+    const soltar = mantenerPantallaEncendida();
+    return () => {
+      window.removeEventListener("beforeunload", avisar);
+      soltar();
+    };
   }, [uploadStatus]);
 
 
@@ -368,6 +376,8 @@ const SubidaEnCurso: FC<{ progreso: number }> = ({ progreso }) => {
 
         <Typography fontSize={14.5} style={{ color: "var(--slate-700, #5A5A5A)", lineHeight: 1.55 }}>
           {t("Se está cifrando en tu navegador antes de subirse. No cierres esta pestaña.")}
+          <br />
+          {t("Si cambias de app un momento, vuelve aquí para que siga.")}
         </Typography>
       </div>
     </div>
