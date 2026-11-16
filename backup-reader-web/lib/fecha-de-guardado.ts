@@ -47,3 +47,20 @@ export function etiquetaDeGuardado(
     })
     .replace(".", "");
 }
+
+/**
+ * «Subido 15 nov 2026 · 19:42» debajo del nombre del chat, en lugar del
+ * nombre del .zip. El mismo chat se puede subir varias veces y todas las
+ * versiones se llaman igual («WhatsApp Chat - Nora.zip»), así que el archivo
+ * no ayuda a distinguirlas; la fecha y la hora de subida, sí. Por eso aquí va
+ * siempre el año y la hora, a diferencia de Recientes.
+ */
+export function fechaDeSubida(ts: number, idioma: string): string {
+  const d = new Date(ts);
+  const en = idioma.startsWith("en");
+  const fecha = d
+    .toLocaleDateString(en ? "en-US" : "es-ES", { day: "numeric", month: "short", year: "numeric" })
+    .replace(".", "");
+  const hora = d.toLocaleTimeString(en ? "en-US" : "es-ES", { hour: "2-digit", minute: "2-digit", hour12: false });
+  return `${fecha} · ${hora}`;
+}

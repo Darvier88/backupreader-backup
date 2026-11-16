@@ -10,6 +10,7 @@ import { BotonCifrar } from "../vault/BotonCifrar";
 import { BotonBorrarChat } from "../chat/BotonBorrarChat";
 import { Logo } from "../ui/BrandChrome";
 import { nombreDelContacto, iniciales } from "../../lib/nombres-de-chat";
+import { fechaDeSubida } from "../../lib/fecha-de-guardado";
 import { Box, Container, Drawer, Typography } from "@mui/material";
 import { storage } from "../../config/firebase";
 import { BuscadorDelPanel } from "../chat/BuscadorDelPanel";
@@ -103,10 +104,10 @@ export const ConversationsDrawerMobile: FC<ConversationsDrawerMobileProps> = ({
   setOpenState,
   
 }) => {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const router = useRouter();
   const { logOut } = useContext(AuthContext);
-  const { fileList, chatName } = useContext(StorageContext);
+  const { fileList, chatName, fullPath: rutaAbierta } = useContext(StorageContext);
   /* Lo que se escribe en «Buscar en todos los chats» del panel. */
   const [consultaPanel, setConsultaPanel] = useState("");
   const buscandoEnPanel = consultaPanel.trim().length > 0;
@@ -344,7 +345,8 @@ export const ConversationsDrawerMobile: FC<ConversationsDrawerMobileProps> = ({
           }
 
           const nombre = nombreDelContacto(item.name);
-          const activo = chatName === item.name;
+          /* Por ruta: dos versiones del mismo chat se llaman igual. */
+          const activo = rutaAbierta ? rutaAbierta === item.fullPath : chatName === item.name;
 
           return  (
             <div
@@ -388,9 +390,14 @@ export const ConversationsDrawerMobile: FC<ConversationsDrawerMobileProps> = ({
                     overflow: "hidden",
                     textOverflow: "ellipsis",
                     whiteSpace: "nowrap",
+                    textTransform: item.creadoEn ? "uppercase" : undefined,
                   }}
                 >
-                  {item.name}
+                  {/* Fecha y hora de subida en vez del .zip: distingue las
+                      versiones del mismo chat. Los antiguos sin fecha, el archivo. */}
+                  {item.creadoEn
+                    ? ((t("Subido {{fecha}}", { fecha: fechaDeSubida(item.creadoEn, i18n.language || "es") }) as unknown as string) ?? "")
+                    : item.name}
                 </span>
               </span>
 

@@ -19,6 +19,7 @@ import { claveDeDia, etiquetaDeDia } from "../../lib/fechas-de-chat";
 import { nombreDelContacto } from "../../lib/nombres-de-chat";
 import { usePanelChats } from "../../context/PanelChatsContext";
 import { pedirBusqueda } from "../../lib/pedir-busqueda";
+import { fechaDeSubida } from "../../lib/fecha-de-guardado";
 
 /** `t()` puede devolver null segun sus tipos; esto lo deja en string. */
 const enTexto = (traducido: unknown): string =>
@@ -82,7 +83,7 @@ const styles = {
 
 export const DashboardScreen: FC = () => {
   const [chatSearch, setChatSearch] = useState<string>("");
-  const { getFile, chat, chatName, uploadStatus, cerrarChat } = useContext(StorageContext);
+  const { getFile, chat, chatName, uploadStatus, cerrarChat, fullPath: rutaAbierta } = useContext(StorageContext);
   const { loading } = useLoading();
   const [toShow, setToShow] = useState<"photos" | "message">("message");
   const [state, setState] = useState<boolean>(true);
@@ -410,6 +411,7 @@ export const DashboardScreen: FC = () => {
               {!ocultarCabecera && (() => {
                 const archivo = chatName !== null ? splitChatName(extractUsername(chatName)).name : "";
                 const nombre = nombreDelContacto(archivo || "") || archivo;
+                const subidoEn = (fileList || []).find((f: any) => f.fullPath === rutaAbierta)?.creadoEn;
                 const inicial = (nombre || "?").replace(/[^\p{L}\p{N}]/gu, "").slice(0, 2).toUpperCase() || "?";
                 return (
                   <div style={{ display: "flex", alignItems: "center", gap: 12, minWidth: 0 }}>
@@ -431,8 +433,12 @@ export const DashboardScreen: FC = () => {
                       <div style={{ fontFamily: "var(--font-serif)", fontWeight: 500, fontSize: 21, letterSpacing: "-0.01em", color: "var(--ink-900)", lineHeight: 1.1 }}>
                         {nombre}
                       </div>
-                      <div style={{ fontFamily: "var(--font-mono)", fontSize: 11, color: "var(--slate-500)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
-                        {archivo}
+                      <div style={{ fontFamily: "var(--font-mono)", fontSize: 11, color: "var(--slate-500)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", textTransform: subidoEn ? "uppercase" : undefined }}>
+                        {/* Fecha y hora de subida en vez del .zip (las
+                            versiones del mismo chat se llaman igual). */}
+                        {subidoEn
+                          ? t("Subido {{fecha}}", { fecha: fechaDeSubida(subidoEn, i18n.language || "es") })
+                          : archivo}
                       </div>
                     </div>
                   </div>

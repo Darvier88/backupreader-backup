@@ -27,6 +27,7 @@ import { Logo, LangToggle } from "../ui/BrandChrome";
 import { storage } from "../../config/firebase";
 
 import { pedirBusqueda } from "../../lib/pedir-busqueda";
+import { fechaDeSubida } from "../../lib/fecha-de-guardado";
 import { VaultContext } from "../../context/VaultContext";
 import {
   ref,
@@ -110,7 +111,8 @@ export const ConversationsDrawer: FC<ConversationsDrawerProps> = ({
   /* Hay una búsqueda con resultados en curso: el panel filtra en vez de abrir. */
   const buscando = Object.keys(porChat).length > 0;
   const { show } = useContext(ModalContext);
-  const { fileList, fetchBucketSize, cerrarChat } = useContext(StorageContext);
+  const { fileList, fetchBucketSize, cerrarChat, fullPath: rutaAbierta } = useContext(StorageContext);
+  const abierto = selected ? rutaAbierta : null;
   const espacio = useEspacioOcupado();
   const [state, setState] = useState<FileList[] | null>();
   const [bucketSize, setBucketSize] = useState<number>(0);
@@ -393,8 +395,10 @@ export const ConversationsDrawer: FC<ConversationsDrawerProps> = ({
 
           // For non-Instagram items (e.g., WhatsApp), keep the original rendering logic
           /* También se marca el chat al que se están limitando los resultados. */
+          /* Por ruta y no por nombre: dos versiones del mismo chat se llaman
+             igual y se marcarían las dos. */
           const isSelected =
-            selected === item.name ||
+            (abierto ? abierto === item.fullPath : selected === item.name) ||
             (buscando && !!chatFiltro && chatFiltro === (backupIdDeHandle(item.fullPath) ?? ""));
           const parts = splitNameDate(item.name);
           const coincidencias = porChat[backupIdDeHandle(item.fullPath) ?? ""];
@@ -499,9 +503,13 @@ export const ConversationsDrawer: FC<ConversationsDrawerProps> = ({
                       : enTexto(t("{{total}} coincidencias", { total: coincidencias }))}
                   </span>
                 ) : (
-                  /* El archivo en mono debajo del nombre (8b). */
-                  <span style={{ fontFamily: "var(--font-mono)", fontSize: 10.5, color: "var(--slate-500)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                    {item.name}
+                  /* Fecha y hora de subida en mono debajo del nombre, no el
+                     .zip: las versiones del mismo chat se llaman igual. Los
+                     chats antiguos sin fecha siguen enseñando el archivo. */
+                  <span style={{ fontFamily: "var(--font-mono)", fontSize: 10.5, color: "var(--slate-500)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", textTransform: item.creadoEn ? "uppercase" : undefined }}>
+                    {item.creadoEn
+                      ? enTexto(t("Subido {{fecha}}", { fecha: fechaDeSubida(item.creadoEn, i18n.language || "es") }))
+                      : item.name}
                   </span>
                 )}
               </div>

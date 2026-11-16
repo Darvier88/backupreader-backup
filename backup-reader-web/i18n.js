@@ -63,6 +63,7 @@ const resources = {
       "Generar uno nuevo invalida el anterior. Tus chats deben estar desbloqueados.": "Generating a new one invalidates the previous one. Your chats must be unlocked.",
       "Migas": "Breadcrumbs",
       "Cookies": "Cookies",
+      "Subido {{fecha}}": "Uploaded {{fecha}}",
       "Resultados": "Results",
       "Sin coincidencias para «{{q}}».": "No matches for “{{q}}”.",
       "Ver sugerencias": "See suggestions",
