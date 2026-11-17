@@ -143,7 +143,7 @@ export const SubscriptionSection: React.FC = () => {
     <button type="button" className="br-btn br-btn-ghost br-btn-sm" onClick={() => llamar("reactivar")} disabled={ocupado}>
       {ocupado ? <Loading type="points" color="currentColor" size="sm" /> : t("Reactivar suscripción")}
     </button>
-  ) : confirmando || user.planManual ? null : (
+  ) : confirmando ? null : (
     <button type="button" className="br-enlace-arcilla" onClick={() => setConfirmando(true)}>
       {t("Cancelar suscripción")}
     </button>
@@ -157,11 +157,7 @@ export const SubscriptionSection: React.FC = () => {
             {plan?.details?.name ? `${t("Plan")} ${plan.details.name}` : t("Tienes un plan activo.")}
           </span>
           <span style={detalle}>
-            {/* Plan regalado a mano (herramientas/dar-plan): no hay cobro
-                que cancelar en Stripe. */}
-            {user.planManual && !vencido
-              ? t("Sin cobro: este plan no se renueva ni se cobra.")
-              : cancelado && user.planCancelAt
+            {cancelado && user.planCancelAt
               ? `${t("Cancelada. Mantienes el acceso hasta el")} ${fecha(user.planCancelAt)}.`
               : vencido && user.planCancelAt
               ? `${t("Tu suscripción terminó el")} ${fecha(user.planCancelAt)}.`

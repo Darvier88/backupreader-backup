@@ -10,9 +10,6 @@ export type User = {
    * = suscripción corriente.
    */
   planCancelAt?: number | null;
-  /** Plan regalado a mano (herramientas/dar-plan): la sincronización con
-   *  Stripe no se lo quita salvo que haya una suscripción con acceso. */
-  planManual?: boolean | null;
   firestoreId?: string;
   storageSize?: number | null;
 };
