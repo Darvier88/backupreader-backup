@@ -34,6 +34,7 @@
  *   node herramientas/sincronizar-planes.mjs          Informe, no toca nada
  *   node herramientas/sincronizar-planes.mjs --si     Escribe los cambios
  *   ... --csv                                         Vuelca las listas en CSV
+ *   ... --email a@x.com --email b@y.com               Solo esas cuentas (se repite)
  */
 
 import { initializeApp, applicationDefault, getApps } from "firebase-admin/app";
@@ -52,6 +53,10 @@ if (!CLAVE) {
 }
 
 const aplicar = process.argv.includes("--si");
+/* --email se puede repetir: solo esas cuentas. Sin él, todas. */
+const correos = process.argv
+  .map((a, i, xs) => (a === "--email" ? (xs[i + 1] || "").trim().toLowerCase() : null))
+  .filter(Boolean);
 const csv = process.argv.includes("--csv");
 const modo = CLAVE.startsWith("sk_live") ? "PRODUCCIÓN (live)" : "prueba (test)";
 
@@ -93,6 +98,16 @@ async function principal() {
     if (c) porCorreo.set(c, [...(porCorreo.get(c) ?? []), doc.id]);
   }
 
+  /* Solo las cuentas pedidas con --email. */
+  if (correos.length) {
+    for (const [uid, u] of [...usuarios]) {
+      if (!correos.includes(normalizar(u.email))) usuarios.delete(uid);
+    }
+    const faltan = correos.filter((c) => ![...usuarios.values()].some((u) => normalizar(u.email) === c));
+    if (faltan.length) console.log(`Sin cuenta en Firestore: ${faltan.join(", ")}\n`);
+    console.log(`Solo: ${[...usuarios.values()].map((u) => u.email).join(", ") || "(ninguna)"}\n`);
+  }
+
   /* Clientes de Stripe, agrupados por usuario. */
   const clientesDe = new Map(); // uid -> [customerId]
   const ambiguos = [];
@@ -102,13 +117,13 @@ async function principal() {
     if (!uid) {
       const lista = porCorreo.get(normalizar(c.email)) ?? [];
       if (lista.length === 1) uid = lista[0];
-      else if (lista.length > 1) {
+      else if (lista.length > 1 && !correos.length) {
         ambiguos.push({ cliente: c.id, email: c.email, uids: lista.join(" ") });
         continue;
       }
     }
     if (!uid || !usuarios.has(uid)) {
-      huerfanos.push({ cliente: c.id, email: c.email ?? "" });
+      if (!correos.length) huerfanos.push({ cliente: c.id, email: c.email ?? "" });
       continue;
     }
     clientesDe.set(uid, [...(clientesDe.get(uid) ?? []), c.id]);

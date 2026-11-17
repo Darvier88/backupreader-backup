@@ -51,7 +51,10 @@ const arg = (n) => {
   const i = process.argv.indexOf(n);
   return i >= 0 ? process.argv[i + 1] : undefined;
 };
-const correoPedido = (arg("--email") || "").trim().toLowerCase();
+/* --email se puede repetir. */
+const correosPedidos = process.argv
+  .map((a, i, xs) => (a === "--email" ? (xs[i + 1] || "").trim().toLowerCase() : null))
+  .filter(Boolean);
 const anio = Number(arg("--creados")) || 0;
 const csv = process.argv.includes("--csv");
 
@@ -124,8 +127,8 @@ async function principal() {
   const sinAcceso = (u) => !u.plan || (u.planCancelAt && u.planCancelAt <= ahora);
 
   let elegidos;
-  if (correoPedido) {
-    elegidos = usuarios.filter((u) => normalizar(u.email) === correoPedido);
+  if (correosPedidos.length) {
+    elegidos = usuarios.filter((u) => correosPedidos.includes(normalizar(u.email)));
   } else {
     elegidos = usuarios.filter(sinAcceso);
     if (anio) {
