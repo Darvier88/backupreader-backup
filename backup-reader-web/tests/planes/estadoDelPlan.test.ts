@@ -4,7 +4,9 @@ import { describe, expect, it, vi } from "vitest";
 vi.mock("../../lib/admin-servidor", () => ({ appDeAdmin: () => null, dbAdmin: () => null }));
 vi.mock("../../lib/stripe-servidor", () => ({ todasLasSuscripciones: async () => ({ clientes: 0, suscripciones: [] }) }));
 
-import { estadoDelPlan } from "../../lib/sincronizar-plan";
+import { estadoDelPlan as deLaWeb } from "../../lib/sincronizar-plan";
+// @ts-ignore: JavaScript sin tipos, el de herramientas/
+import { estadoDelPlan as delScript } from "../../herramientas/estado-del-plan.mjs";
 
 const AHORA = Date.UTC(2026, 10, 17) ;
 const s = (o: Record<string, unknown>) =>
@@ -19,7 +21,12 @@ const s = (o: Record<string, unknown>) =>
     ...o,
   }) as any;
 
-describe("estadoDelPlan", () => {
+/* Los mismos casos contra la versión de la web y la del script de
+   migración: tienen que decidir lo mismo. */
+describe.each([
+  ["web", deLaWeb],
+  ["script", delScript as typeof deLaWeb],
+])("estadoDelPlan (%s)", (_n, estadoDelPlan) => {
   it("sin suscripciones no cambia nada", () => {
     expect(estadoDelPlan([], AHORA)).toEqual({ tipo: "sin-cambios" });
   });
