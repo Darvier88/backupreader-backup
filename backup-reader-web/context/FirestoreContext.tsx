@@ -165,11 +165,25 @@ export const FirestoreProvider = ({ children }: any) => {
     }
   };
 
+  /**
+   * Guarda el plan recién pagado.
+   *
+   * También borra `planCancelAt`: si el usuario ya tuvo un plan cancelado (o
+   * vencido) y vuelve a contratar, esa fecha vieja seguía ahí y, como ya había
+   * pasado, Mi cuenta decía «Tu suscripción terminó el…» y `tieneAcceso` le
+   * negaba la entrada aunque acababa de pagar. Una suscripción nueva no tiene
+   * fecha de fin.
+   *
+   * Se relee el usuario al terminar para que la pantalla lo refleje sin
+   * recargar.
+   */
   const updateUser = async (uid: string, planId: string, name: string) => {
     const ref = doc(FirebaseDB, "users", uid);
     await updateDoc(ref, {
       "user.plan": planId,
+      "user.planCancelAt": null,
     });
+    await getUser(uid);
   };
 
 
