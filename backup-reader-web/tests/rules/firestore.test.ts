@@ -216,6 +216,7 @@ describe("users/{uid}: el plan solo lo escribe el servidor", () => {
     await sembrar({ uid: ANA, plan: "personal", planCancelAt: 1000 });
     await assertFails(updateDoc(doc(comoAna(), "users", ANA), { "user.planCancelAt": null }));
     await assertFails(updateDoc(doc(comoAna(), "users", ANA), { "user.plan": "pro" }));
+    await assertFails(updateDoc(doc(comoAna(), "users", ANA), { "user.planManual": true }));
   });
 
   it("SÍ se pueden cambiar los demás campos sin tocar el plan", async () => {

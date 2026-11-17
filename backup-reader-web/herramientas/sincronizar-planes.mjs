@@ -37,7 +37,7 @@
  */
 
 import { initializeApp, applicationDefault, getApps } from "firebase-admin/app";
-import { getFirestore } from "firebase-admin/firestore";
+import { getFirestore, FieldValue } from "firebase-admin/firestore";
 import Stripe from "stripe";
 import { estadoDelPlan } from "./estado-del-plan.mjs";
 
@@ -88,7 +88,7 @@ async function principal() {
   const porCorreo = new Map(); // correo -> [uid]
   for (const doc of (await db.collection("users").get()).docs) {
     const u = doc.data()?.user ?? {};
-    usuarios.set(doc.id, { email: u.email ?? "", plan: u.plan ?? null, planCancelAt: u.planCancelAt ?? null });
+    usuarios.set(doc.id, { email: u.email ?? "", plan: u.plan ?? null, planCancelAt: u.planCancelAt ?? null, planManual: Boolean(u.planManual) });
     const c = normalizar(u.email);
     if (c) porCorreo.set(c, [...(porCorreo.get(c) ?? []), doc.id]);
   }
@@ -117,6 +117,7 @@ async function principal() {
   const cambios = [];
   let iguales = 0;
   let soloPendientes = 0;
+  let regalados = 0;
   for (const [uid, clientes] of clientesDe) {
     const subs = [];
     for (const id of clientes) {
@@ -128,7 +129,14 @@ async function principal() {
       continue;
     }
     const u = usuarios.get(uid);
-    if (u.plan === e.plan && (u.planCancelAt ?? null) === e.planCancelAt) {
+    /* Plan regalado (herramientas/dar-plan): solo lo sustituye una
+       suscripción con acceso, igual que en la web. */
+    const conAcceso = e.planCancelAt === null || e.planCancelAt > Date.now();
+    if (u.planManual && !conAcceso) {
+      regalados++;
+      continue;
+    }
+    if (u.plan === e.plan && (u.planCancelAt ?? null) === e.planCancelAt && !u.planManual) {
       iguales++;
       continue;
     }
@@ -137,11 +145,11 @@ async function principal() {
 
   /* Con plan en Firestore pero sin cliente en Stripe. */
   const sinStripe = [...usuarios]
-    .filter(([uid, u]) => u.plan && !clientesDe.has(uid))
+    .filter(([uid, u]) => u.plan && !u.planManual && !clientesDe.has(uid))
     .map(([uid, u]) => ({ uid, email: u.email, plan: u.plan, planCancelAt: u.planCancelAt }));
 
   console.log(`Usuarios: ${usuarios.size}  ·  con cliente en Stripe: ${clientesDe.size}`);
-  console.log(`Ya al día: ${iguales}  ·  solo pagos sin confirmar (no se tocan): ${soloPendientes}\n`);
+  console.log(`Ya al día: ${iguales}  ·  solo pagos sin confirmar (no se tocan): ${soloPendientes}  ·  planes regalados que se respetan: ${regalados}\n`);
 
   console.log(`CAMBIAN (${cambios.length}):`);
   for (const c of cambios) {
@@ -182,6 +190,7 @@ async function principal() {
     await db.collection("users").doc(c.uid).update({
       "user.plan": c.despues.plan,
       "user.planCancelAt": c.despues.planCancelAt,
+      "user.planManual": FieldValue.delete(),
     });
   }
   console.log(`\nEscritos ${cambios.length} usuarios.`);

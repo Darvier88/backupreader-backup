@@ -36,12 +36,14 @@ service cloud.firestore {
 
     function sinPlan(d) {
       return datosDeUsuario(d).get('plan', null) == null
-          && datosDeUsuario(d).get('planCancelAt', null) == null;
+          && datosDeUsuario(d).get('planCancelAt', null) == null
+          && datosDeUsuario(d).get('planManual', null) == null;
     }
 
     function mismoPlan(nuevo, viejo) {
       return datosDeUsuario(nuevo).get('plan', null) == datosDeUsuario(viejo).get('plan', null)
-          && datosDeUsuario(nuevo).get('planCancelAt', null) == datosDeUsuario(viejo).get('planCancelAt', null);
+          && datosDeUsuario(nuevo).get('planCancelAt', null) == datosDeUsuario(viejo).get('planCancelAt', null)
+          && datosDeUsuario(nuevo).get('planManual', null) == datosDeUsuario(viejo).get('planManual', null);
     }
 
     // ------------------------------------------------------------------
@@ -55,7 +57,7 @@ service cloud.firestore {
     // dos `query(collection("users"), where("user.uid","==",uid))` de
     // FirestoreContext por getDoc directo. Ver README-ETAPA-3.md.
     //
-    // El plan (`user.plan`, `user.planCancelAt`) NO lo escribe el navegador:
+    // El plan (`user.plan`, `user.planCancelAt`, `user.planManual`) NO lo escribe el navegador:
     // lo escribe el servidor leyendo Stripe (webhook y subscriptions/sync,
     // con el Admin SDK, que se salta estas reglas). Antes cualquiera podía
     // darse un plan desde la consola del navegador.

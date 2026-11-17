@@ -1,5 +1,7 @@
 import type Stripe from "stripe";
 
+import { FieldValue } from "firebase-admin/firestore";
+
 import { appDeAdmin, dbAdmin } from "./admin-servidor";
 import { todasLasSuscripciones } from "./stripe-servidor";
 
@@ -107,9 +109,24 @@ export async function sincronizarPlan(uid: string, correo: string): Promise<Resu
     return { ok: true, escrito: false, plan: actual.plan ?? null, planCancelAt: actual.planCancelAt ?? null };
   }
 
-  const igual = actual.plan === estado.plan && (actual.planCancelAt ?? null) === estado.planCancelAt;
+  /* Plan regalado a mano (herramientas/dar-plan, `user.planManual`): Stripe
+     no se lo quita. Solo manda Stripe si hay una suscripción que da acceso
+     de verdad; entonces deja de ser regalado. */
+  const conAcceso = estado.planCancelAt === null || estado.planCancelAt > Date.now();
+  if (actual.planManual && !conAcceso) {
+    return { ok: true, escrito: false, plan: actual.plan ?? null, planCancelAt: actual.planCancelAt ?? null };
+  }
+
+  const igual =
+    actual.plan === estado.plan &&
+    (actual.planCancelAt ?? null) === estado.planCancelAt &&
+    !actual.planManual;
   if (!igual) {
-    await ref.update({ "user.plan": estado.plan, "user.planCancelAt": estado.planCancelAt });
+    await ref.update({
+      "user.plan": estado.plan,
+      "user.planCancelAt": estado.planCancelAt,
+      "user.planManual": FieldValue.delete(),
+    });
   }
   return { ok: true, escrito: !igual, plan: estado.plan, planCancelAt: estado.planCancelAt };
 }
