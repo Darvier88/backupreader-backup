@@ -30,6 +30,20 @@ service cloud.firestore {
       return request.auth != null && request.auth.uid == uid;
     }
 
+    function datosDeUsuario(d) {
+      return d.get('user', {});
+    }
+
+    function sinPlan(d) {
+      return datosDeUsuario(d).get('plan', null) == null
+          && datosDeUsuario(d).get('planCancelAt', null) == null;
+    }
+
+    function mismoPlan(nuevo, viejo) {
+      return datosDeUsuario(nuevo).get('plan', null) == datosDeUsuario(viejo).get('plan', null)
+          && datosDeUsuario(nuevo).get('planCancelAt', null) == datosDeUsuario(viejo).get('planCancelAt', null);
+    }
+
     // ------------------------------------------------------------------
     // users
     // ------------------------------------------------------------------
@@ -40,9 +54,17 @@ service cloud.firestore {
     // usuario autenticado enumere a todos los demás. Eso obliga a cambiar las
     // dos `query(collection("users"), where("user.uid","==",uid))` de
     // FirestoreContext por getDoc directo. Ver README-ETAPA-3.md.
+    //
+    // El plan (`user.plan`, `user.planCancelAt`) NO lo escribe el navegador:
+    // lo escribe el servidor leyendo Stripe (webhook y subscriptions/sync,
+    // con el Admin SDK, que se salta estas reglas). Antes cualquiera podía
+    // darse un plan desde la consola del navegador.
+    //   - create: el perfil nace sin plan.
+    //   - update: el resto de campos se pueden cambiar; esos dos, no.
     match /users/{uid} {
       allow get: if esDueno(uid);
-      allow create, update: if esDueno(uid);
+      allow create: if esDueno(uid) && sinPlan(request.resource.data);
+      allow update: if esDueno(uid) && mismoPlan(request.resource.data, resource.data);
       allow delete: if false; // el borrado de cuenta se hace desde backend
     }
 

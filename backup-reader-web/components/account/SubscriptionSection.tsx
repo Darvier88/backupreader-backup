@@ -23,7 +23,7 @@ import { planCancelado } from "../../config/acceso";
 export const SubscriptionSection: React.FC = () => {
   const { t, i18n } = useTranslation();
   const router = useRouter();
-  const { user, subscription, getPlans, updatePlanCancelAt } =
+  const { user, subscription, getPlans, updatePlanCancelAt, getUser } =
     useContext(FirestoreContext);
 
   const [ocupado, setOcupado] = useState(false);
@@ -89,13 +89,19 @@ export const SubscriptionSection: React.FC = () => {
         return;
       }
 
-      if (accion === "cancelar") {
-        await updatePlanCancelAt(user.uid, data.activoHasta ?? Date.now());
-        setExito(t("Suscripción cancelada. No se te volverá a cobrar."));
+      /* El servidor ya escribió el plan con lo que dice Stripe; solo hay
+         que releerlo. Si Vercel aún no tiene cuenta de servicio, se escribe
+         desde aquí como antes. */
+      if (data.escritoEnServidor) {
+        await getUser(user.uid);
       } else {
-        await updatePlanCancelAt(user.uid, null);
-        setExito(t("Suscripción reactivada."));
+        await updatePlanCancelAt(user.uid, accion === "cancelar" ? data.activoHasta ?? Date.now() : null);
       }
+      setExito(
+        accion === "cancelar"
+          ? t("Suscripción cancelada. No se te volverá a cobrar.")
+          : t("Suscripción reactivada.")
+      );
     } catch (err) {
       console.error("Error al cambiar la suscripción:", err);
       setAviso(t("No se pudo conectar. Revisa tu conexión e inténtalo de nuevo."));

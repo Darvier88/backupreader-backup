@@ -11,6 +11,7 @@ import { SeccionCuenta } from "../account/SeccionCuenta";
 import { ConversationsDrawer } from "../drawers";
 import { useEspacioOcupado } from "../../hooks/useEspacioOcupado";
 import { tamanoLegible } from "../../lib/tamano-legible";
+import { pedirSincronizacion } from "../../lib/pedir-sincronizacion";
 
 /** `t()` puede devolver null según sus tipos; esto lo deja en string. */
 const enTexto = (v: unknown): string => (v as string | null | undefined) ?? "";
@@ -33,7 +34,7 @@ const flecha = (
 export const AccountScreen: FC = () => {
   const { t, i18n } = useTranslation();
   const router = useRouter();
-  const { user, subscription, getPlans } = useContext(FirestoreContext);
+  const { user, subscription, getPlans, getUser } = useContext(FirestoreContext);
   const { getFile, cerrarChat } = useContext(StorageContext);
   const { logOut } = useContext(AuthContext);
   const espacio = useEspacioOcupado();
@@ -43,6 +44,22 @@ export const AccountScreen: FC = () => {
     if (!subscription || subscription.length === 0) getPlans();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  /* Al abrir Mi cuenta se pone el plan al día con Stripe: cubre cobros
+     fallidos, cancelaciones hechas desde Stripe y cuentas que se quedaron
+     mal antes del webhook (p. ej. con la fecha de fin de un plan viejo tras
+     volver a contratar). Sin hacer esperar a nadie: si cambió, se relee. */
+  useEffect(() => {
+    if (!user?.uid) return;
+    let vigente = true;
+    void pedirSincronizacion().then((r) => {
+      if (vigente && r.tipo === "servidor" && r.cambiado) getUser(user.uid);
+    });
+    return () => {
+      vigente = false;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.uid]);
 
   const volverAlInicio = () => {
     cerrarChat();

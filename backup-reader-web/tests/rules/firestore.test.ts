@@ -195,6 +195,35 @@ describe("users/{uid}", () => {
   });
 });
 
+describe("users/{uid}: el plan solo lo escribe el servidor", () => {
+  const sembrar = (user: Record<string, unknown>) =>
+    env.withSecurityRulesDisabled(async (ctx) => {
+      await setDoc(doc(ctx.firestore(), "users", ANA), { user });
+    });
+
+  it("NO se puede crear el perfil con un plan", async () => {
+    await assertFails(setDoc(doc(comoAna(), "users", ANA), { user: { uid: ANA, plan: "personal" } }));
+    await assertFails(setDoc(doc(comoAna(), "users", ANA), { user: { uid: ANA, planCancelAt: 1 } }));
+  });
+
+  it("se crea el perfil con plan null", async () => {
+    await assertSucceeds(setDoc(doc(comoAna(), "users", ANA), { user: { uid: ANA, plan: null } }));
+  });
+
+  it("NO se puede darse un plan ni cambiar su fecha de fin", async () => {
+    await sembrar({ uid: ANA, plan: null });
+    await assertFails(updateDoc(doc(comoAna(), "users", ANA), { "user.plan": "personal" }));
+    await sembrar({ uid: ANA, plan: "personal", planCancelAt: 1000 });
+    await assertFails(updateDoc(doc(comoAna(), "users", ANA), { "user.planCancelAt": null }));
+    await assertFails(updateDoc(doc(comoAna(), "users", ANA), { "user.plan": "pro" }));
+  });
+
+  it("SÍ se pueden cambiar los demás campos sin tocar el plan", async () => {
+    await sembrar({ uid: ANA, plan: "personal", planCancelAt: null, displayName: "Ana" });
+    await assertSucceeds(updateDoc(doc(comoAna(), "users", ANA), { "user.displayName": "Ana B", "user.storageSize": 10 }));
+  });
+});
+
 describe("plans y userStatus", () => {
   it("un usuario autenticado lee el catálogo de planes", async () => {
     await env.withSecurityRulesDisabled(async (ctx) => {

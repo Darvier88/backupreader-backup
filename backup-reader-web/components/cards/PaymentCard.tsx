@@ -1,4 +1,5 @@
 import { FC, useContext, useEffect, useState } from "react";
+import { pedirSincronizacion } from "../../lib/pedir-sincronizacion";
 import { InformationCard } from ".";
 import { useForm } from "../../hooks";
 import { useRouter } from "next/router";
@@ -87,7 +88,7 @@ export const PaymentCard: FC = () => {
     name: "",
     email: "",
   });
-  const { subscription, user, planId, updateUser } =
+  const { subscription, user, planId, updateUser, getUser } =
     useContext(FirestoreContext);
 
   /* --- Código de descuento --- */
@@ -218,6 +219,31 @@ export const PaymentCard: FC = () => {
     await createCustomer();
   };
 
+  /**
+   * El plan recién pagado lo escribe el servidor, leyendo Stripe (las reglas
+   * ya no dejan que el navegador escriba su propio plan). Se reintenta un par
+   * de veces porque el primer cobro puede tardar unos segundos en confirmarse.
+   * Si Vercel aún no tiene cuenta de servicio, se escribe desde aquí como
+   * antes, para no dejar sin plan a quien acaba de pagar.
+   */
+  const guardarPlanPagado = async (uid: string, plan: string, nombre: string) => {
+    for (let intento = 0; intento < 4; intento++) {
+      const r = await pedirSincronizacion();
+      if (r.tipo === "sin-admin") {
+        await updateUser(uid, plan, nombre);
+        return;
+      }
+      if (r.tipo === "servidor" && r.plan === plan && !r.planCancelAt) {
+        await getUser(uid);
+        return;
+      }
+      await new Promise((ok) => setTimeout(ok, 1500));
+    }
+    /* El webhook lo dejará bien en cuanto Stripe avise; mientras, se relee
+       lo que haya. */
+    await getUser(uid);
+  };
+
   const createSubscription = async (customerId: string, paymentMethodId: string, planId: string) => {
     const res = await fetch("/api/subscriptions/create", {
       method: "POST",
@@ -239,7 +265,7 @@ export const PaymentCard: FC = () => {
     if (data.success) {
       setPayResult("success");
       if (user?.uid && planToPay?.id) {
-        updateUser(user.uid, planToPay?.id, formState.name);
+        await guardarPlanPagado(user.uid, planToPay.id, formState.name);
         /* A la confirmacion (6b), no al panel.
            Ir directo al panel hacia que el cobro desapareciera sin acuse:
            acabas de pagar y lo siguiente que ves es la aplicacion, sin que
