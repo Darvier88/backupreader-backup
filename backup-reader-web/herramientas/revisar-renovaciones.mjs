@@ -171,7 +171,11 @@ async function principal() {
 
     const cs = await clientes(u.uid, u.email);
     if (cs.length === 0) {
-      const v = "Sin cliente en Stripe: la web no llegó a crear la suscripción.";
+      /* Sin plan y sin cliente es lo normal de quien se registró y nunca
+         pagó. Solo es raro si Firestore dice que tuvo plan. */
+      const v = u.plan
+        ? "Tiene plan en Firestore pero ningún cliente en Stripe: revisar a mano."
+        : "Nunca contrató (sin cliente en Stripe). Normal.";
       console.log(`  Stripe: ${v}\n`);
       resumen.set(v, (resumen.get(v) ?? 0) + 1);
       filas.push([u.email, u.uid, u.plan, dia(u.planCancelAt), "", "", "", "", "", "", "", v]);
