@@ -17,7 +17,7 @@ const s = (o: Record<string, unknown>) =>
     current_period_end: AHORA / 1000 + 86400 * 20,
     ended_at: null,
     canceled_at: null,
-    items: { data: [{ plan: { id: "personal" } }] },
+    items: { data: [{ plan: { id: "personal" }, price: { unit_amount: 299 } }] },
     ...o,
   }) as any;
 
@@ -32,7 +32,7 @@ describe.each([
   });
 
   it("activa: el plan sin fecha de fin", () => {
-    expect(estadoDelPlan([s({})], AHORA)).toEqual({ tipo: "plan", plan: "personal", planCancelAt: null });
+    expect(estadoDelPlan([s({})], AHORA)).toEqual({ tipo: "plan", plan: "personal", centavos: 299, planCancelAt: null });
   });
 
   it("activa y programada para cancelarse: fecha de fin del periodo", () => {
@@ -40,6 +40,7 @@ describe.each([
     expect(estadoDelPlan([s({ cancel_at_period_end: true, current_period_end: fin })], AHORA)).toEqual({
       tipo: "plan",
       plan: "personal",
+      centavos: 299,
       planCancelAt: fin * 1000,
     });
   });
@@ -47,17 +48,17 @@ describe.each([
   it("volver a contratar: la nueva gana a la vieja cancelada (el caso de BACKPUP50)", () => {
     const vieja = s({ status: "canceled", ended_at: AHORA / 1000 - 86400 * 2 });
     const nueva = s({});
-    expect(estadoDelPlan([vieja, nueva], AHORA)).toEqual({ tipo: "plan", plan: "personal", planCancelAt: null });
+    expect(estadoDelPlan([vieja, nueva], AHORA)).toEqual({ tipo: "plan", plan: "personal", centavos: 299, planCancelAt: null });
   });
 
   it("entre dos activas, la que no se va a cancelar", () => {
-    const seVa = s({ cancel_at_period_end: true, current_period_end: AHORA / 1000 + 86400 * 30, items: { data: [{ plan: { id: "pro" } }] } });
+    const seVa = s({ cancel_at_period_end: true, current_period_end: AHORA / 1000 + 86400 * 30, items: { data: [{ plan: { id: "pro" }, price: { unit_amount: 399 } }] } });
     const sigue = s({ current_period_end: AHORA / 1000 + 86400 * 10 });
     expect(estadoDelPlan([seVa, sigue], AHORA).tipo === "plan" && (estadoDelPlan([seVa, sigue], AHORA) as any).plan).toBe("personal");
   });
 
   it("cobro fallido en reintento (past_due): sigue con acceso", () => {
-    expect(estadoDelPlan([s({ status: "past_due" })], AHORA)).toEqual({ tipo: "plan", plan: "personal", planCancelAt: null });
+    expect(estadoDelPlan([s({ status: "past_due" })], AHORA)).toEqual({ tipo: "plan", plan: "personal", centavos: 299, planCancelAt: null });
   });
 
   it("impagada (unpaid): se corta, con fecha que no queda en el futuro", () => {
@@ -71,6 +72,7 @@ describe.each([
     expect(estadoDelPlan([s({ status: "canceled", ended_at: fin })], AHORA)).toEqual({
       tipo: "plan",
       plan: "personal",
+      centavos: 299,
       planCancelAt: fin * 1000,
     });
   });

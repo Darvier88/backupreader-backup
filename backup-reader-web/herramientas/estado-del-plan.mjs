@@ -13,6 +13,12 @@ const planDe = (s) => {
   return (item?.plan?.id ?? item?.price?.id) || null;
 };
 
+const centavosDe = (s) => {
+  const item = s.items?.data?.[0];
+  const n = item?.price?.unit_amount ?? item?.plan?.amount;
+  return typeof n === "number" ? n : null;
+};
+
 export function estadoDelPlan(subs, ahora = Date.now()) {
   const conAcceso = subs.filter((s) => CON_ACCESO.includes(s.status) && planDe(s));
   if (conAcceso.length > 0) {
@@ -25,7 +31,7 @@ export function estadoDelPlan(subs, ahora = Date.now()) {
     });
     const mejor = conAcceso[0];
     const fin = finDe(mejor);
-    return { tipo: "plan", plan: planDe(mejor), planCancelAt: fin ? fin * 1000 : null };
+    return { tipo: "plan", plan: planDe(mejor), centavos: centavosDe(mejor), planCancelAt: fin ? fin * 1000 : null };
   }
 
   const terminadas = subs.filter(
@@ -36,7 +42,7 @@ export function estadoDelPlan(subs, ahora = Date.now()) {
     terminadas.sort((a, b) => finDe(b) - finDe(a));
     const ultima = terminadas[0];
     const fin = Math.min(finDe(ultima) * 1000, ahora);
-    return { tipo: "plan", plan: planDe(ultima), planCancelAt: fin };
+    return { tipo: "plan", plan: planDe(ultima), centavos: centavosDe(ultima), planCancelAt: fin };
   }
 
   return { tipo: "sin-cambios" };

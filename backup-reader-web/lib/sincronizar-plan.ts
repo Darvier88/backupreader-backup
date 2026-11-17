@@ -28,15 +28,25 @@ export type EstadoDelPlan =
    *  confirmar). Se deja el documento como está: puede ser un plan puesto a
    *  mano o una cuenta de prueba. */
   | { tipo: "sin-cambios" }
-  | { tipo: "plan"; plan: string; planCancelAt: number | null };
+  /** `plan` es el id del PRECIO de Stripe; `centavos`, su importe. Para
+   *  guardarlo hay que traducirlo al id del documento de `plans`
+   *  (planDeFirestore): no son el mismo id. */
+  | { tipo: "plan"; plan: string; centavos: number | null; planCancelAt: number | null };
 
 /** Da acceso mientras Stripe sigue intentando cobrar (`past_due`). */
 const CON_ACCESO: Stripe.Subscription.Status[] = ["active", "trialing", "past_due"];
 
-/** El id del plan, que es también el id del documento en `plans`. */
+/** El id del precio de Stripe de la suscripción. */
 function planDe(s: Stripe.Subscription): string | null {
   const item = s.items?.data?.[0];
   return (item?.plan?.id ?? item?.price?.id) || null;
+}
+
+/** El importe de lista (sin descuento), en centavos. */
+function centavosDe(s: Stripe.Subscription): number | null {
+  const item = s.items?.data?.[0];
+  const n = item?.price?.unit_amount ?? item?.plan?.amount;
+  return typeof n === "number" ? n : null;
 }
 
 /**
@@ -63,7 +73,7 @@ export function estadoDelPlan(subs: Stripe.Subscription[], ahora = Date.now()): 
     });
     const mejor = conAcceso[0];
     const fin = finDe(mejor);
-    return { tipo: "plan", plan: planDe(mejor)!, planCancelAt: fin ? fin * 1000 : null };
+    return { tipo: "plan", plan: planDe(mejor)!, centavos: centavosDe(mejor), planCancelAt: fin ? fin * 1000 : null };
   }
 
   const terminadas = subs.filter(
@@ -77,10 +87,26 @@ export function estadoDelPlan(subs: Stripe.Subscription[], ahora = Date.now()): 
     /* Nunca en el futuro: si ya no tiene acceso, la fecha de fin no puede
        quedar por delante (con `unpaid` el periodo puede no haber acabado). */
     const fin = Math.min(finDe(ultima) * 1000, ahora);
-    return { tipo: "plan", plan: planDe(ultima)!, planCancelAt: fin };
+    return { tipo: "plan", plan: planDe(ultima)!, centavos: centavosDe(ultima), planCancelAt: fin };
   }
 
   return { tipo: "sin-cambios" };
+}
+
+/**
+ * El id del documento de `plans` que corresponde a lo que cobra Stripe.
+ *
+ * En Firestore `user.plan` guarda el id del DOCUMENTO del plan (p. ej.
+ * «NrcM81oeU0KMb6RYduBw»), no el del precio de Stripe («price_…»). Se
+ * empareja por importe, igual que la web elige el precio al cobrar
+ * (lib/precios-de-planes): plan.price × 100 == unit_amount. Si no hay
+ * exactamente uno, null y no se escribe nada.
+ */
+export async function planDeFirestore(centavos: number | null): Promise<string | null> {
+  if (centavos === null) return null;
+  const snap = await dbAdmin().collection("plans").get();
+  const con = snap.docs.filter((d) => Math.round(Number(d.get("plan.price")) * 100) === centavos);
+  return con.length === 1 ? con[0].id : null;
 }
 
 export type ResultadoSincronizar =
@@ -103,13 +129,18 @@ export async function sincronizarPlan(uid: string, correo: string): Promise<Resu
   const snap = await ref.get();
   const actual = (snap.exists ? snap.get("user") : null) ?? {};
 
-  if (estado.tipo === "sin-cambios" || !snap.exists) {
-    return { ok: true, escrito: false, plan: actual.plan ?? null, planCancelAt: actual.planCancelAt ?? null };
+  const sinCambios = { ok: true as const, escrito: false, plan: actual.plan ?? null, planCancelAt: actual.planCancelAt ?? null };
+  if (estado.tipo === "sin-cambios" || !snap.exists) return sinCambios;
+
+  const plan = await planDeFirestore(estado.centavos);
+  if (!plan) {
+    console.error("No hay un plan en Firestore con el importe de", estado.plan, estado.centavos);
+    return sinCambios;
   }
 
-  const igual = actual.plan === estado.plan && (actual.planCancelAt ?? null) === estado.planCancelAt;
+  const igual = actual.plan === plan && (actual.planCancelAt ?? null) === estado.planCancelAt;
   if (!igual) {
-    await ref.update({ "user.plan": estado.plan, "user.planCancelAt": estado.planCancelAt });
+    await ref.update({ "user.plan": plan, "user.planCancelAt": estado.planCancelAt });
   }
-  return { ok: true, escrito: !igual, plan: estado.plan, planCancelAt: estado.planCancelAt };
+  return { ok: true, escrito: !igual, plan, planCancelAt: estado.planCancelAt };
 }

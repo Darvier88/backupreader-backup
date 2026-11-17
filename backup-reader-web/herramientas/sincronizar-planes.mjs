@@ -88,6 +88,15 @@ async function principal() {
   console.log(`Stripe:   ${modo}`);
   console.log(aplicar ? "Modo:     APLICAR\n" : "Modo:     informe (no se toca nada)\n");
 
+  /* Planes de Firestore por importe: user.plan guarda el id del DOCUMENTO
+     del plan, no el del precio de Stripe. Se empareja por importe, como en
+     la web (lib/sincronizar-plan, planDeFirestore). */
+  const planesPorCentavos = new Map();
+  for (const d of (await db.collection("plans").get()).docs) {
+    const c = Math.round(Number(d.data()?.plan?.price) * 100);
+    planesPorCentavos.set(c, planesPorCentavos.has(c) ? null : d.id);
+  }
+
   /* Usuarios de Firestore. */
   const usuarios = new Map(); // uid -> { email, plan, planCancelAt }
   const porCorreo = new Map(); // correo -> [uid]
@@ -116,9 +125,13 @@ async function principal() {
     let uid = c.metadata?.firebaseUid;
     if (!uid) {
       const lista = porCorreo.get(normalizar(c.email)) ?? [];
+      /* Correo repetido en Firestore: si solo una de esas cuentas tuvo plan,
+         es esa (la otra suele ser un registro duplicado). Si no, se deja. */
+      const conPlan = lista.filter((id) => usuarios.get(id)?.plan);
       if (lista.length === 1) uid = lista[0];
-      else if (lista.length > 1 && !correos.length) {
-        ambiguos.push({ cliente: c.id, email: c.email, uids: lista.join(" ") });
+      else if (lista.length > 1 && conPlan.length === 1) uid = conPlan[0];
+      else if (lista.length > 1) {
+        if (!correos.length) ambiguos.push({ cliente: c.id, email: c.email, uids: lista.join(" ") });
         continue;
       }
     }
@@ -132,6 +145,7 @@ async function principal() {
   const cambios = [];
   let iguales = 0;
   let soloPendientes = 0;
+  const sinPlanFirestore = [];
   for (const [uid, clientes] of clientesDe) {
     const subs = [];
     for (const id of clientes) {
@@ -143,6 +157,12 @@ async function principal() {
       continue;
     }
     const u = usuarios.get(uid);
+    const plan = planesPorCentavos.get(e.centavos);
+    if (!plan) {
+      sinPlanFirestore.push({ uid, email: u.email, precio: e.plan, centavos: e.centavos });
+      continue;
+    }
+    e.plan = plan;
     if (u.plan === e.plan && (u.planCancelAt ?? null) === e.planCancelAt) {
       iguales++;
       continue;
@@ -163,6 +183,11 @@ async function principal() {
     console.log(
       `  ${c.email || c.uid}\n    antes:   plan=${c.antes.plan ?? "null"}  fin=${fecha(c.antes.planCancelAt)}\n    después: plan=${c.despues.plan}  fin=${fecha(c.despues.planCancelAt)}`
     );
+  }
+
+  if (sinPlanFirestore.length) {
+    console.log(`\nSIN PLAN EN FIRESTORE PARA ESE PRECIO — no se tocan (${sinPlanFirestore.length}):`);
+    for (const x of sinPlanFirestore) console.log(`  ${x.email || x.uid}  precio=${x.precio}  importe=${x.centavos}`);
   }
 
   console.log(`\nCON PLAN Y SIN STRIPE — no se tocan, decide tú (${sinStripe.length}):`);
