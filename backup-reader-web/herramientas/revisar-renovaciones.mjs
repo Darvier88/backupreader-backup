@@ -129,11 +129,30 @@ async function principal() {
   } else {
     elegidos = usuarios.filter(sinAcceso);
     if (anio) {
-      const alta = await altas();
+      /* La fecha de alta sale del propio documento (`user.creationDate`,
+         p. ej. «Sun, 24 Sep 2023 15:58:59 GMT»). Solo si falta en alguno se
+         pregunta a Firebase Auth, que con credenciales locales exige un
+         proyecto de cuota; si eso falla, se avisa y se sigue sin ellos. */
       const desde = Date.UTC(anio, 0, 1);
       const hasta = Date.UTC(anio + 1, 0, 1);
+      const delDoc = (u) => {
+        const t = Date.parse(u.creationDate ?? "");
+        return Number.isFinite(t) ? t : null;
+      };
+      let alta = new Map();
+      if (elegidos.some((u) => delDoc(u) === null)) {
+        try {
+          alta = await altas();
+        } catch (e) {
+          console.warn(
+            "Aviso: no se pudo leer Firebase Auth (" + (e?.code ?? e?.message) + "). " +
+              "Las cuentas sin creationDate en Firestore se dejan fuera. Para incluirlas:\n" +
+              "  gcloud auth application-default set-quota-project backup-reader\n"
+          );
+        }
+      }
       elegidos = elegidos.filter((u) => {
-        const t = alta.get(u.uid);
+        const t = delDoc(u) ?? alta.get(u.uid);
         return t && t >= desde && t < hasta;
       });
     }
