@@ -493,7 +493,7 @@ const resources = {
       "Resumen":"Summary",
       "Dinámica":"Rhythm",
       "Palabras":"Words",
-      "Grupo":"Group",
+      "Quién habla":"Who talks",
       "Ajustes":"Settings",
       "Esto no cuadra":"This looks wrong",
       "Anotado":"Noted",

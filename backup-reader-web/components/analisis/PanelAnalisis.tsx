@@ -38,7 +38,7 @@ import { Ajustes } from "./Ajustes";
  * otra pregunta.
  */
 
-type Vista = "resumen" | "dinamica" | "palabras" | "grupo" | "ajustes";
+type Vista = "resumen" | "dinamica" | "palabras" | "ajustes";
 
 export const PanelAnalisis: FC<{
   /** Las filas del chat ya descifrado: `[fecha, autor, texto]`. */
@@ -236,11 +236,12 @@ export const PanelAnalisis: FC<{
   }
 
   const esGrupo = analisis.grupo.esGrupo;
+  /* En un grupo, «Resumen» YA es la tabla: una pestaña «Grupo» aparte
+     enseñaría exactamente lo mismo y haría dudar de si son dos cosas. */
   const vistas: Array<{ valor: Vista; etiqueta: string }> = [
-    { valor: "resumen", etiqueta: enTexto(t("Resumen")) },
+    { valor: "resumen", etiqueta: enTexto(esGrupo ? t("Quién habla") : t("Resumen")) },
     { valor: "dinamica", etiqueta: enTexto(t("Dinámica")) },
     { valor: "palabras", etiqueta: enTexto(t("Palabras")) },
-    ...(esGrupo ? [{ valor: "grupo" as Vista, etiqueta: enTexto(t("Grupo")) }] : []),
     { valor: "ajustes", etiqueta: enTexto(t("Ajustes")) },
   ];
 
@@ -336,10 +337,6 @@ export const PanelAnalisis: FC<{
           onNoCuadra={marcarNoCuadra}
           onIrAlMensaje={onIrAlMensaje}
         />
-      )}
-
-      {vistaActual === "grupo" && (
-        <TablaGrupo analisis={analisis} yo={yo} marcadas={marcadas} onNoCuadra={marcarNoCuadra} />
       )}
 
       {vistaActual === "ajustes" && (
