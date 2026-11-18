@@ -518,7 +518,22 @@ export const DashboardScreen: FC = () => {
                   </span>
                 </div>
               ) : toShow === "analisis" ? (
-                <PanelAnalisis filas={(chat || []) as string[][]} yo={myName} />
+                <PanelAnalisis
+                  filas={(chat || []) as string[][]}
+                  handle={rutaAbierta}
+                  yoPorDefecto={myName}
+                  /* Tocar un emoji o una palabra lleva al mensaje: se vuelve
+                     a Mensajes y se carga hasta donde está, que si no el
+                     render incremental lo tiene todavía sin pintar. */
+                  onIrAlMensaje={(indice) => {
+                    setToShow("message");
+                    setVisibleCount((c) => Math.max(c, indice + CHUNK));
+                    window.setTimeout(() => {
+                      const fila = document.querySelector(`[data-mensaje="${indice}"]`);
+                      fila?.scrollIntoView({ block: "center", behavior: "smooth" });
+                    }, 120);
+                  }}
+                />
               ) : toShow === "photos" ? (
                 <>
                   <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(240px, 1fr))", gap: 16, padding: "4px 0", width: "100%" }}>
@@ -561,6 +576,9 @@ export const DashboardScreen: FC = () => {
 
                       return (
                         <Fragment key={i}>
+                          {/* Ancla sin alto: sirve para saltar aquí desde el
+                              análisis sin tocar cómo se pinta la burbuja. */}
+                          <div data-mensaje={i} style={{ height: 0 }} />
                           {cambiaDeDia && (
                             <div
                               role="separator"
