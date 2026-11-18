@@ -20,6 +20,8 @@ import { nombreDelContacto } from "../../lib/nombres-de-chat";
 import { usePanelChats } from "../../context/PanelChatsContext";
 import { pedirBusqueda } from "../../lib/pedir-busqueda";
 import { fechaDeSubida } from "../../lib/fecha-de-guardado";
+import { ANALISIS_ACTIVO } from "../../lib/analisis/activo";
+import { PanelAnalisis } from "../analisis/PanelAnalisis";
 
 /** `t()` puede devolver null segun sus tipos; esto lo deja en string. */
 const enTexto = (traducido: unknown): string =>
@@ -85,7 +87,7 @@ export const DashboardScreen: FC = () => {
   const [chatSearch, setChatSearch] = useState<string>("");
   const { getFile, chat, chatName, uploadStatus, cerrarChat, fullPath: rutaAbierta } = useContext(StorageContext);
   const { loading } = useLoading();
-  const [toShow, setToShow] = useState<"photos" | "message">("message");
+  const [toShow, setToShow] = useState<"photos" | "message" | "analisis">("message");
   const [state, setState] = useState<boolean>(true);
   const { fileList } = useContext(StorageContext);
   const {
@@ -463,10 +465,22 @@ export const DashboardScreen: FC = () => {
                 <ControlSegmentado
                   completo
                   valor={toShow}
-                  onCambio={(v) => setToShow(v as "photos" | "message")}
+                  onCambio={(v) => setToShow(v as "photos" | "message" | "analisis")}
                   opciones={[
                     { valor: "message", etiqueta: enTexto(t("Mensajes")) },
                     { valor: "photos", etiqueta: enTexto(t("Media")) },
+                    /* La pestaña solo existe con la función encendida: sin
+                       NEXT_PUBLIC_ANALISIS_ENABLED el panel no se compila en
+                       la vista ni aparece el botón. */
+                    ...(ANALISIS_ACTIVO
+                      ? [
+                          {
+                            valor: "analisis",
+                            etiqueta: enTexto(t("Análisis")),
+                            insignia: enTexto(t("Nuevo")),
+                          },
+                        ]
+                      : []),
                   ]}
                 />
               </Box>
@@ -503,6 +517,8 @@ export const DashboardScreen: FC = () => {
                     {t("Obteniendo mensajes del backup...")}
                   </span>
                 </div>
+              ) : toShow === "analisis" ? (
+                <PanelAnalisis filas={(chat || []) as string[][]} yo={myName} />
               ) : toShow === "photos" ? (
                 <>
                   <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(240px, 1fr))", gap: 16, padding: "4px 0", width: "100%" }}>

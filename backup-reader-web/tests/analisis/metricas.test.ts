@@ -160,8 +160,11 @@ describe("iniciaMas", () => {
     ]);
     const r = iniciaMas(mensajesDe(filas), 4);
     expect(r.conversaciones).toBe(3);
-    expect(r.porAutor).toEqual({ Ana: 3 });
-    expect(r.masInicios.mayor).toBeNull(); /* solo una persona inicia: no hay par */
+    /* Beto sale con cero, no se queda fuera: si no, el reparto diría que Ana
+       es el 100 % de un único nombre y el titular acabaría en «parecido». */
+    expect(r.porAutor).toEqual({ Ana: 3, Beto: 0 });
+    expect(r.porcentajes).toEqual({ Ana: 100, Beto: 0 });
+    expect(r.masInicios).toEqual({ mayor: "Ana", parecido: false });
   });
 
   it("reparte y compara cuando los dos empiezan", () => {

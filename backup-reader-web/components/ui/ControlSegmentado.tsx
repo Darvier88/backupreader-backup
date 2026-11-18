@@ -11,7 +11,8 @@ import { FC } from "react";
  * dentro, eso se ve sin tener que probarlo.
  */
 export const ControlSegmentado: FC<{
-  opciones: Array<{ valor: string; etiqueta: string }>;
+  /** `insignia` marca una opción nueva («NUEVO») sin añadir otro elemento. */
+  opciones: Array<{ valor: string; etiqueta: string; insignia?: string }>;
   valor: string;
   onCambio: (valor: string) => void;
   /** Ocupa todo el ancho disponible. En móvil suele interesar. */
@@ -53,9 +54,30 @@ export const ControlSegmentado: FC<{
               fontWeight: activa ? 600 : 500,
               color: activa ? "var(--ink-900)" : "var(--slate-500)",
               whiteSpace: "nowrap",
+              display: "inline-flex",
+              alignItems: "center",
+              justifyContent: "center",
+              gap: 6,
             }}
           >
             {opcion.etiqueta}
+            {opcion.insignia && (
+              <span
+                style={{
+                  fontFamily: "var(--font-mono)",
+                  fontSize: 9,
+                  letterSpacing: "0.1em",
+                  textTransform: "uppercase",
+                  lineHeight: 1,
+                  padding: "3px 5px",
+                  borderRadius: 4,
+                  background: activa ? "var(--ink-900)" : "var(--paper-200, #e9e7e2)",
+                  color: activa ? "var(--paper-100)" : "var(--slate-500)",
+                }}
+              >
+                {opcion.insignia}
+              </span>
+            )}
           </button>
         );
       })}

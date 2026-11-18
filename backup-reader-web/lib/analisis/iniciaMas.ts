@@ -109,7 +109,13 @@ export function iniciaMas(
 ): QuienInicia {
   const lista = conversaciones ?? partirEnConversaciones(mensajes, umbralHoras);
 
+  /* Todos los que escriben entran en el reparto, aunque no hayan empezado
+     nunca. Si no, quien empieza todas las conversaciones sale solo en la
+     barra con un 100 % y, al haber un único nombre, la comparación de dos
+     no se hace y el titular acaba diciendo «parecido», que es justo lo
+     contrario de lo que ha pasado. */
   const porAutor: Record<string, number> = {};
+  for (const m of mensajes) if (m.autor) porAutor[m.autor] = porAutor[m.autor] || 0;
   for (const c of lista) porAutor[c.inicia] = (porAutor[c.inicia] || 0) + 1;
 
   const total = lista.length;
