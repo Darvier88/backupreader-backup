@@ -66,8 +66,8 @@ describe("grupos", () => {
   it("guarda el primero y el último mensaje de cada uno", () => {
     const g = analizar(filasDe(GRUPO));
     const ana = g.filas.find((f) => f.autor === "Ana")!;
-    expect(ana.primero!.getDate()).toBe(13);
-    expect(ana.ultimo!.getDate()).toBe(13);
+    expect(new Date(ana.primero!).getDate()).toBe(13);
+    expect(new Date(ana.ultimo!).getDate()).toBe(13);
   });
 
   it("señala a quien lleva meses sin escribir", () => {

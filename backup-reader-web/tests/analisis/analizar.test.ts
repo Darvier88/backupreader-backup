@@ -1,0 +1,97 @@
+import { describe, expect, it } from "vitest";
+import { analizar, VERSION_ANALISIS } from "../../lib/analisis/analizar";
+import { ANDROID_DIA_PRIMERO, GRUPO, CORTO, chatGrande, filasDe } from "./ejemplos";
+
+describe("analizar", () => {
+  const a = analizar(filasDe(ANDROID_DIA_PRIMERO));
+
+  it("trae todas las métricas en un solo resultado", () => {
+    for (const clave of [
+      "volumen",
+      "inicios",
+      "respuestas",
+      "actividad",
+      "tendencias",
+      "emojis",
+      "palabras",
+      "expresiones",
+      "grupo",
+    ]) {
+      expect(a).toHaveProperty(clave);
+    }
+  });
+
+  it("guarda la versión y los ajustes con los que se calculó", () => {
+    expect(a.v).toBe(VERSION_ANALISIS);
+    expect(a.ajustes).toEqual({ umbralHoras: 4, medida: "mensajes", idioma: "es" });
+    const otro = analizar(filasDe(ANDROID_DIA_PRIMERO), { umbralHoras: 8, medida: "palabras" });
+    expect(otro.ajustes.umbralHoras).toBe(8);
+    expect(otro.ajustes.medida).toBe("palabras");
+    expect(otro.tendencias.medida).toBe("palabras");
+  });
+
+  it("dice qué quedó fuera de los conteos", () => {
+    expect(a.totalFilas).toBe(7);
+    expect(a.mensajesContables).toBe(7);
+    expect(a.eliminados).toBe(0);
+    expect(a.sistema).toBe(0);
+    expect(a.sinFecha).toBe(0);
+  });
+
+  it("avisa de que un chat corto no llega al mínimo", () => {
+    expect(analizar(filasDe(CORTO)).suficiente).toBe(false);
+    expect(analizar(chatGrande(200)).suficiente).toBe(true);
+  });
+
+  it("el umbral cambia el resultado, no solo la etiqueta", () => {
+    const filas = chatGrande(300);
+    const corto = analizar(filas, { umbralHoras: 1 });
+    const largo = analizar(filas, { umbralHoras: 8 });
+    expect(corto.inicios.conversaciones).toBeGreaterThanOrEqual(largo.inicios.conversaciones);
+  });
+
+  it("es pura: dos veces lo mismo da lo mismo", () => {
+    const filas = filasDe(GRUPO);
+    expect(JSON.stringify(analizar(filas))).toBe(JSON.stringify(analizar(filas)));
+  });
+
+  it("sobrevive a ida y vuelta por JSON, que es como se guarda", () => {
+    const vuelta = JSON.parse(JSON.stringify(a));
+    expect(vuelta).toEqual(a);
+  });
+
+  it("no mete texto del chat en el resultado: solo cifras e índices", () => {
+    const filas = [
+      ["13/01/26 9:00", "Ana", "la contraseña del wifi es jirafa-morada-77"],
+      ["13/01/26 9:01", "Beto", "gracias"],
+    ];
+    const r = analizar(filas);
+    const json = JSON.stringify(r);
+    expect(json).not.toContain("jirafa-morada-77");
+    expect(json).not.toContain("contraseña del wifi");
+    /* Los ejemplos son posiciones, no frases. */
+    expect(r.expresiones.agradecimientos[0].ejemplos).toEqual([1]);
+  });
+
+  it("un chat vacío da un resultado vacío y no una excepción", () => {
+    const vacio = analizar([]);
+    expect(vacio.mensajesContables).toBe(0);
+    expect(vacio.suficiente).toBe(false);
+    expect(vacio.desde).toBeNull();
+  });
+});
+
+describe("rendimiento", () => {
+  it("analiza 50.000 mensajes en menos de 10 segundos", () => {
+    const filas = chatGrande(50000);
+    const empezo = Date.now();
+    const r = analizar(filas);
+    const ms = Date.now() - empezo;
+
+    expect(r.mensajesContables).toBeGreaterThan(49000);
+    /* Lo que se mide aquí es que no se ha colado nada cuadrático. Si esto
+       falla, el culpable casi siempre es una búsqueda dentro de un bucle. */
+    expect(ms).toBeLessThan(10000);
+    console.log(`  50.000 mensajes en ${ms} ms`);
+  }, 60000);
+});

@@ -40,8 +40,10 @@ export type FilaDeGrupo = {
   media: number;
   notasDeVoz: number;
   emojis: number;
-  primero: Date | null;
-  ultimo: Date | null;
+  /* Marcas de tiempo, no `Date`: el resultado entero se guarda cifrado como
+     JSON, y un `Date` vuelve de ahí convertido en texto. */
+  primero: number | null;
+  ultimo: number | null;
 };
 
 export type Grupo = {
@@ -51,7 +53,7 @@ export type Grupo = {
   totalMensajes: number;
   conversaciones: number;
   /** Quien lleva más tiempo sin escribir, si hace más de 30 días. */
-  masCallado: { autor: string; ultimo: Date } | null;
+  masCallado: { autor: string; ultimo: number } | null;
 };
 
 const MEDIA = new Set(["imagen", "video", "audio", "documento", "sticker", "multimedia"]);
@@ -105,8 +107,9 @@ export function grupos(
     if (m.tipo === "audio") fila.notasDeVoz++;
     fila.emojis += emojisDe(m.contenido).length;
     if (m.fecha) {
-      if (!fila.primero || m.fecha < fila.primero) fila.primero = m.fecha;
-      if (!fila.ultimo || m.fecha > fila.ultimo) fila.ultimo = m.fecha;
+      const t = m.fecha.getTime();
+      if (fila.primero === null || t < fila.primero) fila.primero = t;
+      if (fila.ultimo === null || t > fila.ultimo) fila.ultimo = t;
     }
   }
 
@@ -126,8 +129,8 @@ export function grupos(
   let masCallado: Grupo["masCallado"] = null;
   if (finDelChat) {
     for (const f of filas) {
-      if (!f.ultimo) continue;
-      const dias = (finDelChat.getTime() - f.ultimo.getTime()) / DIA;
+      if (f.ultimo === null) continue;
+      const dias = (finDelChat.getTime() - f.ultimo) / DIA;
       if (dias < DIAS_CALLADO) continue;
       if (!masCallado || f.ultimo < masCallado.ultimo) {
         masCallado = { autor: f.autor, ultimo: f.ultimo };
