@@ -2,6 +2,7 @@ import {
   collection,
   deleteDoc,
   doc,
+  getDoc,
   getDocs,
   setDoc,
 } from "firebase/firestore";
@@ -76,6 +77,40 @@ export async function marcarIndexado(
   await setDoc(
     doc(FirebaseDB, backupDocPath(uid, backupId)),
     { idxVersion: version },
+    { merge: true }
+  );
+}
+
+/**
+ * Apunta lo que ocupa la pieza del análisis.
+ *
+ * El espacio que ve el usuario NO lo suma Storage: sale de `cipherBytes` en
+ * este documento, que se escribe una vez al subir el backup. Una pieza
+ * añadida después ocuparía sitio sin aparecer en la cuenta, y la cuota del
+ * plan se calcula con esa misma cifra.
+ *
+ * `anaBytes` guarda aparte lo que ocupa la última versión de la pieza, para
+ * que recalcular el análisis no sume dos veces: se resta lo anterior y se
+ * suma lo nuevo.
+ */
+export async function anotarAnalisis(
+  uid: string,
+  backupId: string,
+  bytes: number
+): Promise<void> {
+  const referencia = doc(FirebaseDB, backupDocPath(uid, backupId));
+  const snap = await getDoc(referencia);
+  /* Sin registro no hay nada que ajustar: el backup es de los viejos en texto
+     plano, que no cuentan en el espacio. */
+  if (!snap.exists()) return;
+
+  const datos = snap.data() as BackupDoc & { anaBytes?: number };
+  const anterior = Number(datos.anaBytes) || 0;
+  const base = (Number(datos.cipherBytes) || 0) - anterior;
+
+  await setDoc(
+    referencia,
+    { cipherBytes: Math.max(0, base + bytes), anaBytes: bytes },
     { merge: true }
   );
 }
