@@ -32,6 +32,16 @@ export type Mensaje = {
   palabras: number;
   /** El texto, ya sin la marca «<se editó este mensaje>». */
   texto: string;
+  /**
+   * Solo lo que escribió la persona: el pie de una foto, sin el nombre del
+   * archivo ni el aviso del export. Vacío en un adjunto sin pie.
+   *
+   * Va aparte de `texto` porque las dos cosas hacen falta: `texto` es lo que
+   * se enseña y lo que se busca; `contenido` es lo que se cuenta. Contar
+   * sobre `texto` metería «IMG-20260113-WA0001.jpg» entre las palabras más
+   * usadas del chat de quien manda muchas fotos.
+   */
+  contenido: string;
   /** El mensaje llevaba la marca de editado. */
   editado: boolean;
 };

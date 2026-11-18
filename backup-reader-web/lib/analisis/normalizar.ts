@@ -195,7 +195,16 @@ export function normalizar(
     /* Sin autor es un aviso de WhatsApp, no un mensaje de nadie. */
     if (!autor) {
       sistema++;
-      mensajes.push({ indice, autor: "", fecha, tipo: "sistema", palabras: 0, texto: crudo, editado: false });
+      mensajes.push({
+        indice,
+        autor: "",
+        fecha,
+        tipo: "sistema",
+        palabras: 0,
+        texto: crudo,
+        contenido: "",
+        editado: false,
+      });
       return;
     }
 
@@ -213,6 +222,7 @@ export function normalizar(
       tipo,
       palabras: tipo === "eliminado" ? 0 : contarPalabras(resto, idioma),
       texto: sinMarca,
+      contenido: tipo === "eliminado" ? "" : resto,
       editado,
     });
   });
