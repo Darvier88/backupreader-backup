@@ -37,7 +37,10 @@ function token(uid: string) {
   })}.`;
 }
 
-const auth = (uid: string | null) => (uid ? { Authorization: `Bearer ${token(uid)}` } : {});
+/* `Record<string, string>` y no un objeto literal: si no, TypeScript ve una
+   unión con `Authorization` opcional y deja de aceptarla como cabeceras. */
+const auth = (uid: string | null): Record<string, string> =>
+  uid ? { Authorization: `Bearer ${token(uid)}` } : {};
 
 const subir = async (uid: string | null, ruta: string, bytes = 64) =>
   (
