@@ -41,8 +41,13 @@ import {
 import { grupos, type Grupo } from "./grupos";
 import { MIN_MENSAJES } from "./umbrales";
 
-/** Sube cuando cambia la forma del resultado: las cachés viejas se rehacen. */
-export const VERSION_ANALISIS = 1;
+/**
+ * Sube cuando cambia la forma del resultado: las cachés viejas se rehacen.
+ *
+ * 2: mapa por cubos de cuatro horas, meses incompletos marcados y el tramo
+ *    de cinco minutos en los tiempos de respuesta.
+ */
+export const VERSION_ANALISIS = 2;
 
 export type OpcionesAnalisis = OpcionesNormalizar & {
   /** Horas de silencio que separan dos conversaciones. */
@@ -109,7 +114,13 @@ export function analizar(filas: string[][], opciones: OpcionesAnalisis = {}): An
     inicios: iniciaMas(mensajes, umbralHoras, conversaciones),
     respuestas: tiempoDeRespuesta(turnos, umbralHoras),
     actividad: cuando,
-    tendencias: tendencias(cuando.porMes, medida),
+    /* Las fechas de los extremos van aquí porque son lo que deja saber qué
+       meses están a medias: sin ellas, la gráfica dibuja enero bajo sin
+       decir que el archivo empieza el día 12. */
+    tendencias: tendencias(cuando.porMes, medida, {
+      desde: chat.desde,
+      hasta: chat.hasta,
+    }),
     emojis: emojis(mensajes),
     palabras: palabrasFrecuentes(mensajes, { idioma }),
     expresiones: disculpasYAgradecimientos(mensajes),

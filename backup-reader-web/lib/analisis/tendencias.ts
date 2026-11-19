@@ -28,6 +28,25 @@ export type PuntoDelMes = {
   /** 1 a 12. */
   mes: number;
   valor: number;
+  /**
+   * El archivo no cubre el mes entero.
+   *
+   * POR QUÉ IMPORTA
+   * ---------------
+   * Un export que empieza el 12 de enero y acaba el 15 de septiembre tiene
+   * dos meses a medias en las puntas. Dibujados como los demás, enero y
+   * septiembre salen bajos y la gráfica cuenta una historia que no pasó:
+   * «empezasteis flojo y lo habéis dejado». No es que hablaran menos, es que
+   * hay medio mes menos de archivo.
+   *
+   * Se marcan en vez de quitarlos porque quitarlos escondería que el archivo
+   * no empieza donde empieza la conversación.
+   */
+  parcial: boolean;
+  /** Días del mes que cubre el archivo, para poder explicarlo. */
+  diasCubiertos: number;
+  /** Días que tiene ese mes. */
+  diasDelMes: number;
 };
 
 export type Tendencias = {
@@ -48,9 +67,15 @@ export type Tendencias = {
 /** Por debajo de este cambio, los dos tramos son el mismo. */
 const MARGEN = 0.2;
 
+/** Cuántos días tiene un mes. El 0 del mes siguiente es su último día. */
+const diasDe = (anio: number, mes: number) => new Date(anio, mes, 0).getDate();
+
 function rellenar(
   porMes: Actividad["porMes"],
-  medida: Medida
+  medida: Medida,
+  /** Primer y último mensaje del chat, para saber qué meses están a medias. */
+  desde?: Date | null,
+  hasta?: Date | null
 ): PuntoDelMes[] {
   if (porMes.length === 0) return [];
 
@@ -66,7 +91,30 @@ function rellenar(
      y evita que un año corrupto haga una serie infinita. */
   for (let i = 0; i < 1200; i++) {
     const clave = `${anio}-${String(mes).padStart(2, "0")}`;
-    serie.push({ clave, anio, mes, valor: valores.get(clave) ?? 0 });
+    const diasDelMes = diasDe(anio, mes);
+
+    /* El archivo empieza en `desde` y acaba en `hasta`. Para el primer mes
+       del chat se cubren los días que quedan desde ese día; para el último,
+       los que van hasta ese día. Los de en medio están enteros. */
+    let primerDia = 1;
+    let ultimoDia = diasDelMes;
+    if (desde && desde.getFullYear() === anio && desde.getMonth() + 1 === mes) {
+      primerDia = desde.getDate();
+    }
+    if (hasta && hasta.getFullYear() === anio && hasta.getMonth() + 1 === mes) {
+      ultimoDia = hasta.getDate();
+    }
+    const diasCubiertos = Math.max(0, ultimoDia - primerDia + 1);
+
+    serie.push({
+      clave,
+      anio,
+      mes,
+      valor: valores.get(clave) ?? 0,
+      parcial: diasCubiertos < diasDelMes,
+      diasCubiertos,
+      diasDelMes,
+    });
     if (anio === ultimo.anio && mes === ultimo.mes) break;
     mes++;
     if (mes > 12) {
@@ -90,20 +138,34 @@ const media = (valores: number[]) =>
 export function tendencias(
   porMes: Actividad["porMes"],
   medida: Medida = "mensajes",
-  mesesPorTramo = 3
+  opciones: {
+    /** Meses a cada lado de la comparación. */
+    mesesPorTramo?: number;
+    /** Primer y último mensaje del chat, para marcar los meses a medias. */
+    desde?: Date | null;
+    hasta?: Date | null;
+  } = {}
 ): Tendencias {
-  const serie = rellenar(porMes, medida);
+  const mesesPorTramo = opciones.mesesPorTramo ?? 3;
+  const serie = rellenar(porMes, medida, opciones.desde, opciones.hasta);
 
   const conValor = serie.filter((p) => p.valor > 0);
   const masActivo = conValor.length
     ? conValor.reduce((mejor, p) => (p.valor > mejor.valor ? p : mejor))
     : null;
 
+  /* La comparación solo mira meses enteros. Un último mes a medias baja la
+     media del tramo reciente sin que nadie haya escrito menos, y entonces
+     esto anunciaría una caída que solo existe porque el archivo se exportó
+     a mitad de mes. Es el error más fácil de cometer aquí y el más difícil
+     de ver después. */
+  const completos = serie.filter((p) => !p.parcial);
+
   let comparacion: Tendencias["comparacion"] = null;
-  if (serie.length >= mesesPorTramo * 2) {
-    const reciente = media(serie.slice(-mesesPorTramo).map((p) => p.valor));
+  if (completos.length >= mesesPorTramo * 2) {
+    const reciente = media(completos.slice(-mesesPorTramo).map((p) => p.valor));
     const anterior = media(
-      serie.slice(-mesesPorTramo * 2, -mesesPorTramo).map((p) => p.valor)
+      completos.slice(-mesesPorTramo * 2, -mesesPorTramo).map((p) => p.valor)
     );
 
     let direccion: "mas" | "menos" | "parecido" = "parecido";

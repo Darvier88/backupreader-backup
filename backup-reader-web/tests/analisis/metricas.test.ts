@@ -389,3 +389,171 @@ describe("tendencias", () => {
     expect(t.comparacion).toBeNull();
   });
 });
+
+/* ---------- lo que pedía el diseño: cubos, meses a medias y 5 minutos ---------- */
+
+describe("mapa por cubos de cuatro horas", () => {
+  const a = actividad(
+    mensajesDe([
+      /* 13/01/2026 es martes: índice 1 con la semana empezando en lunes. */
+      ["13/01/26 09:30", "Ana", "uno"],
+      ["13/01/26 10:00", "Beto", "dos"],
+      ["13/01/26 11:00", "Ana", "tres"],
+      ["13/01/26 23:00", "Beto", "cuatro"],
+      ["18/01/26 02:00", "Ana", "cinco"],
+    ])
+  );
+
+  it("es de 7 por 6", () => {
+    expect(a.mapaPorCubos).toHaveLength(7);
+    expect(a.mapaPorCubos[0]).toHaveLength(6);
+  });
+
+  it("mete cada hora en su cubo", () => {
+    /* 9, 10 y 11 caen en el cubo 2 (de 8 a 12). */
+    expect(a.mapaPorCubos[1][2].mensajes).toBe(3);
+    /* 23:00 cae en el cubo 5 (de 20 a 24). */
+    expect(a.mapaPorCubos[1][5].mensajes).toBe(1);
+    /* El domingo a las 02:00 cae en el cubo 0 del día 6. */
+    expect(a.mapaPorCubos[6][0].mensajes).toBe(1);
+  });
+
+  it("los cubos suman lo mismo que las 24 horas", () => {
+    const porCubos = a.mapaPorCubos.flat().reduce((n, c) => n + c.mensajes, 0);
+    const porHoras = a.mapaSemanal.flat().reduce((n, c) => n + c.mensajes, 0);
+    expect(porCubos).toBe(porHoras);
+    expect(porCubos).toBe(a.total.mensajes);
+  });
+
+  it("señala la celda con más actividad", () => {
+    expect(a.puntaSemanal).toEqual({ dia: 1, cubo: 2 });
+  });
+
+  it("sin mensajes no hay punta", () => {
+    expect(actividad([]).puntaSemanal).toBeNull();
+  });
+});
+
+describe("meses a medias", () => {
+  const deEnero12ASeptiembre15 = {
+    desde: new Date(2026, 0, 12, 9, 0),
+    hasta: new Date(2026, 8, 15, 20, 0),
+  };
+  const mesesSeguidos = (desde: number, hasta: number, valor = 100) => {
+    const lista = [];
+    for (let m = desde; m <= hasta; m++) {
+      lista.push({
+        clave: `2026-${String(m).padStart(2, "0")}`,
+        anio: 2026,
+        mes: m,
+        mensajes: valor,
+        palabras: valor * 10,
+        notasDeVoz: 0,
+      });
+    }
+    return lista;
+  };
+
+  it("marca el primero y el último, y deja enteros los de en medio", () => {
+    const t = tendencias(mesesSeguidos(1, 9), "mensajes", deEnero12ASeptiembre15);
+    expect(t.serie[0].parcial).toBe(true);
+    expect(t.serie[0].diasCubiertos).toBe(20); /* del 12 al 31 de enero */
+    expect(t.serie[8].parcial).toBe(true);
+    expect(t.serie[8].diasCubiertos).toBe(15);
+    expect(t.serie.slice(1, 8).every((p) => !p.parcial)).toBe(true);
+  });
+
+  it("un mes que empieza el día 1 y acaba el último no está a medias", () => {
+    const t = tendencias(mesesSeguidos(1, 2), "mensajes", {
+      desde: new Date(2026, 0, 1, 0, 0),
+      hasta: new Date(2026, 1, 28, 23, 59),
+    });
+    expect(t.serie.every((p) => !p.parcial)).toBe(true);
+  });
+
+  it("sin fechas de los extremos no se marca nada", () => {
+    const t = tendencias(mesesSeguidos(1, 3));
+    expect(t.serie.every((p) => !p.parcial)).toBe(true);
+  });
+
+  it("un último mes a medias NO se cuenta como una caída", () => {
+    /* Seis meses iguales y un séptimo a medias con la mitad de mensajes:
+       nadie ha escrito menos, solo hay medio mes menos de archivo. */
+    const meses = [...mesesSeguidos(1, 6, 100), ...mesesSeguidos(7, 7, 50)];
+    const t = tendencias(meses, "mensajes", {
+      desde: new Date(2026, 0, 1, 0, 0),
+      hasta: new Date(2026, 6, 15, 12, 0),
+    });
+    expect(t.serie[6].parcial).toBe(true);
+    expect(t.comparacion!.direccion).toBe("parecido");
+  });
+
+  it("y una caída de verdad sí se ve", () => {
+    const meses = [...mesesSeguidos(1, 3, 100), ...mesesSeguidos(4, 6, 20)];
+    const t = tendencias(meses, "mensajes", {
+      desde: new Date(2026, 0, 1, 0, 0),
+      hasta: new Date(2026, 5, 30, 23, 0),
+    });
+    expect(t.comparacion!.direccion).toBe("menos");
+  });
+});
+
+describe("respuestas en cinco minutos o menos", () => {
+  const r = tiempoDeRespuesta(
+    turnosDe(
+      cronologia([
+        [0, "Ana", "a"],
+        [2, "Beto", "en dos minutos"],
+        [10, "Ana", "b"],
+        [15, "Beto", "en cinco justos"],
+        [20, "Ana", "c"],
+        [50, "Beto", "en media hora"],
+      ])
+    ),
+    8
+  );
+  const beto = r.porAutor.find((a) => a.autor === "Beto")!;
+
+  it("cuenta las que caen dentro, incluidos los cinco justos", () => {
+    expect(beto.bajoCincoMinutos).toBe(2);
+  });
+
+  it("da el porcentaje", () => {
+    expect(beto.porcentajeBajoCincoMinutos).toBe(66.7);
+  });
+
+  it("separa a quien está pendiente de quien no, con la misma mediana", () => {
+    /* Dos personas con mediana parecida: una contesta al vuelo la mitad de
+       las veces, la otra siempre tarda un rato medio. */
+    const aVeces = tiempoDeRespuesta(
+      turnosDe(
+        cronologia([
+          [0, "Ana", "a"], [1, "Beto", "x"],
+          [10, "Ana", "b"], [11, "Beto", "x"],
+          [20, "Ana", "c"], [50, "Beto", "x"],
+          [60, "Ana", "d"], [90, "Beto", "x"],
+        ])
+      ),
+      8
+    ).porAutor.find((a) => a.autor === "Beto")!;
+
+    const siempreIgual = tiempoDeRespuesta(
+      turnosDe(
+        cronologia([
+          [0, "Ana", "a"], [15, "Beto", "x"],
+          [25, "Ana", "b"], [40, "Beto", "x"],
+          [50, "Ana", "c"], [65, "Beto", "x"],
+          [75, "Ana", "d"], [90, "Beto", "x"],
+        ])
+      ),
+      8
+    ).porAutor.find((a) => a.autor === "Beto")!;
+
+    expect(aVeces.porcentajeBajoCincoMinutos).toBe(50);
+    expect(siempreIgual.porcentajeBajoCincoMinutos).toBe(0);
+  });
+
+  it("sin respuestas, cero y no una división por cero", () => {
+    expect(tiempoDeRespuesta([], 4).porAutor).toEqual([]);
+  });
+});

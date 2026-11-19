@@ -39,6 +39,20 @@ export type RespuestasDeAutor = {
   bajoUnMinuto: number;
   bajoUnaHora: number;
   masDeUnaHora: number;
+  /**
+   * Respuestas en cinco minutos o menos, y su porcentaje.
+   *
+   * POR QUÉ CINCO Y NO LA MEDIANA
+   * -----------------------------
+   * La mediana dice cuánto tarda la respuesta del medio, y eso deja fuera lo
+   * que la gente nota de verdad: si el otro está pendiente. Dos personas con
+   * la misma mediana de doce minutos pueden ser una que contesta al vuelo la
+   * mitad de las veces y tarda mucho la otra mitad, y otra que siempre tarda
+   * un rato medio. El porcentaje por debajo de cinco minutos separa esos dos
+   * casos, que es justo lo que la mediana junta.
+   */
+  bajoCincoMinutos: number;
+  porcentajeBajoCincoMinutos: number;
 };
 
 export type TiemposDeRespuesta = {
@@ -73,14 +87,20 @@ export function tiempoDeRespuesta(
   }
 
   const porAutor: RespuestasDeAutor[] = [...esperas.entries()]
-    .map(([autor, lista]) => ({
-      autor,
-      respuestas: lista.length,
-      medianaMs: mediana(lista) ?? 0,
-      bajoUnMinuto: lista.filter((ms) => ms < MINUTO).length,
-      bajoUnaHora: lista.filter((ms) => ms >= MINUTO && ms < 60 * MINUTO).length,
-      masDeUnaHora: lista.filter((ms) => ms >= 60 * MINUTO).length,
-    }))
+    .map(([autor, lista]) => {
+      const bajoCincoMinutos = lista.filter((ms) => ms <= 5 * MINUTO).length;
+      return {
+        autor,
+        respuestas: lista.length,
+        medianaMs: mediana(lista) ?? 0,
+        bajoUnMinuto: lista.filter((ms) => ms < MINUTO).length,
+        bajoUnaHora: lista.filter((ms) => ms >= MINUTO && ms < 60 * MINUTO).length,
+        masDeUnaHora: lista.filter((ms) => ms >= 60 * MINUTO).length,
+        bajoCincoMinutos,
+        porcentajeBajoCincoMinutos:
+          lista.length > 0 ? Math.round((bajoCincoMinutos / lista.length) * 1000) / 10 : 0,
+      };
+    })
     .sort((a, b) => a.medianaMs - b.medianaMs || a.autor.localeCompare(b.autor));
 
   const totalRespuestas = porAutor.reduce((n, a) => n + a.respuestas, 0);
