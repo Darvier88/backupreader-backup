@@ -1064,3 +1064,45 @@ body {
   font-family: var(--font-mono); font-size: 10.5px;
   letter-spacing: 0.12em; text-transform: uppercase; color: var(--text-muted);
 }
+
+/* Elegir el formato de fecha. Botones grandes porque es una decisión, no un
+   ajuste: se toma una vez y condiciona la mitad del panel. */
+.br-an-opciones { display: flex; flex-direction: column; gap: 10px; }
+.br-an-opcion {
+  display: flex; align-items: center; gap: 12px; width: 100%;
+  padding: 14px 16px; cursor: pointer; text-align: left;
+  background: var(--surface-raised);
+  border: 1px solid var(--border); border-radius: var(--radius-lg);
+}
+.br-an-opcion:hover { border-color: var(--accent); }
+.br-an-opcion:focus-visible { outline: none; box-shadow: var(--focus-ring); }
+.br-an-opcion--elegida { border-color: var(--accent); background: var(--accent-pale); }
+.br-an-opcion-punto {
+  flex-shrink: 0; width: 18px; height: 18px; border-radius: 50%;
+  border: 1.5px solid var(--border-strong); background: var(--surface-raised);
+}
+.br-an-opcion--elegida .br-an-opcion-punto {
+  border-color: var(--accent); border-width: 5px;
+}
+.br-an-opcion-texto { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+.br-an-opcion-titulo {
+  font-family: var(--font-sans); font-size: 15px; font-weight: 600;
+  color: var(--text-strong);
+}
+.br-an-opcion-ejemplo {
+  font-family: var(--font-mono); font-size: 11.5px;
+  letter-spacing: 0.04em; color: var(--text-muted);
+}
+.br-an-espera-lista {
+  display: flex; flex-direction: column; gap: 6px;
+  padding: 14px 16px;
+  border: 1px dashed var(--border-strong); border-radius: var(--radius-lg);
+}
+.br-an-espera-label { color: var(--text-muted); }
+.br-an-espera-lista .br-an-numeros-label + .br-an-detalle { margin-bottom: 6px; }
+
+/* Un botón apagado tiene que verse apagado. Sin esto, «Confirmar formato»
+   parecía pulsable antes de elegir nada y el clic no hacía nada, que es la
+   forma más rápida de que alguien piense que la aplicación está rota. */
+.br-btn:disabled { opacity: 0.45; cursor: default; }
+.br-btn:disabled:hover { filter: none; }

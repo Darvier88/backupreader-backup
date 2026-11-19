@@ -21,6 +21,7 @@ import {
   Titular,
   enTexto,
 } from "./piezas";
+import { PreguntaFecha } from "./PreguntaFecha";
 import { Resumen } from "./Resumen";
 import { Dinamica } from "./Dinamica";
 import { Palabras } from "./Palabras";
@@ -71,6 +72,8 @@ export const PanelAnalisis: FC<{
   const [calculando, setCalculando] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [marcadas, setMarcadas] = useState<string[]>([]);
+  /* El formato que el usuario confirmó, si tuvo que confirmarlo. */
+  const [diaPrimero, setDiaPrimero] = useState<boolean | undefined>(undefined);
 
   /* Lo elegido a mano manda sobre lo deducido del título, pero solo cuando
      se ha elegido: si no, cambiar de chat no arrastraría el nombre viejo. */
@@ -104,6 +107,8 @@ export const PanelAnalisis: FC<{
       }
       if (!vigente) return;
 
+      if (guardado?.diaPrimero !== undefined) setDiaPrimero(guardado.diaPrimero);
+
       if (guardado && analisisVigente(guardado, ajustes)) {
         setAnalisis(guardado.analisis);
         setMarcadas(guardado.senales?.map((s) => s.metrica) ?? []);
@@ -116,7 +121,13 @@ export const PanelAnalisis: FC<{
       try {
         const { analisis: nuevo } = await pedirAnalisis(
           filas,
-          { ...ajustes, diaPrimeroPorDefecto: idioma.startsWith("en") ? false : true },
+          {
+            ...ajustes,
+            /* Lo confirmado a mano manda; si no, el idioma del lector como
+               último recurso. */
+            diaPrimeroPorDefecto:
+              (guardado?.diaPrimero ?? diaPrimero) ?? !idioma.startsWith("en"),
+          },
           abortar.signal
         );
         if (!vigente) return;
@@ -150,7 +161,7 @@ export const PanelAnalisis: FC<{
       abortar.abort();
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [filas, handle, ajustes]);
+  }, [filas, handle, ajustes, diaPrimero]);
 
   /** Guarda el cambio de ajuste manual dentro de la pieza cifrada. */
   const guardarEleccion = useCallback(
@@ -167,6 +178,12 @@ export const PanelAnalisis: FC<{
     },
     [handle, escribirAnalisis, analisis, yo, marcadas]
   );
+
+  /** El formato que el usuario dice que usa su teléfono. */
+  const confirmarFecha = (valor: boolean) => {
+    setDiaPrimero(valor);
+    guardarEleccion({ diaPrimero: valor });
+  };
 
   const elegirYo = (autor: string | undefined) => {
     yoElegido.current = true;
@@ -241,6 +258,11 @@ export const PanelAnalisis: FC<{
     );
   }
 
+  /* Si el chat no demuestra el formato y nadie lo ha confirmado, se
+     pregunta. Las cifras que no dependen del día se siguen enseñando
+     debajo, para que la pregunta no deje la pantalla en blanco. */
+  const hayQuePreguntar = !analisis.formatoFecha.seguro && diaPrimero === undefined;
+
   if (!analisis.suficiente) {
     /* Esto ya no es «hay pocos datos»: es que no hay nada que contar. Un
        archivo vacío, o un chat donde solo ha escrito una persona. */
@@ -255,6 +277,15 @@ export const PanelAnalisis: FC<{
           </Detalle>
         </Tarjeta>
       </div>
+    );
+  }
+
+  if (hayQuePreguntar) {
+    return (
+      <PreguntaFecha
+        sugerido={analisis.formatoFecha.diaPrimero}
+        onConfirmar={confirmarFecha}
+      />
     );
   }
 
@@ -309,19 +340,7 @@ export const PanelAnalisis: FC<{
         {calculando && <span>{t("Calculando…")}</span>}
       </div>
 
-      {/* Dos avisos que van ANTES de cualquier cifra, porque cambian cómo se
-          leen todas las de debajo. */}
-
-      {/* 1. No se sabe si 3/4 es el 3 de abril o el 4 de marzo. */}
-      {!analisis.formatoFecha.seguro && (
-        <Aviso>
-          {t(
-            "En este chat ningún día pasa del 12, así que no hay forma de saber si las fechas son día/mes o mes/día. Lo demás aguanta, pero «mes a mes» podría estar desplazado."
-          )}
-        </Aviso>
-      )}
-
-      {/* 2. Sin saber quién eres, todo se lee en tercera persona y la mitad
+      {/* Sin saber quién eres, todo se lee en tercera persona y la mitad
              de las frases pierden sentido. */}
       {!yo && analisis.autores.length === 2 && (
         <Aviso>

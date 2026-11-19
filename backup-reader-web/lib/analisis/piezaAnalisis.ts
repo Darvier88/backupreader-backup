@@ -62,6 +62,15 @@ export type AnalisisGuardado = {
    */
   yo?: string;
   /**
+   * El formato de fecha que el usuario confirmó a mano.
+   *
+   * Solo hace falta cuando el chat no lo demuestra (ningún día pasa del 12).
+   * Va aquí y no en localStorage por lo mismo que `yo`: se perdería al
+   * cambiar de dispositivo, y entonces el chat volvería a enseñar las
+   * métricas en espera como si nunca se hubiera preguntado.
+   */
+  diaPrimero?: boolean;
+  /**
    * Las métricas que el usuario marcó con «Esto no cuadra».
    *
    * Qué métrica y cuándo, nada más: ni texto del chat, ni nombres, ni las
