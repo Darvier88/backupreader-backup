@@ -5,6 +5,7 @@ import type { Analisis } from "../../lib/analisis/analizar";
 import { MIN_CONVERSACIONES, MIN_RESPUESTAS } from "../../lib/analisis/umbrales";
 import { duracion, numero } from "../../lib/analisis/formatear";
 import {
+  Barra,
   Detalle,
   EstoNoCuadra,
   Insuficiente,
@@ -47,6 +48,11 @@ export const Resumen: FC<{
   const titular = (autor: string, propio: string, ajeno: string) =>
     soyYo(autor) ? t(propio) : t(ajeno, { quien: autor });
 
+  /* `tardaMas` nombra al lento; para el titular hace falta el otro. La lista
+     viene ordenada de mediana más baja a más alta, así que el primero es el
+     que responde antes. */
+  const masRapido = respuestas.porAutor[0]?.autor;
+
   const accion = (metrica: string) => (
     <EstoNoCuadra
       metrica={metrica}
@@ -58,11 +64,29 @@ export const Resumen: FC<{
   return (
     <>
       <Tarjeta titulo={enTexto(t("Quién escribe más"))} accion={accion("volumen")}>
+        {/* El titular dice QUÉ cuenta. En un chat de fotos, «escribe más»
+            por mensajes y por palabras pueden señalar a personas distintas,
+            y sin decirlo la cifra parece un hecho en vez de una medida. */}
         <Titular>
           {volumen.masPalabras.parecido
-            ? t("Escribís parecido")
-            : titular(volumen.masPalabras.mayor || "", "Escribes más", "{{quien}} escribe más")}
+            ? t("Escribís parecido, en palabras")
+            : titular(
+                volumen.masPalabras.mayor || "",
+                "Escribes más palabras",
+                "{{quien}} escribe más palabras"
+              )}
         </Titular>
+        {/* Y si por mensajes gana el otro, se dice: es la contradicción que
+            más desconfianza genera si el lector la descubre solo. */}
+        {!volumen.masMensajes.parecido &&
+          !volumen.masPalabras.parecido &&
+          volumen.masMensajes.mayor !== volumen.masPalabras.mayor && (
+            <Detalle>
+              {t("Por número de mensajes gana {{quien}}: son dos formas de contar.", {
+                quien: comoSeLlama(volumen.masMensajes.mayor || ""),
+              })}
+            </Detalle>
+          )}
         <Reparto
           partes={volumen.porAutor.map((a) => ({
             etiqueta: comoSeLlama(a.autor),
@@ -143,13 +167,15 @@ export const Resumen: FC<{
           </Insuficiente>
         ) : (
           <>
+            {/* Se nombra al que responde antes, no al que tarda. Dice lo
+                mismo y no suena a reproche sobre nadie. */}
             <Titular>
               {respuestas.tardaMas.parecido
                 ? t("Contestáis en un tiempo parecido")
                 : titular(
-                    respuestas.tardaMas.mayor || "",
-                    "Tardas más en contestar",
-                    "{{quien}} tarda más en contestar"
+                    masRapido || "",
+                    "Respondes antes",
+                    "{{quien}} responde antes"
                   )}
             </Titular>
             <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
@@ -187,20 +213,24 @@ export const Resumen: FC<{
                     {/* La mediana sola esconde dos costumbres distintas: quien
                         contesta al instante la mitad de las veces y a las dos
                         horas la otra mitad tiene la misma mediana que quien
-                        siempre tarda un rato medio. */}
-                    <span
-                      style={{
-                        fontFamily: "var(--font-mono)",
-                        fontSize: 11,
-                        color: "var(--slate-500)",
-                      }}
-                    >
-                      {t("{{rapidas}} al momento · {{medias}} en menos de una hora · {{lentas}} más tarde", {
-                        rapidas: numero(a.bajoUnMinuto, idioma),
-                        medias: numero(a.bajoUnaHora, idioma),
-                        lentas: numero(a.masDeUnaHora, idioma),
-                      })}
-                    </span>
+                        siempre tarda un rato medio. El porcentaje por debajo
+                        de cinco minutos es lo que separa esos dos casos. */}
+                    <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                      <div style={{ flex: 1, maxWidth: 160 }}>
+                        <Barra parte={a.bajoCincoMinutos} total={a.respuestas} alto={4} />
+                      </div>
+                      <span
+                        style={{
+                          fontFamily: "var(--font-mono)",
+                          fontSize: 11,
+                          color: "var(--slate-500)",
+                        }}
+                      >
+                        {t("{{pct}} % contesta en 5 min o menos", {
+                          pct: numero(a.porcentajeBajoCincoMinutos, idioma),
+                        })}
+                      </span>
+                    </div>
                   </div>
                 );
               })}
