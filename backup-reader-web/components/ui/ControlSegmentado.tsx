@@ -24,6 +24,13 @@ export const ControlSegmentado: FC<{
       style={{
         display: "inline-flex",
         width: completo ? "100%" : undefined,
+        /* Si las etiquetas no caben, se desliza en vez de cortarse. En el
+           panel de un grupo son cuatro y la primera es «Quién habla»: sin
+           esto, «Ajustes» se quedaba partido contra el borde y parecía que
+           no existía. */
+        maxWidth: "100%",
+        overflowX: "auto",
+        scrollbarWidth: "none",
         padding: 3,
         gap: 2,
         borderRadius: 10,
@@ -43,7 +50,9 @@ export const ControlSegmentado: FC<{
             style={{
               flex: completo ? 1 : undefined,
               minHeight: 38,
-              padding: "0 16px",
+              /* 10 y no 16: con cuatro pestañas en un panel de 360 px, seis
+                 píxeles por lado a cada una son los que deciden si cabe. */
+              padding: completo ? "0 10px" : "0 16px",
               borderRadius: 8,
               border: "none",
               cursor: "pointer",
