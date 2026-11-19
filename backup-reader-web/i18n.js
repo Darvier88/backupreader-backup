@@ -506,6 +506,9 @@ const resources = {
 
       /* Dinámica */
       "Cuándo habláis":"When you talk",
+      "En números":"In numbers",
+      "{{n}} mensajes en {{meses}} meses.":"{{n}} messages over {{meses}} months.",
+      "Habláis sobre todo los {{dia}} {{franja}}.":"You mostly talk on {{dia}} {{franja}}.",
       "Sobre todo los {{dia}} {{franja}}":"Mostly on {{dia}} {{franja}}",
       "Aún no hay bastante para ver un patrón":"Not enough yet to see a pattern",
       "de madrugada":"in the small hours",
@@ -530,8 +533,8 @@ const resources = {
       "miércoles":"Wednesdays",
       "jueves":"Thursdays",
       "viernes":"Fridays",
-      "sábado":"Saturdays",
-      "domingo":"Sundays",
+      "sábados":"Saturdays",
+      "domingos":"Sundays",
       "Mes a mes":"Month by month",
       "Los últimos meses, parecido que antes":"Recent months, much like before",
       "Los últimos meses, más que antes":"Recent months, more than before",

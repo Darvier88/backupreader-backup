@@ -861,3 +861,107 @@ body {
 .br-sugerencias-pie { display: flex; align-items: center; justify-content: space-between; gap: 12px; width: 100%; padding: 12px 18px; border: 0; border-top: 1px solid var(--border); background: var(--paper-50); font-family: var(--font-sans); font-size: 13.5px; font-weight: 600; color: var(--brass-600); text-align: left; cursor: pointer; }
 .br-sugerencias > .br-sugerencias-pie:first-child { border-top: 0; }
 .br-consejo { padding: 12px 0; border-bottom: 1px solid var(--border); font-family: var(--font-sans); font-size: 14px; line-height: 1.45; color: var(--slate-700); }
+
+/* ======================== Análisis de chats ==============================
+   Las tarjetas del análisis. Estaban con estilos en línea dentro de cada
+   componente, que es cómodo para empezar y un problema en cuanto hay cinco
+   vistas: una tarjeta que se ve distinta se lee como si dijera algo
+   distinto. Aquí están los mismos valores, en un sitio.
+   ========================================================================= */
+
+.br-an { display: flex; flex-direction: column; gap: 14px; padding: 8px 0 24px; }
+
+.br-an-tarjeta {
+  display: flex; flex-direction: column; gap: 14px; min-width: 0;
+  padding: 18px 20px 20px;
+  background: var(--surface-raised);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-xs);
+}
+.br-an-cabecera { display: flex; align-items: center; gap: 12px; }
+.br-an-titulo {
+  flex: 1; min-width: 0; margin: 0;
+  font-family: var(--font-mono); font-size: 11px; font-weight: 500;
+  letter-spacing: 0.14em; text-transform: uppercase; color: var(--text-muted);
+}
+.br-an-titular {
+  margin: 0;
+  font-family: var(--font-serif); font-weight: 500;
+  font-size: 22px; line-height: 1.25; letter-spacing: -0.01em;
+  color: var(--text-strong);
+}
+.br-an-detalle {
+  margin: 0;
+  font-family: var(--font-sans); font-size: 13px; line-height: 1.5;
+  color: var(--text-body);
+}
+.br-an-pie {
+  margin: 2px 0 0;
+  font-family: var(--font-sans); font-size: 12px; line-height: 1.5;
+  color: var(--text-muted);
+}
+.br-an-rango {
+  display: flex; flex-wrap: wrap; gap: 4px 12px; align-items: baseline;
+  font-family: var(--font-mono); font-size: 11px;
+  letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-muted);
+}
+
+/* El bloque oscuro del resumen: lo primero que se ve, y solo hechos. */
+.br-an-numeros {
+  display: flex; flex-direction: column; gap: 10px;
+  padding: 20px 22px 22px;
+  background: var(--surface-inverse);
+  border-radius: var(--radius-xl);
+}
+.br-an-numeros-label {
+  font-family: var(--font-mono); font-size: 11px; font-weight: 500;
+  letter-spacing: 0.16em; text-transform: uppercase; color: var(--brass-300);
+}
+.br-an-numeros-frase {
+  margin: 0;
+  font-family: var(--font-serif); font-weight: 400;
+  font-size: 24px; line-height: 1.3; letter-spacing: -0.01em;
+  color: var(--text-on-ink);
+}
+
+/* Barras y repartos */
+.br-an-barra {
+  height: 6px; min-width: 40px; overflow: hidden;
+  border-radius: var(--radius-pill); background: var(--surface-sunken);
+}
+.br-an-barra > span { display: block; height: 100%; background: var(--ink-900); }
+.br-an-reparto { display: flex; height: 8px; overflow: hidden; border-radius: var(--radius-pill); background: var(--surface-sunken); }
+.br-an-leyenda { display: flex; flex-wrap: wrap; gap: 4px 16px; }
+.br-an-leyenda span { font-family: var(--font-mono); font-size: 11.5px; color: var(--text-muted); }
+.br-an-leyenda span:first-child { color: var(--text-strong); }
+
+/* «Esto no cuadra» */
+.br-an-senal {
+  padding: 4px 10px; border: 1px solid var(--border); background: transparent;
+  border-radius: var(--radius-pill); cursor: pointer; white-space: nowrap;
+  font-family: var(--font-sans); font-size: 11px; color: var(--text-muted);
+  transition: color var(--dur-fast) var(--ease-standard),
+              border-color var(--dur-fast) var(--ease-standard);
+}
+.br-an-senal:hover:not(:disabled) { color: var(--text-accent); border-color: var(--accent); }
+.br-an-senal:focus-visible { outline: none; box-shadow: var(--focus-ring); }
+.br-an-senal:disabled { background: var(--surface-sunken); cursor: default; }
+
+/* Filas que se pueden tocar para ir a un mensaje */
+.br-an-fila {
+  display: flex; align-items: center; gap: 10px;
+  margin: 0 -6px; padding: 3px 6px;
+  border-radius: var(--radius-sm);
+  transition: background var(--dur-fast) var(--ease-standard);
+}
+.br-an-fila[role="button"] { cursor: pointer; }
+.br-an-fila[role="button"]:hover { background: var(--surface-sunken); }
+.br-an-fila[role="button"]:focus-visible { outline: none; box-shadow: var(--focus-ring); }
+
+@media (max-width: 720px) {
+  .br-an-tarjeta { padding: 16px 16px 18px; }
+  .br-an-titular { font-size: 20px; }
+  .br-an-numeros { padding: 18px; }
+  .br-an-numeros-frase { font-size: 21px; }
+}

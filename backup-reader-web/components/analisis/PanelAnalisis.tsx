@@ -10,7 +10,7 @@ import type { Medida } from "../../lib/analisis/tendencias";
 import { MIN_MENSAJES } from "../../lib/analisis/umbrales";
 import { fechaCorta, numero } from "../../lib/analisis/formatear";
 import { ControlSegmentado } from "../ui/ControlSegmentado";
-import { Detalle, Tarjeta, Titular, enTexto } from "./piezas";
+import { DIAS_LARGO, Detalle, EnNumeros, FRANJAS, Tarjeta, Titular, enTexto } from "./piezas";
 import { Resumen } from "./Resumen";
 import { Dinamica } from "./Dinamica";
 import { Palabras } from "./Palabras";
@@ -185,7 +185,7 @@ export const PanelAnalisis: FC<{
 
   if (!bovedaAbierta) {
     return (
-      <div style={{ padding: "8px 0 24px" }}>
+      <div className="br-an">
         <Tarjeta titulo={enTexto(t("Análisis"))}>
           <Titular>{t("Abre la bóveda para analizar este chat")}</Titular>
           <Detalle>
@@ -200,7 +200,7 @@ export const PanelAnalisis: FC<{
 
   if (error) {
     return (
-      <div style={{ padding: "8px 0 24px" }}>
+      <div className="br-an">
         <Tarjeta titulo={enTexto(t("Análisis"))}>
           <Titular>{t("No se pudo analizar este chat")}</Titular>
           <Detalle>{error}</Detalle>
@@ -211,7 +211,7 @@ export const PanelAnalisis: FC<{
 
   if (!analisis) {
     return (
-      <div style={{ padding: "8px 0 24px" }}>
+      <div className="br-an">
         <Tarjeta titulo={enTexto(t("Análisis"))}>
           <Detalle>{t("Calculando…")}</Detalle>
         </Tarjeta>
@@ -221,7 +221,7 @@ export const PanelAnalisis: FC<{
 
   if (!analisis.suficiente) {
     return (
-      <div style={{ padding: "8px 0 24px" }}>
+      <div className="br-an">
         <Tarjeta titulo={enTexto(t("Análisis"))}>
           <Titular>{t("Aún no hay bastante conversación")}</Titular>
           <Detalle>
@@ -236,6 +236,28 @@ export const PanelAnalisis: FC<{
   }
 
   const esGrupo = analisis.grupo.esGrupo;
+
+  /**
+   * La frase del bloque oscuro, compuesta de conteos.
+   *
+   * No hay nada generado aquí: son cifras metidas en una frase. Se dice
+   * «sobre todo» y una franja ancha porque es lo que el dato aguanta, y si
+   * no hay una franja que destaque no se dice nada de cuándo, en vez de
+   * señalar la que ganó por tres mensajes.
+   */
+  const meses = (() => {
+    if (!analisis.desde || !analisis.hasta) return 0;
+    const a = new Date(analisis.desde);
+    const b = new Date(analisis.hasta);
+    return Math.max(1, (b.getFullYear() - a.getFullYear()) * 12 + (b.getMonth() - a.getMonth()) + 1);
+  })();
+
+  const punta = analisis.actividad.puntaSemanal;
+  const celdas = analisis.actividad.mapaPorCubos.flat().map((c) => c.mensajes);
+  const mediaCelda = celdas.reduce((n, x) => n + x, 0) / Math.max(1, celdas.length);
+  /* «Destaca» es, al menos, el doble de la celda media. Por debajo de eso
+     hay un máximo pero no un patrón, y nombrarlo sería inventar. */
+  const hayPatron = !!punta && celdas[punta.dia * 6 + punta.cubo] >= mediaCelda * 2;
   /* En un grupo, «Resumen» YA es la tabla: una pestaña «Grupo» aparte
      enseñaría exactamente lo mismo y haría dudar de si son dos cosas. */
   const vistas: Array<{ valor: Vista; etiqueta: string }> = [
@@ -248,22 +270,10 @@ export const PanelAnalisis: FC<{
   const vistaActual = vistas.some((v) => v.valor === vista) ? vista : "resumen";
 
   return (
-    <div style={{ padding: "8px 0 24px", display: "flex", flexDirection: "column", gap: 14 }}>
+    <div className="br-an">
       {/* De cuándo a cuándo, arriba del todo: sin esto, cualquier cifra flota
           y nadie sabe si habla de este año o de siete. */}
-      <div
-        style={{
-          display: "flex",
-          flexWrap: "wrap",
-          gap: "4px 12px",
-          alignItems: "baseline",
-          fontFamily: "var(--font-mono)",
-          fontSize: 11,
-          letterSpacing: "0.1em",
-          textTransform: "uppercase",
-          color: "var(--slate-500)",
-        }}
-      >
+      <div className="br-an-rango">
         {analisis.desde && analisis.hasta && (
           <span>
             {t("Del {{desde}} al {{hasta}} · {{n}} mensajes", {
@@ -302,6 +312,22 @@ export const PanelAnalisis: FC<{
         onCambio={(v) => setVista(v as Vista)}
         opciones={vistas}
       />
+
+      {vistaActual === "resumen" && (
+        <EnNumeros>
+          {t("{{n}} mensajes en {{meses}} meses.", {
+            n: numero(analisis.mensajesContables, idioma),
+            meses,
+          })}
+          {hayPatron && punta
+            ? " " +
+              t("Habláis sobre todo los {{dia}} {{franja}}.", {
+                dia: t(DIAS_LARGO[punta.dia]),
+                franja: t(FRANJAS[punta.cubo]),
+              })
+            : ""}
+        </EnNumeros>
+      )}
 
       {vistaActual === "resumen" &&
         (esGrupo ? (
@@ -351,15 +377,7 @@ export const PanelAnalisis: FC<{
         />
       )}
 
-      <p
-        style={{
-          margin: "2px 0 0",
-          fontFamily: "var(--font-sans)",
-          fontSize: 12,
-          lineHeight: 1.5,
-          color: "var(--slate-500)",
-        }}
-      >
+      <p className="br-an-pie">
         {t("Calculado en tu navegador. Ni el texto del chat ni estas cifras salen de tu dispositivo.")}
       </p>
     </div>

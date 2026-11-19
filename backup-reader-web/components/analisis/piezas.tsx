@@ -4,10 +4,34 @@ import { t } from "i18next";
 /**
  * Las piezas que comparten todas las tarjetas del análisis.
  *
- * Están aquí y no repetidas en cada vista para que el tono y el espaciado
- * sean los mismos en las cinco pestañas: una tarjeta que se ve distinta se
- * lee como si dijera algo distinto.
+ * Los estilos viven en `styles/backupreader-design.css`, con el prefijo
+ * `br-an-`, y no aquí dentro: con cinco vistas, una tarjeta que se ve
+ * distinta se lee como si dijera algo distinto, y los estilos en línea
+ * hacen que eso pase sin que nadie lo decida.
  */
+
+/**
+ * Los días de la semana, empezando en lunes. Son claves de i18n.
+ *
+ * En plural, porque siempre van detrás de «los»: «los lunes», «los
+ * sábados». Lunes a viernes se escriben igual en singular y plural, sábado
+ * y domingo no, y en singular salía «los sábado».
+ */
+export const DIAS = ["L", "M", "X", "J", "V", "S", "D"];
+export const DIAS_LARGO = [
+  "lunes", "martes", "miércoles", "jueves", "viernes", "sábados", "domingos",
+];
+
+/** Las seis franjas del día, en el orden de los cubos de `actividad`. */
+export const FRANJAS = [
+  "de madrugada",
+  "a primera hora",
+  "por la mañana",
+  "a mediodía",
+  "por la tarde",
+  "por la noche",
+];
+export const HORA_INICIAL = ["0h", "4h", "8h", "12h", "16h", "20h"];
 
 export const enTexto = (traducido: unknown): string =>
   (traducido as string | null | undefined) ?? "";
@@ -18,38 +42,10 @@ export const Tarjeta: FC<{
   /** Botón de la esquina, para «Esto no cuadra». */
   accion?: ReactNode;
 }> = ({ titulo, children, accion }) => (
-  <section
-    style={{
-      background: "var(--surface-raised)",
-      border: "1px solid var(--border)",
-      borderRadius: 14,
-      padding: "18px 20px 20px",
-      boxShadow: "var(--shadow-xs)",
-      display: "flex",
-      flexDirection: "column",
-      gap: 14,
-      minWidth: 0,
-    }}
-  >
+  <section className="br-an-tarjeta">
     {(titulo || accion) && (
-      <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-        {titulo && (
-          <h3
-            style={{
-              margin: 0,
-              flex: 1,
-              minWidth: 0,
-              fontFamily: "var(--font-mono)",
-              fontSize: 11,
-              letterSpacing: "0.14em",
-              textTransform: "uppercase",
-              color: "var(--slate-500)",
-              fontWeight: 500,
-            }}
-          >
-            {titulo}
-          </h3>
-        )}
+      <div className="br-an-cabecera">
+        {titulo && <h3 className="br-an-titulo">{titulo}</h3>}
         {accion}
       </div>
     )}
@@ -58,34 +54,28 @@ export const Tarjeta: FC<{
 );
 
 export const Titular: FC<{ children: ReactNode }> = ({ children }) => (
-  <p
-    style={{
-      margin: 0,
-      fontFamily: "var(--font-serif)",
-      fontSize: 22,
-      lineHeight: 1.25,
-      letterSpacing: "-0.01em",
-      color: "var(--ink-900)",
-    }}
-  >
-    {children}
-  </p>
+  <p className="br-an-titular">{children}</p>
 );
 
 export const Detalle: FC<{ children: ReactNode }> = ({ children }) => (
-  <p
-    style={{
-      margin: 0,
-      fontFamily: "var(--font-sans)",
-      fontSize: 13,
-      lineHeight: 1.5,
-      color: "var(--slate-700)",
-    }}
-  >
-    {children}
-  </p>
+  <p className="br-an-detalle">{children}</p>
 );
 
+/**
+ * El bloque oscuro del resumen.
+ *
+ * Es lo primero que se ve al abrir la pestaña, así que solo lleva hechos:
+ * cuántos mensajes, en cuánto tiempo y cuándo se habla. Nada de veredictos
+ * ni de adjetivos. Lo que viene debajo ya compara personas; esto todavía no.
+ */
+export const EnNumeros: FC<{ children: ReactNode }> = ({ children }) => (
+  <div className="br-an-numeros">
+    <span className="br-an-numeros-label">{t("En números")}</span>
+    <p className="br-an-numeros-frase">{children}</p>
+  </div>
+);
+
+/* Los grises del reparto, del más fuerte al más tenue. */
 const COLORES = ["var(--ink-900)", "#9aa0a6", "#c2c7cc", "#dcdfe3", "#eceef0"];
 
 /**
@@ -98,15 +88,7 @@ export const Reparto: FC<{ partes: Array<{ etiqueta: string; porcentaje: number 
   partes,
 }) => (
   <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-    <div
-      style={{
-        display: "flex",
-        height: 8,
-        borderRadius: 999,
-        overflow: "hidden",
-        background: "var(--paper-100)",
-      }}
-    >
+    <div className="br-an-reparto">
       {partes.map((p, i) => (
         <div
           key={p.etiqueta}
@@ -114,16 +96,9 @@ export const Reparto: FC<{ partes: Array<{ etiqueta: string; porcentaje: number 
         />
       ))}
     </div>
-    <div style={{ display: "flex", flexWrap: "wrap", gap: "4px 16px" }}>
-      {partes.map((p, i) => (
-        <span
-          key={p.etiqueta}
-          style={{
-            fontFamily: "var(--font-mono)",
-            fontSize: 11.5,
-            color: i === 0 ? "var(--ink-900)" : "var(--slate-500)",
-          }}
-        >
+    <div className="br-an-leyenda">
+      {partes.map((p) => (
+        <span key={p.etiqueta}>
           {p.etiqueta} · {p.porcentaje}%
         </span>
       ))}
@@ -135,24 +110,10 @@ export const Reparto: FC<{ partes: Array<{ etiqueta: string; porcentaje: number 
 export const Barra: FC<{ parte: number; total: number; alto?: number }> = ({
   parte,
   total,
-  alto = 6,
+  alto,
 }) => (
-  <div
-    style={{
-      height: alto,
-      borderRadius: 999,
-      background: "var(--paper-100)",
-      overflow: "hidden",
-      minWidth: 40,
-    }}
-  >
-    <div
-      style={{
-        width: `${total > 0 ? Math.max(2, (parte / total) * 100) : 0}%`,
-        height: "100%",
-        background: "var(--ink-900)",
-      }}
-    />
+  <div className="br-an-barra" style={alto ? { height: alto } : undefined}>
+    <span style={{ width: `${total > 0 ? Math.max(2, (parte / total) * 100) : 0}%` }} />
   </div>
 );
 
@@ -179,20 +140,10 @@ export const EstoNoCuadra: FC<{
 }> = ({ metrica, marcada, onMarcar }) => (
   <button
     type="button"
+    className="br-an-senal"
     onClick={() => onMarcar(metrica)}
     disabled={marcada}
     title={enTexto(t("Solo se guarda qué métrica y cuándo. Nada del chat."))}
-    style={{
-      border: "1px solid var(--border)",
-      background: marcada ? "var(--paper-100)" : "transparent",
-      borderRadius: 999,
-      padding: "4px 10px",
-      cursor: marcada ? "default" : "pointer",
-      fontFamily: "var(--font-sans)",
-      fontSize: 11,
-      color: "var(--slate-500)",
-      whiteSpace: "nowrap",
-    }}
   >
     {marcada ? t("Anotado") : t("Esto no cuadra")}
   </button>

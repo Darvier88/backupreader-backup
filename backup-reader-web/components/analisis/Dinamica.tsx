@@ -4,7 +4,17 @@ import i18n, { t } from "i18next";
 import type { Analisis } from "../../lib/analisis/analizar";
 import type { Medida } from "../../lib/analisis/tendencias";
 import { fechaCorta, numero } from "../../lib/analisis/formatear";
-import { Detalle, EstoNoCuadra, Tarjeta, Titular, enTexto } from "./piezas";
+import {
+  DIAS,
+  DIAS_LARGO,
+  Detalle,
+  EstoNoCuadra,
+  FRANJAS,
+  HORA_INICIAL,
+  Tarjeta,
+  Titular,
+  enTexto,
+} from "./piezas";
 
 /**
  * Cuándo se habla: horas del día, días de la semana y meses.
@@ -18,19 +28,6 @@ import { Detalle, EstoNoCuadra, Tarjeta, Titular, enTexto } from "./piezas";
  * pantalla y se puede seleccionar.
  */
 
-const DIAS = ["L", "M", "X", "J", "V", "S", "D"];
-const DIAS_LARGO = ["lunes", "martes", "miércoles", "jueves", "viernes", "sábado", "domingo"];
-
-/** Las seis franjas del día, en el orden de los cubos de `actividad`. */
-const FRANJAS = [
-  "de madrugada",
-  "a primera hora",
-  "por la mañana",
-  "a mediodía",
-  "por la tarde",
-  "por la noche",
-];
-const HORA_INICIAL = ["0h", "4h", "8h", "12h", "16h", "20h"];
 
 /**
  * El gris de una celda del mapa.

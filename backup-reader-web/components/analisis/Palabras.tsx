@@ -67,15 +67,7 @@ export const Palabras: FC<{
             : undefined
         }
         title={sePuede ? enTexto(t("Ver un mensaje donde aparece")) : undefined}
-        style={{
-          display: "flex",
-          alignItems: "center",
-          gap: 10,
-          cursor: sePuede ? "pointer" : "default",
-          borderRadius: 8,
-          padding: "3px 4px",
-          margin: "0 -4px",
-        }}
+        className="br-an-fila"
       >
         {children}
       </div>
