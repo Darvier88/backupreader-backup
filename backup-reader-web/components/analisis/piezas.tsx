@@ -11,13 +11,33 @@ import { t } from "i18next";
  */
 
 /**
- * Los días de la semana, empezando en lunes. Son claves de i18n.
+ * Las iniciales de los días, empezando en lunes.
+ *
+ * Salen del idioma y no de una lista escrita a mano: en español son L M X J
+ * V S D y en inglés M T W T F S S, y la lista fija dejaba el mapa de un
+ * usuario inglés con las letras españolas al lado de un texto en inglés.
+ *
+ * Se piden a `Intl` con un lunes cualquiera y los seis días siguientes, que
+ * es la única forma de empezar la semana en lunes sin depender de dónde la
+ * empiece cada país.
+ */
+export function diasIniciales(idioma: string): string[] {
+  try {
+    const f = new Intl.DateTimeFormat(idioma, { weekday: "narrow" });
+    /* 1 de enero de 2024 fue lunes. */
+    return [0, 1, 2, 3, 4, 5, 6].map((i) => f.format(new Date(2024, 0, 1 + i)));
+  } catch {
+    return ["L", "M", "X", "J", "V", "S", "D"];
+  }
+}
+
+/**
+ * Los días de la semana, en plural y como claves de i18n.
  *
  * En plural, porque siempre van detrás de «los»: «los lunes», «los
  * sábados». Lunes a viernes se escriben igual en singular y plural, sábado
  * y domingo no, y en singular salía «los sábado».
  */
-export const DIAS = ["L", "M", "X", "J", "V", "S", "D"];
 export const DIAS_LARGO = [
   "lunes", "martes", "miércoles", "jueves", "viernes", "sábados", "domingos",
 ];

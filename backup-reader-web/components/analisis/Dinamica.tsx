@@ -5,7 +5,7 @@ import type { Analisis } from "../../lib/analisis/analizar";
 import type { Medida } from "../../lib/analisis/tendencias";
 import { fechaCorta, numero } from "../../lib/analisis/formatear";
 import {
-  DIAS,
+  diasIniciales,
   Insuficiente,
   DIAS_LARGO,
   Detalle,
@@ -98,6 +98,7 @@ export const Dinamica: FC<{
 }> = ({ analisis, medida, marcadas, onNoCuadra }) => {
   const idioma = i18n.language || "es";
   const { actividad, tendencias, cobertura } = analisis;
+  const iniciales = diasIniciales(idioma);
 
   const valor = (c: { mensajes: number; palabras: number; notasDeVoz: number }) => c[medida];
   const maxCubo = Math.max(1, ...actividad.mapaPorCubos.flat().map(valor));
@@ -171,7 +172,7 @@ export const Dinamica: FC<{
                   color: "var(--slate-500)",
                 }}
               >
-                {DIAS[d]}
+                {iniciales[d]}
               </span>
               {fila.map((c, cubo) => {
                 const n = valor(c);
