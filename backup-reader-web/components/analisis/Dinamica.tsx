@@ -65,6 +65,31 @@ function nombreDeMes(anio: number, mes: number, idioma: string): string {
   }
 }
 
+/**
+ * Cómo se llama lo que se está contando, en plural y en minúscula.
+ *
+ * Hace falta porque la tarjeta la cambia Ajustes: «100 al mes» no dice nada
+ * si no se sabe si son mensajes, palabras o audios, y el usuario pudo
+ * cambiar la medida hace dos pantallas.
+ */
+const unidadDe = (medida: Medida): string =>
+  medida === "palabras"
+    ? enTexto(t("palabras"))
+    : medida === "notasDeVoz"
+    ? enTexto(t("notas de voz"))
+    : enTexto(t("mensajes"));
+
+/** «agosto de 2025», para la frase del quiebre. En el pie va el corto. */
+function mesLargo(anio: number, mes: number, idioma: string): string {
+  try {
+    return new Intl.DateTimeFormat(idioma, { month: "long", year: "numeric" }).format(
+      new Date(anio, mes - 1, 1)
+    );
+  } catch {
+    return `${MESES[mes - 1]} ${anio}`;
+  }
+}
+
 export const Dinamica: FC<{
   analisis: Analisis;
   medida: Medida;
@@ -224,14 +249,43 @@ export const Dinamica: FC<{
             )}
           </Insuficiente>
         )}
-        {tendencias.comparacion && (
-          <Titular>
-            {tendencias.comparacion.direccion === "parecido"
-              ? t("Los últimos meses, parecido que antes")
-              : tendencias.comparacion.direccion === "mas"
-              ? t("Los últimos meses, más que antes")
-              : t("Los últimos meses, menos que antes")}
-          </Titular>
+        {/* El quiebre manda sobre la comparación de los últimos meses: dice
+            lo mismo pero con un cuándo, y dos titulares seguidos sobre lo
+            mismo se leen como dos hallazgos distintos. */}
+        {tendencias.quiebre ? (
+          <>
+            <Titular>
+              {tendencias.quiebre.direccion === "baja"
+                ? t("Desde {{mes}}, un {{n}} % menos", {
+                    mes: mesLargo(tendencias.quiebre.anio, tendencias.quiebre.mes, idioma),
+                    n: tendencias.quiebre.porcentaje,
+                  })
+                : t("Desde {{mes}}, un {{n}} % más", {
+                    mes: mesLargo(tendencias.quiebre.anio, tendencias.quiebre.mes, idioma),
+                    n: tendencias.quiebre.porcentaje,
+                  })}
+            </Titular>
+            <Detalle>
+              {t("Antes, {{antes}} {{unidad}} al mes de media; desde entonces, {{desde}}.", {
+                antes: numero(tendencias.quiebre.antes, idioma),
+                desde: numero(tendencias.quiebre.desde, idioma),
+                unidad: unidadDe(tendencias.medida),
+              })}{" "}
+              {/* Sin esto, la frase se lee como un diagnóstico. Un chat que
+                  baja puede ser dos personas que ahora se ven en persona. */}
+              {t("Dice cuándo cambió el ritmo, no por qué.")}
+            </Detalle>
+          </>
+        ) : (
+          tendencias.comparacion && (
+            <Titular>
+              {tendencias.comparacion.direccion === "parecido"
+                ? t("Los últimos meses, parecido que antes")
+                : tendencias.comparacion.direccion === "mas"
+                ? t("Los últimos meses, más que antes")
+                : t("Los últimos meses, menos que antes")}
+            </Titular>
+          )
         )}
         {/* Los meses vacíos se dibujan a cero: si se saltaran, tres meses de
             silencio desaparecerían y la línea parecería continua. */}
@@ -250,7 +304,22 @@ export const Dinamica: FC<{
                     )}`
                   : "")
               }
-              style={{ flex: 1, minWidth: 4, display: "flex", flexDirection: "column", justifyContent: "flex-end", height: "100%" }}
+              style={{
+                flex: 1,
+                minWidth: 4,
+                display: "flex",
+                flexDirection: "column",
+                justifyContent: "flex-end",
+                height: "100%",
+                /* La raya cae justo donde empieza el tramo nuevo: la frase
+                   dice «desde agosto» y aquí se ve dónde está agosto. */
+                borderLeft:
+                  tendencias.quiebre && p.clave === tendencias.quiebre.clave
+                    ? "1.5px solid var(--brass-500)"
+                    : undefined,
+                paddingLeft:
+                  tendencias.quiebre && p.clave === tendencias.quiebre.clave ? 3 : undefined,
+              }}
             >
               <div
                 style={{
@@ -307,7 +376,10 @@ export const Dinamica: FC<{
             )}
           </Detalle>
         )}
-        {tendencias.comparacion && (
+        {/* Con un quiebre delante, esta línea compara dos tramos que suelen
+            caer del mismo lado del corte y sale un «parecido» que parece
+            contradecir el titular. */}
+        {!tendencias.quiebre && tendencias.comparacion && (
           <Detalle>
             {t(
               "Media de los últimos {{meses}} meses enteros: {{reciente}}. Los {{meses}} anteriores: {{anterior}}.",

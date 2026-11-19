@@ -17,6 +17,7 @@
  */
 
 import type { Actividad } from "./actividad";
+import { mediana } from "./turnos";
 
 /** Qué se mide en la serie. Lo elige Ajustes. */
 export type Medida = "mensajes" | "palabras" | "notasDeVoz";
@@ -49,6 +50,58 @@ export type PuntoDelMes = {
   diasDelMes: number;
 };
 
+/**
+ * El mes en el que el chat cambió de ritmo.
+ *
+ * CUÁNDO SE DICE Y CUÁNDO NO
+ * --------------------------
+ * «Desde agosto habláis un 31 % menos» es la frase más fácil de escribir de
+ * todo el análisis y la más fácil de equivocar: cualquier serie de meses
+ * tiene un mes que, mirado solo, parece el principio de algo. Decirlo cuando
+ * no lo es convierte unas vacaciones en una ruptura.
+ *
+ * Por eso hay una regla escrita, y se cumplen las cuatro cosas o no se dice
+ * nada:
+ *
+ * 1. SEIS MESES ENTEROS. Con menos no hay un «antes» y un «después», hay dos
+ *    puñados de meses. Los meses a medias de las puntas no cuentan: un export
+ *    cortado a mitad de mes inventaría una caída al final.
+ * 2. DOS MESES A CADA LADO. Un solo mes no es un tramo: agosto bajo es
+ *    agosto, no un cambio de ritmo.
+ * 3. UN TERCIO DE CAMBIO. Por debajo de eso, decirlo en un titular le da un
+ *    peso que no tiene.
+ * 4. MÁS GRANDE QUE EL VAIVÉN DEL PROPIO CHAT. Un chat que salta de 40 a 120
+ *    mensajes todos los meses no ha cambiado de ritmo porque un mes baje: el
+ *    salto tiene que ser vez y media el vaivén normal de ESTE chat, no de uno
+ *    de referencia.
+ * 5. QUE AGUANTE. Dos de cada tres meses de después tienen que estar del lado
+ *    del cambio. Si no, lo que hay es un mes raro tirando de la media.
+ *
+ * Y aun cumpliéndose, esto dice CUÁNDO cambió y CUÁNTO, nunca por qué.
+ */
+export type Quiebre = {
+  /** El primer mes del tramo nuevo, «aaaa-mm». */
+  clave: string;
+  anio: number;
+  /** 1 a 12. */
+  mes: number;
+  direccion: "sube" | "baja";
+  /** Media mensual antes del quiebre y desde él. */
+  antes: number;
+  desde: number;
+  /** Cuánto cambió, en por ciento y siempre positivo. */
+  porcentaje: number;
+  mesesAntes: number;
+  mesesDesde: number;
+};
+
+/** Los números de la regla de arriba, en un sitio donde se pueden discutir. */
+export const MIN_MESES_QUIEBRE = 6;
+export const MIN_MESES_POR_LADO = 2;
+export const CAMBIO_MINIMO = 1 / 3;
+export const VECES_EL_VAIVEN = 1.5;
+export const PROPORCION_QUE_AGUANTA = 2 / 3;
+
 export type Tendencias = {
   medida: Medida;
   /** Todos los meses entre el primero y el último, huecos incluidos. */
@@ -64,6 +117,8 @@ export type Tendencias = {
     anterior: number;
     direccion: "mas" | "menos" | "parecido";
   } | null;
+  /** El mes en que cambió el ritmo, si la regla lo da por bueno. */
+  quiebre: Quiebre | null;
 };
 
 /** Por debajo de este cambio, los dos tramos son el mismo. */
@@ -131,6 +186,63 @@ function rellenar(
 const media = (valores: number[]) =>
   valores.length ? valores.reduce((a, b) => a + b, 0) / valores.length : 0;
 
+const redondear = (n: number) => Math.round(n * 10) / 10;
+
+/**
+ * Busca el mes en que el chat cambió de ritmo, con la regla de `Quiebre`.
+ *
+ * Se prueban todos los cortes posibles y se queda el que más separa los dos
+ * tramos; luego ese candidato tiene que pasar la regla entera. Probar todos
+ * y filtrar después es justo lo contrario de buscar hasta encontrar algo que
+ * cuadre: el filtro no depende de cuál salió ganador.
+ */
+export function quiebre(serie: PuntoDelMes[]): Quiebre | null {
+  const completos = serie.filter((p) => !p.parcial);
+  if (completos.length < MIN_MESES_QUIEBRE) return null;
+
+  const v = completos.map((p) => p.valor);
+
+  /* El vaivén normal de este chat: cuánto cambia de un mes al siguiente, en
+     mediana. Se usa la mediana y no la media porque un único mes disparado
+     subiría la media y taparía el cambio que se busca. */
+  const saltos: number[] = [];
+  for (let i = 1; i < v.length; i++) saltos.push(Math.abs(v[i] - v[i - 1]));
+  const vaiven = mediana(saltos) ?? 0;
+
+  let mejor: { i: number; antes: number; desde: number; salto: number } | null = null;
+  for (let i = MIN_MESES_POR_LADO; i <= v.length - MIN_MESES_POR_LADO; i++) {
+    const antes = media(v.slice(0, i));
+    const desde = media(v.slice(i));
+    const salto = Math.abs(desde - antes);
+    if (!mejor || salto > mejor.salto) mejor = { i, antes, desde, salto };
+  }
+  if (!mejor) return null;
+
+  const { i, antes, desde, salto } = mejor;
+  /* Sin un «antes» no hay nada con lo que comparar: un chat que empieza en
+     cero y arranca no ha cambiado de ritmo, ha empezado. */
+  if (antes <= 0) return null;
+  if (salto / antes < CAMBIO_MINIMO) return null;
+  if (salto < vaiven * VECES_EL_VAIVEN) return null;
+
+  const baja = desde < antes;
+  const deAcuerdo = v.slice(i).filter((x) => (baja ? x < antes : x > antes)).length;
+  if (deAcuerdo / (v.length - i) < PROPORCION_QUE_AGUANTA) return null;
+
+  const p = completos[i];
+  return {
+    clave: p.clave,
+    anio: p.anio,
+    mes: p.mes,
+    direccion: baja ? "baja" : "sube",
+    antes: redondear(antes),
+    desde: redondear(desde),
+    porcentaje: Math.round((salto / antes) * 100),
+    mesesAntes: i,
+    mesesDesde: v.length - i,
+  };
+}
+
 /**
  * La serie por meses y la comparación entre el tramo reciente y el anterior.
  *
@@ -194,5 +306,12 @@ export function tendencias(
     };
   }
 
-  return { medida, serie, mesesEnteros: completos.length, masActivo, comparacion };
+  return {
+    medida,
+    serie,
+    mesesEnteros: completos.length,
+    masActivo,
+    comparacion,
+    quiebre: quiebre(serie),
+  };
 }

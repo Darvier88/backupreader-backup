@@ -617,3 +617,68 @@ describe("sensibilidad del umbral", () => {
     expect(iniciaMas([], 4).estable).toBe(false);
   });
 });
+
+describe("quiebre de tendencia", () => {
+  const serieDe = (valores: number[]) =>
+    valores.map((v, i) => {
+      const mes = (i % 12) + 1;
+      const anio = 2025 + Math.floor(i / 12);
+      return {
+        clave: `${anio}-${String(mes).padStart(2, "0")}`,
+        anio,
+        mes,
+        mensajes: v,
+        palabras: v * 10,
+        notasDeVoz: 0,
+      };
+    });
+
+  it("encuentra el mes en que el chat baja de ritmo y de cuánto", () => {
+    /* Seis meses a 100 y seis a 40: el corte está en el séptimo. */
+    const t = tendencias(serieDe([100, 100, 100, 100, 100, 100, 40, 40, 40, 40, 40, 40]));
+    expect(t.quiebre).not.toBeNull();
+    expect(t.quiebre!.clave).toBe("2025-07");
+    expect(t.quiebre!.direccion).toBe("baja");
+    expect(t.quiebre!.porcentaje).toBe(60);
+    expect(t.quiebre!.antes).toBe(100);
+    expect(t.quiebre!.desde).toBe(40);
+  });
+
+  it("también lo dice cuando el chat se anima", () => {
+    const t = tendencias(serieDe([20, 22, 18, 21, 90, 95, 88, 92]));
+    expect(t.quiebre?.direccion).toBe("sube");
+    expect(t.quiebre?.clave).toBe("2025-05");
+  });
+
+  it("no inventa un cambio donde solo hay el vaivén de siempre", () => {
+    /* Sube y baja todos los meses, pero el nivel es el mismo. */
+    const t = tendencias(serieDe([100, 20, 95, 25, 105, 18, 98, 22, 102, 19]));
+    expect(t.quiebre).toBeNull();
+  });
+
+  it("no llama cambio a un mes raro: tiene que aguantar", () => {
+    /* Un agosto de vacaciones y todo sigue igual después. */
+    const t = tendencias(serieDe([80, 82, 78, 81, 5, 79, 83, 80]));
+    expect(t.quiebre).toBeNull();
+  });
+
+  it("calla con menos de seis meses enteros, por mucho que se note", () => {
+    const t = tendencias(serieDe([100, 100, 100, 10, 10]));
+    expect(t.quiebre).toBeNull();
+  });
+
+  it("calla si el cambio no llega a un tercio", () => {
+    const t = tendencias(serieDe([100, 100, 100, 80, 80, 80]));
+    expect(t.quiebre).toBeNull();
+  });
+
+  it("no cuenta los meses a medias: un export cortado no es una caída", () => {
+    /* Doce meses planos; el archivo acaba el día 10 del último, así que ese
+       mes sale bajo. Sin descartarlo, esto anunciaría un desplome. */
+    const t = tendencias(serieDe([60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 6]), "mensajes", {
+      desde: new Date(2025, 0, 1, 9, 0),
+      hasta: new Date(2025, 11, 10, 9, 0),
+    });
+    expect(t.quiebre).toBeNull();
+  });
+});

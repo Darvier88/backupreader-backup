@@ -84,7 +84,7 @@ const medir = (tiene: number, pide: number): Medida3 => ({
  *    10 conversaciones, 30 respuestas por persona, 14 días, 2 meses).
  * 5: «quién escribe detrás de ti» en grupos, con su línea base.
  */
-export const VERSION_ANALISIS = 5;
+export const VERSION_ANALISIS = 6;
 
 export type OpcionesAnalisis = OpcionesNormalizar & {
   /** Quién es «tú»: hace falta para «quién escribe detrás de ti». */
