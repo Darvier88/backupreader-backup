@@ -11,7 +11,7 @@ import { MIN_MENSAJES } from "../../lib/analisis/umbrales";
 import { conNombre, fechaCorta, numero } from "../../lib/analisis/formatear";
 import { ControlSegmentado } from "../ui/ControlSegmentado";
 import {
-  Aviso,
+
   DIAS_LARGO,
   Detalle,
   EnNumeros,
@@ -22,6 +22,7 @@ import {
   enTexto,
 } from "./piezas";
 import { PreguntaFecha } from "./PreguntaFecha";
+import { PreguntaQuienEres } from "./PreguntaQuienEres";
 import { Resumen } from "./Resumen";
 import { Dinamica } from "./Dinamica";
 import { Palabras } from "./Palabras";
@@ -289,6 +290,19 @@ export const PanelAnalisis: FC<{
     );
   }
 
+  /* Y después, quién eres. Las dos preguntas van antes de las cifras y en
+     este orden: la fecha cambia los números, el nombre solo cómo se leen. */
+  if (!yoElegido.current && !yo && analisis.autores.length >= 2) {
+    return (
+      <PreguntaQuienEres
+        analisis={analisis}
+        filas={filas}
+        sugerido={yoPorDefecto}
+        onElegir={elegirYo}
+      />
+    );
+  }
+
   const esGrupo = analisis.grupo.esGrupo;
 
   /**
@@ -339,17 +353,6 @@ export const PanelAnalisis: FC<{
         )}
         {calculando && <span>{t("Calculando…")}</span>}
       </div>
-
-      {/* Sin saber quién eres, todo se lee en tercera persona y la mitad
-             de las frases pierden sentido. */}
-      {!yo && analisis.autores.length === 2 && (
-        <Aviso>
-          {t("¿Cuál de los dos eres tú? Elígelo en Ajustes y las tarjetas te nombrarán.")}{" "}
-          <button type="button" className="br-an-enlace" onClick={() => setVista("ajustes")}>
-            {t("Ir a Ajustes")}
-          </button>
-        </Aviso>
-      )}
 
       {/* Lo que queda FUERA de los conteos, dicho antes de enseñar cifras. */}
       {(analisis.eliminados > 0 || analisis.sinFecha > 0) && (

@@ -1106,3 +1106,16 @@ body {
    forma más rápida de que alguien piense que la aplicación está rota. */
 .br-btn:disabled { opacity: 0.45; cursor: default; }
 .br-btn:disabled:hover { filter: none; }
+
+/* La lista de «cuál eres tú»: nombre, cuántos mensajes y su último mensaje,
+   que es lo que de verdad deja reconocerse cuando el nombre es un apodo o
+   un número de teléfono. */
+.br-an-opcion-fila {
+  display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap;
+}
+.br-an-opcion-cita {
+  font-family: var(--font-sans); font-size: 12.5px; line-height: 1.4;
+  color: var(--text-muted);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.br-an-botones { display: flex; gap: 8px; flex-wrap: wrap; }
