@@ -110,7 +110,11 @@ export const TablaGrupo: FC<{
         })}
       </Titular>
 
-      <div style={{ overflowX: "auto", margin: "0 -4px" }}>
+      {/* La tabla no cabe en un móvil y se desliza. Sin decirlo, la columna
+          cortada contra el borde se lee como el final de la tabla y las
+          cuatro de la derecha no existen para quien mira. La sombra del
+          borde es la señal; desaparece al llegar al final. */}
+      <div className="br-an-tabla-caja">
         <table
           style={{
             width: "100%",
