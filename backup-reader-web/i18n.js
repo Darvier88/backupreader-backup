@@ -518,6 +518,8 @@ const resources = {
       /* Dinámica */
       "Cuándo habláis":"When you talk",
       "En números":"In numbers",
+      "Solo chat":"Chat only",
+      "Con estadísticas":"With statistics",
       "Antes de contar":"Before counting",
       "¿Cuál de los dos eres tú?":"Which of the two is you?",
       "¿Cuál de estas personas eres tú?":"Which of these people is you?",

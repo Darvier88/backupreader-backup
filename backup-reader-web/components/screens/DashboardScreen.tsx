@@ -108,6 +108,13 @@ export const DashboardScreen: FC = () => {
      cada pocos mensajes cambia la lectura sin que nadie lo haya pedido. */
   const [mostrarEsperas, setMostrarEsperas] = useState(false);
 
+  /* El análisis AL LADO del chat, en escritorio.
+     En el móvil no cabe y sigue siendo una pestaña; aquí sí cabe, y verlo
+     al lado es lo que deja comprobar una cifra sin perder de vista los
+     mensajes de los que habla. Apagado por defecto: quien abre un chat
+     viene a leerlo. */
+  const [panelLateral, setPanelLateral] = useState(false);
+
   /* El formato de fecha, deducido una vez por chat. Hace falta para restar
      dos mensajes, y deducirlo por mensaje sería recorrer el chat entero en
      cada fila. */
@@ -377,6 +384,26 @@ export const DashboardScreen: FC = () => {
   const [buscando, setBuscando] = useState(false);
   const ocultarCabecera = phone && buscando;
 
+  /* El panel, montado una sola vez: la pestaña del móvil y la columna de
+     escritorio pintan exactamente lo mismo. */
+  const elAnalisis = (
+    <PanelAnalisis
+      filas={(chat || []) as string[][]}
+      handle={rutaAbierta}
+      yoPorDefecto={myName}
+      /* Tocar un emoji o una palabra lleva al mensaje. Con el panel al
+         lado no hace falta cambiar de vista; en la pestaña del móvil sí. */
+      onIrAlMensaje={(indice) => {
+        if (!panelLateral) setToShow("message");
+        setVisibleCount((c) => Math.max(c, indice + CHUNK));
+        window.setTimeout(() => {
+          const fila = document.querySelector(`[data-mensaje="${indice}"]`);
+          fila?.scrollIntoView({ block: "center", behavior: "smooth" });
+        }, 120);
+      }}
+    />
+  );
+
   /* Alto del chat abierto: desde donde empieza la columna hasta el borde de
      abajo de la pantalla, igual que el panel de chats, que ocupa la pantalla
      entera. Antes era un 85vh fijo: en escritorio quedaba un hueco debajo del
@@ -511,10 +538,10 @@ export const DashboardScreen: FC = () => {
                   opciones={[
                     { valor: "message", etiqueta: enTexto(t("Mensajes")) },
                     { valor: "photos", etiqueta: enTexto(t("Media")) },
-                    /* La pestaña solo existe con la función encendida: sin
-                       NEXT_PUBLIC_ANALISIS_ENABLED el panel no se compila en
-                       la vista ni aparece el botón. */
-                    ...(ANALISIS_ACTIVO
+                    /* La pestaña solo existe con la función encendida, y
+                       solo en el móvil: en escritorio el análisis va al
+                       lado del chat, no en lugar de él. */
+                    ...(ANALISIS_ACTIVO && phone
                       ? [
                           {
                             valor: "analisis",
@@ -528,37 +555,59 @@ export const DashboardScreen: FC = () => {
                 {/* Los tiempos de respuesta, encima del chat y no escondidos
                     en Ajustes: es una forma de leer el chat, no una
                     preferencia que se configura una vez. */}
-                {ANALISIS_ACTIVO && toShow === "message" && (
-                  <button
-                    type="button"
-                    className={
-                      mostrarEsperas
-                        ? "br-an-conmutador br-an-conmutador--activo"
-                        : "br-an-conmutador"
-                    }
-                    aria-pressed={mostrarEsperas}
-                    onClick={() => setMostrarEsperas((v) => !v)}
-                  >
-                    {t("Tiempos de respuesta")}
-                  </button>
-                )}
+                <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                  {ANALISIS_ACTIVO && toShow === "message" && (
+                    <button
+                      type="button"
+                      className={
+                        mostrarEsperas
+                          ? "br-an-conmutador br-an-conmutador--activo"
+                          : "br-an-conmutador"
+                      }
+                      aria-pressed={mostrarEsperas}
+                      onClick={() => setMostrarEsperas((v) => !v)}
+                    >
+                      {t("Tiempos de respuesta")}
+                    </button>
+                  )}
+                  {ANALISIS_ACTIVO && !phone && (
+                    <button
+                      type="button"
+                      className={
+                        panelLateral
+                          ? "br-an-conmutador br-an-conmutador--activo"
+                          : "br-an-conmutador"
+                      }
+                      aria-pressed={panelLateral}
+                      onClick={() => setPanelLateral((v) => !v)}
+                    >
+                      {panelLateral ? t("Solo chat") : t("Con estadísticas")}
+                      {!panelLateral && <span className="br-an-conmutador-nuevo">{t("Nuevo")}</span>}
+                    </button>
+                  )}
+                </div>
               </Box>
 
             </Container>
             <Grid
               xs={12}
+              className={panelLateral ? "br-an-partido" : undefined}
               style={{
                 flexDirection: "column",
-                overflowY: "scroll",
+                /* Con el panel al lado, el scroll pasa a cada columna: si lo
+                   mantuviera aquí, bajar en el análisis arrastraría el chat
+                   y las dos cosas se perderían a la vez. */
+                overflowY: panelLateral ? "hidden" : "scroll",
                 overflowX: "hidden",
                 width: "100%",
                 minWidth: 0,
                 marginTop: 12,
-                padding: "4px 16px 24px",
+                padding: panelLateral ? 0 : "4px 16px 24px",
                 background: "var(--paper-100)",
                 borderTop: "1px solid var(--border)",
               }}
             >
+              <div className={panelLateral ? "br-an-columna" : undefined}>
               {loading ? (
                 <div
                   style={{
@@ -577,22 +626,7 @@ export const DashboardScreen: FC = () => {
                   </span>
                 </div>
               ) : toShow === "analisis" ? (
-                <PanelAnalisis
-                  filas={(chat || []) as string[][]}
-                  handle={rutaAbierta}
-                  yoPorDefecto={myName}
-                  /* Tocar un emoji o una palabra lleva al mensaje: se vuelve
-                     a Mensajes y se carga hasta donde está, que si no el
-                     render incremental lo tiene todavía sin pintar. */
-                  onIrAlMensaje={(indice) => {
-                    setToShow("message");
-                    setVisibleCount((c) => Math.max(c, indice + CHUNK));
-                    window.setTimeout(() => {
-                      const fila = document.querySelector(`[data-mensaje="${indice}"]`);
-                      fila?.scrollIntoView({ block: "center", behavior: "smooth" });
-                    }, 120);
-                  }}
-                />
+                elAnalisis
               ) : toShow === "photos" ? (
                 <>
                   <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(240px, 1fr))", gap: 16, padding: "4px 0", width: "100%" }}>
@@ -732,6 +766,12 @@ export const DashboardScreen: FC = () => {
                     </>
                   )}
                 </>
+              )}
+              </div>
+              {/* El análisis, a la derecha y con su propio scroll. Mismo
+                  componente que la pestaña del móvil. */}
+              {panelLateral && (
+                <aside className="br-an-columna br-an-columna--panel">{elAnalisis}</aside>
               )}
             </Grid>
           </>
