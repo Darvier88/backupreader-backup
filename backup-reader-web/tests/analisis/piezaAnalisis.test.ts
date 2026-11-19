@@ -34,6 +34,27 @@ describe("la pieza del análisis", () => {
     expect(vuelta).toEqual(original);
   });
 
+  it("las métricas nuevas también sobreviven al cifrado", async () => {
+    /* Todo esto viaja por JSON dentro de la pieza. Un `Date` o un `Map` que
+       se colara aquí volvería convertido en otra cosa y la interfaz leería
+       cifras mal sin que nada fallara a gritos. */
+    const original = guardado();
+    const blob = await empaquetarAnalisis(original, dek(), BACKUP);
+    const vuelta = (await abrirAnalisis(blob, dek(), BACKUP))!;
+
+    expect(vuelta.analisis.actividad.mapaPorCubos).toHaveLength(7);
+    expect(vuelta.analisis.actividad.mapaPorCubos[0]).toHaveLength(6);
+    expect(vuelta.analisis.actividad.puntaSemanal).toEqual(
+      original.analisis.actividad.puntaSemanal
+    );
+    expect(vuelta.analisis.tendencias.serie.map((p) => p.parcial)).toEqual(
+      original.analisis.tendencias.serie.map((p) => p.parcial)
+    );
+    expect(vuelta.analisis.respuestas.porAutor.map((a) => a.porcentajeBajoCincoMinutos)).toEqual(
+      original.analisis.respuestas.porAutor.map((a) => a.porcentajeBajoCincoMinutos)
+    );
+  });
+
   it("guarda quién eres tú dentro de la pieza cifrada", async () => {
     const blob = await empaquetarAnalisis(guardado(), dek(), BACKUP);
     expect((await abrirAnalisis(blob, dek(), BACKUP))!.yo).toBe("Ana");
