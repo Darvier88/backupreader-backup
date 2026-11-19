@@ -82,10 +82,13 @@ const medir = (tiene: number, pide: number): Medida3 => ({
  * 3: el formato de fecha deducido, para poder avisar cuando no es seguro.
  * 4: la cobertura por métrica, y los mínimos nuevos (parecido a 5 puntos,
  *    10 conversaciones, 30 respuestas por persona, 14 días, 2 meses).
+ * 5: «quién escribe detrás de ti» en grupos, con su línea base.
  */
-export const VERSION_ANALISIS = 4;
+export const VERSION_ANALISIS = 5;
 
 export type OpcionesAnalisis = OpcionesNormalizar & {
+  /** Quién es «tú»: hace falta para «quién escribe detrás de ti». */
+  yo?: string;
   /** Horas de silencio que separan dos conversaciones. */
   umbralHoras?: number;
   /** Qué se mide en las tendencias. */
@@ -95,7 +98,7 @@ export type OpcionesAnalisis = OpcionesNormalizar & {
 export type Analisis = {
   v: number;
   /** Con qué ajustes se calculó: si cambian, hay que recalcular. */
-  ajustes: { umbralHoras: number; medida: Medida; idioma: string };
+  ajustes: { umbralHoras: number; medida: Medida; idioma: string; yo?: string };
 
   /** De cuándo a cuándo, y qué quedó fuera. */
   desde: number | null;
@@ -161,7 +164,7 @@ export function analizar(filas: string[][], opciones: OpcionesAnalisis = {}): An
 
   return {
     v: VERSION_ANALISIS,
-    ajustes: { umbralHoras, medida, idioma },
+    ajustes: { umbralHoras, medida, idioma, yo: opciones.yo },
 
     desde: chat.desde ? chat.desde.getTime() : null,
     hasta: chat.hasta ? chat.hasta.getTime() : null,
@@ -197,6 +200,6 @@ export function analizar(filas: string[][], opciones: OpcionesAnalisis = {}): An
     emojis: emojis(mensajes),
     palabras: palabrasFrecuentes(mensajes, { idioma }),
     expresiones: disculpasYAgradecimientos(mensajes),
-    grupo: grupos(chat, mensajes, umbralHoras),
+    grupo: grupos(chat, mensajes, umbralHoras, opciones.yo),
   };
 }

@@ -14,12 +14,18 @@
  * última fecha. Es una de las pocas cosas que un grupo grande no deja ver y
  * que a la gente le interesa.
  *
- * «QUIÉN RESPONDE A QUIÉN» NO ESTÁ AQUÍ
- * -------------------------------------
+ * «QUIÉN RESPONDE A QUIÉN» NO ESTÁ AQUÍ, Y LO QUE SÍ ESTÁ VA CON SU BASE
+ * ----------------------------------------------------------------------
  * En un grupo, que B escriba después de A no significa que le conteste: hay
  * tres conversaciones a la vez y WhatsApp solo marca la respuesta cuando se
- * cita expresamente, cosa que el export no conserva. Inventar un grafo de
- * afinidades con ese dato sería dibujar relaciones que no constan.
+ * cita expresamente, cosa que el export no conserva.
+ *
+ * Lo que sí se puede contar es quién escribe DETRÁS de ti, y aun así la
+ * cifra sola engaña: quien manda el 31 % de los mensajes del grupo va a
+ * salir el primero detrás de ti por pura aritmética. Por eso cada persona
+ * lleva su parte del grupo al lado. Lo que dice algo es la diferencia entre
+ * las dos: estar detrás de ti el 46 % de las veces cuando solo escribes el
+ * 31 % del grupo es quince puntos de más, y eso sí es un dato.
  */
 
 import type { ChatNormalizado, Mensaje } from "./tipos";
@@ -46,6 +52,19 @@ export type FilaDeGrupo = {
   ultimo: number | null;
 };
 
+/** Quién escribe justo detrás de una persona, contra su peso en el grupo. */
+export type DetrasDeTi = {
+  autor: string;
+  /** Veces que ha escrito justo detrás, dentro de la ventana. */
+  veces: number;
+  /** Porcentaje de las veces que alguien escribe detrás de ti. */
+  porcentajeDetras: number;
+  /** Su porcentaje de mensajes del grupo entero: la línea base. */
+  porcentajeGrupo: number;
+  /** La diferencia, que es lo único que significa algo. */
+  diferencia: number;
+};
+
 export type Grupo = {
   esGrupo: boolean;
   personas: number;
@@ -54,9 +73,20 @@ export type Grupo = {
   conversaciones: number;
   /** Quien lleva más tiempo sin escribir, si hace más de 30 días. */
   masCallado: { autor: string; ultimo: number } | null;
+  /**
+   * Quién escribe detrás de una persona, con su línea base.
+   *
+   * Vacío si no se pidió o si no hay suficientes casos. NO es «quién te
+   * responde»: el archivo no dice a quién contesta cada mensaje.
+   */
+  detrasDe: DetrasDeTi[];
 };
 
 const MEDIA = new Set(["imagen", "video", "audio", "documento", "sticker", "multimedia"]);
+/** Cuánto puede tardar un mensaje en contar como «detrás de» otro. */
+const VENTANA_DETRAS = 10 * 60 * 1000;
+/** Por debajo de esto, la cifra es ruido y no se enseña. */
+const MIN_DETRAS = 20;
 const DIA = 24 * 60 * 60 * 1000;
 /** Por debajo de un mes, «lleva tiempo sin escribir» no describe nada. */
 const DIAS_CALLADO = 30;
@@ -70,7 +100,9 @@ const DIAS_CALLADO = 30;
 export function grupos(
   chat: ChatNormalizado,
   mensajes: Mensaje[],
-  umbralHoras: number = UMBRAL_POR_DEFECTO
+  umbralHoras: number = UMBRAL_POR_DEFECTO,
+  /** De quién se quiere saber quién escribe detrás. Normalmente, tú. */
+  deQuien?: string
 ): Grupo {
   const conversaciones = partirEnConversaciones(mensajes, umbralHoras);
   const inicios = new Map<string, number>();
@@ -138,6 +170,45 @@ export function grupos(
     }
   }
 
+  /* Quién escribe detrás de `deQuien`, dentro de la ventana. Se mira el
+     mensaje siguiente de OTRA persona: si quien escribe detrás es la misma
+     persona, está siguiendo su propio mensaje, no respondiendo a nadie. */
+  const detrasDe: DetrasDeTi[] = [];
+  if (deQuien) {
+    const cuenta = new Map<string, number>();
+    let total = 0;
+    for (let i = 0; i < mensajes.length - 1; i++) {
+      if (mensajes[i].autor !== deQuien) continue;
+      const mio = mensajes[i].fecha;
+      if (!mio) continue;
+      for (let j = i + 1; j < mensajes.length; j++) {
+        const otro = mensajes[j];
+        if (otro.autor === deQuien) break;
+        if (!otro.fecha) break;
+        if (otro.fecha.getTime() - mio.getTime() > VENTANA_DETRAS) break;
+        cuenta.set(otro.autor, (cuenta.get(otro.autor) || 0) + 1);
+        total++;
+        break;
+      }
+    }
+
+    if (total >= MIN_DETRAS) {
+      const porPeso = new Map(filas.map((f) => [f.autor, f.porcentajeMensajes]));
+      for (const [autor, veces] of cuenta) {
+        const porcentajeDetras = Math.round((veces / total) * 1000) / 10;
+        const porcentajeGrupo = porPeso.get(autor) ?? 0;
+        detrasDe.push({
+          autor,
+          veces,
+          porcentajeDetras,
+          porcentajeGrupo,
+          diferencia: Math.round((porcentajeDetras - porcentajeGrupo) * 10) / 10,
+        });
+      }
+      detrasDe.sort((a, b) => b.porcentajeDetras - a.porcentajeDetras);
+    }
+  }
+
   return {
     esGrupo: filas.length > 2,
     personas: filas.length,
@@ -145,5 +216,6 @@ export function grupos(
     totalMensajes,
     conversaciones: conversaciones.length,
     masCallado,
+    detrasDe,
   };
 }

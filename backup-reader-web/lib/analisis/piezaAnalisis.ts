@@ -73,12 +73,17 @@ export type AnalisisGuardado = {
   /**
    * Las métricas que el usuario marcó con «Esto no cuadra».
    *
-   * Qué métrica y cuándo, nada más: ni texto del chat, ni nombres, ni las
-   * cifras que se estaban enseñando. Van aquí dentro, cifradas con el resto,
+   * Qué métrica, cuál de los motivos cerrados y cuándo. Nada más: ni texto
+   * del chat, ni nombres, ni las cifras que se estaban enseñando.
+   *
+   * Los motivos son una lista cerrada a propósito. Un campo libre acabaría
+   * con gente pegando trozos de su conversación para explicarse, y entonces
+   * la promesa de que el texto no sale de aquí la rompería el usuario sin
+   * saberlo. Van aquí dentro, cifradas con el resto,
    * por lo mismo que la elección de «quién eres tú»: es una nota sobre esta
    * conversación y no tiene por qué salir de la bóveda.
    */
-  senales?: Array<{ metrica: string; cuando: number }>;
+  senales?: Array<{ metrica: string; motivo?: string; cuando: number }>;
   /** Cuándo se calculó, para poder decirlo si hace falta. */
   cuando: number;
 };
@@ -110,7 +115,9 @@ export function analisisVigente(
   return (
     a.umbralHoras === ajustes.umbralHoras &&
     a.medida === ajustes.medida &&
-    a.idioma === ajustes.idioma
+    a.idioma === ajustes.idioma &&
+    /* Si cambia quién eres, «detrás de ti» cambia: no sirve lo guardado. */
+    (a.yo ?? "") === (ajustes.yo ?? "")
   );
 }
 

@@ -102,3 +102,58 @@ describe("grupos", () => {
     expect(g.masCallado).toBeNull();
   });
 });
+
+describe("quién escribe detrás de ti", () => {
+  /* Un grupo donde Marcela manda muchísimo: tiene que salir la primera
+     detrás de Ana por pura aritmética, y la cifra sola engañaría. */
+  const filas: string[][] = [];
+  const base = new Date(2026, 0, 5, 9, 0);
+  for (let i = 0; i < 40; i++) {
+    const t = new Date(base.getTime() + i * 60 * 60 * 1000);
+    const sello = `${String(t.getDate()).padStart(2, "0")}/01/26 ${String(t.getHours()).padStart(2, "0")}:00`;
+    const siguiente = `${String(t.getDate()).padStart(2, "0")}/01/26 ${String(t.getHours()).padStart(2, "0")}:05`;
+    filas.push([sello, "Ana", "algo"]);
+    /* Dos de cada tres veces contesta Marcela, una Diego. */
+    filas.push([siguiente, i % 3 === 2 ? "Diego" : "Marcela", "vale"]);
+  }
+  /* Y Marcela además escribe mucho por su cuenta. */
+  for (let i = 0; i < 60; i++) {
+    filas.push([`20/02/26 ${String(8 + (i % 12)).padStart(2, "0")}:${String(i % 60).padStart(2, "0")}`, "Marcela", "hablo yo"]);
+  }
+
+  const chat = normalizar(filas);
+  const g = grupos(chat, contables(chat), 4, "Ana");
+
+  it("da el porcentaje detrás de ti y su parte del grupo", () => {
+    const marcela = g.detrasDe.find((d) => d.autor === "Marcela")!;
+    expect(marcela.porcentajeDetras).toBeGreaterThan(50);
+    expect(marcela.porcentajeGrupo).toBeGreaterThan(0);
+    expect(marcela.diferencia).toBe(
+      Math.round((marcela.porcentajeDetras - marcela.porcentajeGrupo) * 10) / 10
+    );
+  });
+
+  it("la diferencia es lo que distingue a quien te contesta de quien solo habla mucho", () => {
+    const marcela = g.detrasDe.find((d) => d.autor === "Marcela")!;
+    const diego = g.detrasDe.find((d) => d.autor === "Diego")!;
+    /* Marcela escribe más detrás de Ana de lo que le tocaría por su peso. */
+    expect(marcela.diferencia).toBeGreaterThan(0);
+    /* Diego también, y con muchísimo menos volumen en el grupo. */
+    expect(diego.diferencia).toBeGreaterThan(0);
+    expect(diego.porcentajeGrupo).toBeLessThan(marcela.porcentajeGrupo);
+  });
+
+  it("no se calcula si no se pide de nadie", () => {
+    expect(grupos(chat, contables(chat), 4).detrasDe).toEqual([]);
+  });
+
+  it("con pocos casos no se enseña, que sería ruido", () => {
+    const pocos = normalizar([
+      ["05/01/26 09:00", "Ana", "a"],
+      ["05/01/26 09:02", "Beto", "b"],
+      ["05/01/26 10:00", "Ana", "c"],
+      ["05/01/26 10:02", "Carla", "d"],
+    ]);
+    expect(grupos(pocos, contables(pocos), 4, "Ana").detrasDe).toEqual([]);
+  });
+});

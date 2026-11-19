@@ -178,8 +178,8 @@ export const EstoNoCuadra: FC<{
     className="br-an-senal"
     onClick={() => onMarcar(metrica)}
     disabled={marcada}
-    title={enTexto(t("Solo se guarda qué métrica y cuándo. Nada del chat."))}
+    title={enTexto(t("Solo se guarda qué métrica y por qué. Nada del chat."))}
   >
-    {marcada ? t("Anotado") : t("Esto no cuadra")}
+    {marcada ? t("Anotado") : t("¿No cuadra?")}
   </button>
 );

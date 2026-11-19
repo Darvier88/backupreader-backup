@@ -81,6 +81,10 @@ export const TablaGrupo: FC<{
 
   const comoSeLlama = (autor: string) => (yo && autor === yo ? enTexto(t("Tú")) : autor);
 
+  /* Solo se nombra a alguien si la diferencia se nota: cinco puntos, el
+     mismo margen que usamos para «parecido» en todo lo demás. */
+  const destacado = grupo.detrasDe.find((d) => d.diferencia >= 5) ?? null;
+
   const filas = [...grupo.filas].sort((a, b) => {
     const va = a[orden];
     const vb = b[orden];
@@ -164,6 +168,41 @@ export const TablaGrupo: FC<{
           </tbody>
         </table>
       </div>
+
+      {/* Quién escribe detrás de ti, SIEMPRE con su parte del grupo al lado.
+          La cifra sola engaña: quien manda el 31 % de los mensajes sale el
+          primero detrás de ti por aritmética, no porque te conteste. */}
+      {grupo.detrasDe.length > 0 && (
+        <div className="br-an-detras">
+          <div className="br-an-detras-cabecera">
+            <span className="br-an-detras-nombre">{t("Quién escribe detrás de ti")}</span>
+            <span className="br-an-detras-col">{t("Del grupo")}</span>
+            <span className="br-an-detras-col">{t("Detrás de ti")}</span>
+          </div>
+          {grupo.detrasDe.map((d) => (
+            <div key={d.autor} className="br-an-detras-fila">
+              <span className="br-an-detras-nombre">{comoSeLlama(d.autor)}</span>
+              <span className="br-an-detras-col">{numero(d.porcentajeGrupo, idioma)} %</span>
+              <span className="br-an-detras-col br-an-detras-col--fuerte">
+                {numero(d.porcentajeDetras, idioma)} %
+              </span>
+            </div>
+          ))}
+          {destacado && (
+            <Detalle>
+              {t("{{quien}}: {{n}} puntos más detrás de ti que en el grupo.", {
+                quien: comoSeLlama(destacado.autor),
+                n: numero(destacado.diferencia, idioma),
+              })}
+            </Detalle>
+          )}
+          <Detalle>
+            {t(
+              "Detrás de ti = el siguiente mensaje de otra persona, en menos de 10 min. El archivo no dice si es una respuesta; en un grupo suele ser quién está activo a tus horas."
+            )}
+          </Detalle>
+        </div>
+      )}
 
       {grupo.masCallado && (
         <Detalle>

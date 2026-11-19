@@ -21,6 +21,7 @@ import {
   Titular,
   enTexto,
 } from "./piezas";
+import { HojaNoCuadra } from "./HojaNoCuadra";
 import { PreguntaFecha } from "./PreguntaFecha";
 import { PreguntaQuienEres } from "./PreguntaQuienEres";
 import { Resumen } from "./Resumen";
@@ -52,6 +53,25 @@ import { Ajustes } from "./Ajustes";
 
 type Vista = "resumen" | "dinamica" | "palabras" | "ajustes";
 
+/**
+ * El nombre de cada métrica, para la hoja de «¿no cuadra?».
+ *
+ * Las claves internas («volumen», «inicios») sirven para guardar la señal,
+ * pero enseñárselas al usuario es pedirle que opine sobre algo que no sabe
+ * qué es.
+ */
+const NOMBRE_METRICA: Record<string, string> = {
+  volumen: "Quién escribe más",
+  inicios: "Quién empieza las conversaciones",
+  respuestas: "Cuánto se tarda en contestar",
+  horas: "Cuándo habláis",
+  tendencias: "Mes a mes",
+  emojis: "Emojis",
+  palabras: "Palabras",
+  expresiones: "Perdones y gracias",
+  grupo: "Quién habla en el grupo",
+};
+
 export const PanelAnalisis: FC<{
   /** Las filas del chat ya descifrado: `[fecha, autor, texto]`. */
   filas: string[][];
@@ -73,6 +93,8 @@ export const PanelAnalisis: FC<{
   const [calculando, setCalculando] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [marcadas, setMarcadas] = useState<string[]>([]);
+  /** La métrica cuya hoja de motivos está abierta, si hay alguna. */
+  const [preguntando, setPreguntando] = useState<string | null>(null);
   /* El formato que el usuario confirmó, si tuvo que confirmarlo. */
   const [diaPrimero, setDiaPrimero] = useState<boolean | undefined>(undefined);
 
@@ -80,9 +102,11 @@ export const PanelAnalisis: FC<{
      se ha elegido: si no, cambiar de chat no arrastraría el nombre viejo. */
   const yoElegido = useRef(false);
 
+  /* `yo` entra en los ajustes porque cambia el resultado: «quién escribe
+     detrás de ti» no se puede calcular sin saber quién eres. */
   const ajustes = useMemo(
-    () => ({ umbralHoras, medida, idioma }),
-    [umbralHoras, medida, idioma]
+    () => ({ umbralHoras, medida, idioma, yo }),
+    [umbralHoras, medida, idioma, yo]
   );
 
   useEffect(() => {
@@ -204,9 +228,21 @@ export const PanelAnalisis: FC<{
    */
   const marcarNoCuadra = (metrica: string) => {
     if (marcadas.includes(metrica)) return;
+    setPreguntando(metrica);
+  };
+
+  /** Ya con el motivo elegido. */
+  const anotarMotivo = (metrica: string, motivo: string) => {
     const nuevas = [...marcadas, metrica];
     setMarcadas(nuevas);
-    guardarEleccion({ senales: nuevas.map((m) => ({ metrica: m, cuando: Date.now() })) });
+    setPreguntando(null);
+    guardarEleccion({
+      senales: nuevas.map((m) => ({
+        metrica: m,
+        motivo: m === metrica ? motivo : undefined,
+        cuando: Date.now(),
+      })),
+    });
   };
 
   /* --- Estados que no son el análisis --- */
@@ -254,7 +290,15 @@ export const PanelAnalisis: FC<{
             <span className="br-an-hueso" style={{ width: "100%", height: 8 }} />
           </Tarjeta>
         ))}
-        <p className="br-an-pie">{t("Calculando en tu navegador…")}</p>
+        {preguntando && (
+        <HojaNoCuadra
+          titulo={enTexto(t(NOMBRE_METRICA[preguntando] ?? preguntando))}
+          onElegir={(motivo) => anotarMotivo(preguntando, motivo)}
+          onCerrar={() => setPreguntando(null)}
+        />
+      )}
+
+      <p className="br-an-pie">{t("Calculando en tu navegador…")}</p>
       </div>
     );
   }
@@ -448,6 +492,14 @@ export const PanelAnalisis: FC<{
           onUmbral={setUmbralHoras}
           onMedida={setMedida}
           onYo={elegirYo}
+        />
+      )}
+
+      {preguntando && (
+        <HojaNoCuadra
+          titulo={enTexto(t(NOMBRE_METRICA[preguntando] ?? preguntando))}
+          onElegir={(motivo) => anotarMotivo(preguntando, motivo)}
+          onCerrar={() => setPreguntando(null)}
         />
       )}
 
