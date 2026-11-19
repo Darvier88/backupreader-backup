@@ -1,4 +1,4 @@
-import { FC, useState } from "react";
+import { FC, useEffect, useRef, useState } from "react";
 import { t } from "i18next";
 
 import { Detalle, enTexto } from "./piezas";
@@ -31,9 +31,18 @@ export const HojaNoCuadra: FC<{
   onCerrar: () => void;
 }> = ({ titulo, onElegir, onCerrar }) => {
   const [motivo, setMotivo] = useState<string | null>(null);
+  const caja = useRef<HTMLDivElement | null>(null);
+
+  /* La hoja se pinta al final del panel, así que al abrirla desde la primera
+     tarjeta queda a pantallas de distancia: se pulsa un botón y no pasa
+     nada visible. Traerla a la vista es lo que convierte eso en una
+     respuesta. */
+  useEffect(() => {
+    caja.current?.scrollIntoView({ block: "center", behavior: "smooth" });
+  }, []);
 
   return (
-    <div className="br-an-hoja" role="dialog" aria-label={enTexto(t("¿Qué no cuadra?"))}>
+    <div ref={caja} className="br-an-hoja" role="dialog" aria-label={enTexto(t("¿Qué no cuadra?"))}>
       <div className="br-an-hoja-cabecera">
         <span className="br-an-numeros-label">{titulo}</span>
         <button type="button" className="br-an-hoja-cerrar" onClick={onCerrar} aria-label={enTexto(t("Cerrar"))}>
