@@ -130,9 +130,31 @@ export const Aviso: FC<{ children: ReactNode }> = ({ children }) => (
   </div>
 );
 
-/** Lo que se enseña cuando una métrica no tiene datos suficientes. */
-export const Insuficiente: FC<{ children: ReactNode }> = ({ children }) => (
-  <Detalle>{children}</Detalle>
+/**
+ * Lo que se enseña cuando una métrica no tiene datos suficientes.
+ *
+ * Con la cifra de lo que hay y la del mínimo, no solo «faltan datos»: así se
+ * sabe si es cuestión de una semana más o de que este chat nunca va a dar.
+ */
+export const Insuficiente: FC<{
+  tiene: number;
+  pide: number;
+  /** Qué se está contando: conversaciones, respuestas, días, meses. */
+  unidad: string;
+  children: ReactNode;
+}> = ({ tiene, pide, unidad, children }) => (
+  <div className="br-an-falta">
+    <div className="br-an-falta-cuenta">
+      <span className="br-an-falta-cifra">
+        {tiene} / {pide}
+      </span>
+      <span className="br-an-falta-unidad">{unidad}</span>
+    </div>
+    <div className="br-an-barra">
+      <span style={{ width: `${Math.min(100, Math.round((tiene / Math.max(1, pide)) * 100))}%` }} />
+    </div>
+    <Detalle>{children}</Detalle>
+  </div>
 );
 
 /**

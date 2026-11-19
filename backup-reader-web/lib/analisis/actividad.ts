@@ -45,6 +45,14 @@ export type Actividad = {
   mapaPorCubos: Casilla[][];
   /** La celda con más actividad del mapa por cubos. */
   puntaSemanal: { dia: number; cubo: number } | null;
+  /**
+   * Días distintos con al menos un mensaje.
+   *
+   * El mapa de horas necesita días repartidos, no mensajes: tres días con
+   * mil mensajes cada uno dibujan tres franjas oscuras y seis vacías, y eso
+   * no es el horario de nadie, es el horario de esos tres días.
+   */
+  diasConMensajes: number;
   total: Casilla;
 };
 
@@ -72,6 +80,7 @@ export function actividad(mensajes: Mensaje[]): Actividad {
   const mapaSemanal = Array.from({ length: 7 }, () => repetir(24));
   const mapaPorCubos = Array.from({ length: 7 }, () => repetir(CUBOS));
   const meses = new Map<string, { clave: string; anio: number; mes: number } & Casilla>();
+  const dias = new Set<string>();
   const total = vacia();
 
   for (const m of mensajes) {
@@ -88,6 +97,8 @@ export function actividad(mensajes: Mensaje[]): Actividad {
       casillaMes = { clave, anio, mes, ...vacia() };
       meses.set(clave, casillaMes);
     }
+
+    dias.add(`${clave}-${m.fecha.getDate()}`);
 
     sumar(porHora[hora], m);
     sumar(porDiaDeLaSemana[dia], m);
@@ -119,6 +130,7 @@ export function actividad(mensajes: Mensaje[]): Actividad {
     mapaSemanal,
     mapaPorCubos,
     puntaSemanal,
+    diasConMensajes: dias.size,
     total,
   };
 }

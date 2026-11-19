@@ -38,9 +38,41 @@ describe("analizar", () => {
     expect(a.sinFecha).toBe(0);
   });
 
-  it("avisa de que un chat corto no llega al mínimo", () => {
-    expect(analizar(filasDe(CORTO)).suficiente).toBe(false);
-    expect(analizar(chatGrande(200)).suficiente).toBe(true);
+  it("«suficiente» es que haya algo que contar, no que haya bastante", () => {
+    /* Dos personas y dos mensajes ya se pueden contar: lo que no llega lo
+       dice `cobertura`, métrica por métrica. */
+    expect(analizar(filasDe(CORTO)).suficiente).toBe(true);
+    expect(analizar([]).suficiente).toBe(false);
+    /* Un monólogo tampoco: no hay a quién comparar con quién. */
+    expect(
+      analizar([["13/01/26 9:00", "Ana", "hola"], ["13/01/26 9:01", "Ana", "¿hay alguien?"]])
+        .suficiente
+    ).toBe(false);
+  });
+
+  it("dice qué le falta a cada cifra, no solo que falta", () => {
+    const corto = analizar(filasDe(CORTO)).cobertura;
+    expect(corto.mensajes).toEqual({ tiene: 2, pide: 100, llega: false });
+    expect(corto.conversaciones.llega).toBe(false);
+    expect(corto.dias.pide).toBe(14);
+    expect(corto.meses.pide).toBe(2);
+
+    const grande = analizar(chatGrande(2000)).cobertura;
+    expect(grande.mensajes.llega).toBe(true);
+    expect(grande.conversaciones.llega).toBe(true);
+    expect(grande.dias.llega).toBe(true);
+  });
+
+  it("las respuestas se miden por la persona que MENOS tiene", () => {
+    /* Con la mediana de uno solo no se puede comparar a nadie. */
+    const filas = [
+      ["05/01/26 09:00", "Ana", "a"],
+      ["05/01/26 10:00", "Beto", "b"],
+      ["05/01/26 11:00", "Ana", "c"],
+    ];
+    const c = analizar(filas, { umbralHoras: 8 }).cobertura;
+    expect(c.respuestas.tiene).toBe(1);
+    expect(c.respuestas.llega).toBe(false);
   });
 
   it("el umbral cambia el resultado, no solo la etiqueta", () => {

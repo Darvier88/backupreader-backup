@@ -40,7 +40,39 @@ import {
   type Expresiones,
 } from "./disculpasYAgradecimientos";
 import { grupos, type Grupo } from "./grupos";
-import { MIN_MENSAJES } from "./umbrales";
+import {
+  MIN_CONVERSACIONES,
+  MIN_DIAS,
+  MIN_MENSAJES,
+  MIN_MESES,
+  MIN_RESPUESTAS,
+} from "./umbrales";
+
+/**
+ * Qué tiene el chat y qué pide cada cifra.
+ *
+ * Existe para que la interfaz no tenga que saber de umbrales: pregunta si
+ * una métrica llega, y si no, enseña cuánto le falta. Antes el panel entero
+ * desaparecía por debajo de cien mensajes; contar cuánto escribe cada uno se
+ * puede hacer con cuarenta, lo que no se puede es hablar de ritmos.
+ */
+export type Cobertura = {
+  /** `tiene` de lo que hay, `pide` del mínimo, `llega` si basta. */
+  mensajes: Medida3;
+  conversaciones: Medida3;
+  /** Respuestas de quien MENOS tiene: la mediana de uno solo no vale. */
+  respuestas: Medida3;
+  dias: Medida3;
+  meses: Medida3;
+};
+
+type Medida3 = { tiene: number; pide: number; llega: boolean };
+
+const medir = (tiene: number, pide: number): Medida3 => ({
+  tiene,
+  pide,
+  llega: tiene >= pide,
+});
 
 /**
  * Sube cuando cambia la forma del resultado: las cachés viejas se rehacen.
@@ -48,8 +80,10 @@ import { MIN_MENSAJES } from "./umbrales";
  * 2: mapa por cubos de cuatro horas, meses incompletos marcados y el tramo
  *    de cinco minutos en los tiempos de respuesta.
  * 3: el formato de fecha deducido, para poder avisar cuando no es seguro.
+ * 4: la cobertura por métrica, y los mínimos nuevos (parecido a 5 puntos,
+ *    10 conversaciones, 30 respuestas por persona, 14 días, 2 meses).
  */
-export const VERSION_ANALISIS = 3;
+export const VERSION_ANALISIS = 4;
 
 export type OpcionesAnalisis = OpcionesNormalizar & {
   /** Horas de silencio que separan dos conversaciones. */
@@ -72,8 +106,14 @@ export type Analisis = {
   sistema: number;
   sinFecha: number;
   autores: string[];
-  /** Si el chat llega al mínimo para enseñar algo. */
+  /**
+   * Hay algo que contar: al menos dos personas y mensajes con fecha.
+   *
+   * No es «hay bastante»: eso lo dice `cobertura`, métrica por métrica.
+   */
   suficiente: boolean;
+  /** Qué llega y qué no, por métrica. */
+  cobertura: Cobertura;
   /**
    * Qué formato de fecha se dedujo y si el chat lo demuestra.
    *
@@ -113,6 +153,12 @@ export function analizar(filas: string[][], opciones: OpcionesAnalisis = {}): An
   const conversaciones = partirEnConversaciones(mensajes, umbralHoras);
   const cuando = actividad(mensajes);
 
+  const respuestas = tiempoDeRespuesta(turnos, umbralHoras);
+  const serie = tendencias(cuando.porMes, medida, {
+    desde: chat.desde,
+    hasta: chat.hasta,
+  });
+
   return {
     v: VERSION_ANALISIS,
     ajustes: { umbralHoras, medida, idioma },
@@ -125,20 +171,29 @@ export function analizar(filas: string[][], opciones: OpcionesAnalisis = {}): An
     sistema: chat.sistema,
     sinFecha: chat.sinFecha,
     autores: chat.autores,
-    suficiente: mensajes.length >= MIN_MENSAJES,
+    suficiente: mensajes.length > 0 && chat.autores.length >= 2,
+    cobertura: {
+      mensajes: medir(mensajes.length, MIN_MENSAJES),
+      conversaciones: medir(conversaciones.length, MIN_CONVERSACIONES),
+      respuestas: medir(
+        respuestas.porAutor.length > 0
+          ? Math.min(...respuestas.porAutor.map((r) => r.respuestas))
+          : 0,
+        MIN_RESPUESTAS
+      ),
+      dias: medir(cuando.diasConMensajes, MIN_DIAS),
+      meses: medir(serie.mesesEnteros, MIN_MESES),
+    },
     formatoFecha,
 
     volumen: escribeMas(mensajes, turnos),
     inicios: iniciaMas(mensajes, umbralHoras, conversaciones),
-    respuestas: tiempoDeRespuesta(turnos, umbralHoras),
+    respuestas,
     actividad: cuando,
-    /* Las fechas de los extremos van aquí porque son lo que deja saber qué
-       meses están a medias: sin ellas, la gráfica dibuja enero bajo sin
-       decir que el archivo empieza el día 12. */
-    tendencias: tendencias(cuando.porMes, medida, {
-      desde: chat.desde,
-      hasta: chat.hasta,
-    }),
+    /* Las fechas de los extremos son lo que deja saber qué meses están a
+       medias: sin ellas, la gráfica dibuja enero bajo sin decir que el
+       archivo empieza el día 12. */
+    tendencias: serie,
     emojis: emojis(mensajes),
     palabras: palabrasFrecuentes(mensajes, { idioma }),
     expresiones: disculpasYAgradecimientos(mensajes),

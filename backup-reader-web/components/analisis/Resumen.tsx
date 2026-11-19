@@ -2,7 +2,6 @@ import { FC } from "react";
 import i18n, { t } from "i18next";
 
 import type { Analisis } from "../../lib/analisis/analizar";
-import { MIN_CONVERSACIONES, MIN_RESPUESTAS } from "../../lib/analisis/umbrales";
 import { conNombre, duracion, numero } from "../../lib/analisis/formatear";
 import {
   Barra,
@@ -38,7 +37,7 @@ export const Resumen: FC<{
   onNoCuadra: (metrica: string) => void;
 }> = ({ analisis, yo, marcadas, onNoCuadra }) => {
   const idioma = i18n.language || "es";
-  const { volumen, inicios, respuestas } = analisis;
+  const { volumen, inicios, respuestas, cobertura } = analisis;
 
   const comoSeLlama = (autor: string) => (yo && autor === yo ? enTexto(t("Tú")) : autor);
   const soyYo = (autor: string) => !!yo && autor === yo;
@@ -67,8 +66,19 @@ export const Resumen: FC<{
         {/* El titular dice QUÉ cuenta. En un chat de fotos, «escribe más»
             por mensajes y por palabras pueden señalar a personas distintas,
             y sin decirlo la cifra parece un hecho en vez de una medida. */}
+        {/* El reparto se enseña siempre; el nombre solo cuando hay bastantes
+            mensajes. Con cuarenta, «escribe el 70 %» es que uno mandó
+            veintiocho y el otro doce, y eso no es un rasgo de nadie. */}
         <Titular>
-          {volumen.masPalabras.parecido
+          {!cobertura.mensajes.llega
+            ? /* Las mismas unidades que la barra de debajo: enseñar aquí
+                 mensajes y ahí palabras hacía que el titular pareciera un
+                 empate mientras la barra marcaba 64/36. */
+              t("{{a}} frente a {{b}} palabras", {
+                a: numero(volumen.porAutor[0]?.palabras ?? 0, idioma),
+                b: numero(volumen.porAutor[1]?.palabras ?? 0, idioma),
+              })
+            : volumen.masPalabras.parecido
             ? t("Escribís parecido, en palabras")
             : titular(
                 volumen.masPalabras.mayor || "",
@@ -76,6 +86,14 @@ export const Resumen: FC<{
                 "{{quien}} escribe más palabras"
               )}
         </Titular>
+        {!cobertura.mensajes.llega && (
+          <Detalle>
+            {t("Con {{min}} mensajes empezamos a decir quién escribe más; de momento van {{n}}.", {
+              min: cobertura.mensajes.pide,
+              n: numero(cobertura.mensajes.tiene, idioma),
+            })}
+          </Detalle>
+        )}
         {/* Y si por mensajes gana el otro, se dice: es la contradicción que
             más desconfianza genera si el lector la descubre solo. */}
         {!volumen.masMensajes.parecido &&
@@ -131,11 +149,14 @@ export const Resumen: FC<{
         titulo={enTexto(t("Quién empieza las conversaciones"))}
         accion={accion("inicios")}
       >
-        {inicios.conversaciones < MIN_CONVERSACIONES ? (
-          <Insuficiente>
+        {!cobertura.conversaciones.llega ? (
+          <Insuficiente
+            tiene={cobertura.conversaciones.tiene}
+            pide={cobertura.conversaciones.pide}
+            unidad={enTexto(t("conversaciones"))}
+          >
             {t(
-              "Hay {{n}} conversaciones. A partir de {{min}} se puede decir algo sin que dependa de una semana concreta.",
-              { n: inicios.conversaciones, min: MIN_CONVERSACIONES }
+              "Con menos no se puede decir quién empieza sin que dependa de una semana concreta."
             )}
           </Insuficiente>
         ) : (
@@ -197,11 +218,14 @@ export const Resumen: FC<{
       </Tarjeta>
 
       <Tarjeta titulo={enTexto(t("Cuánto se tarda en contestar"))} accion={accion("respuestas")}>
-        {respuestas.totalRespuestas < MIN_RESPUESTAS ? (
-          <Insuficiente>
+        {!cobertura.respuestas.llega ? (
+          <Insuficiente
+            tiene={cobertura.respuestas.tiene}
+            pide={cobertura.respuestas.pide}
+            unidad={enTexto(t("respuestas de quien menos tiene"))}
+          >
             {t(
-              "Hay {{n}} respuestas. A partir de {{min}} la mediana deja de moverse con cada mensaje.",
-              { n: respuestas.totalRespuestas, min: MIN_RESPUESTAS }
+              "Se cuenta por la persona con menos respuestas: con la mediana de uno solo no hay a quién comparar."
             )}
           </Insuficiente>
         ) : (

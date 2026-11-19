@@ -55,6 +55,8 @@ export type Tendencias = {
   serie: PuntoDelMes[];
   /** El mes con más actividad, o `null` si no hay ninguna. */
   masActivo: PuntoDelMes | null;
+  /** Meses enteros que cubre el archivo: lo que decide si hay tendencia. */
+  mesesEnteros: number;
   /** Media mensual del tramo reciente y del anterior, y qué pasó. */
   comparacion: {
     meses: number;
@@ -146,7 +148,6 @@ export function tendencias(
     hasta?: Date | null;
   } = {}
 ): Tendencias {
-  const mesesPorTramo = opciones.mesesPorTramo ?? 3;
   const serie = rellenar(porMes, medida, opciones.desde, opciones.hasta);
 
   const conValor = serie.filter((p) => p.valor > 0);
@@ -160,6 +161,14 @@ export function tendencias(
      a mitad de mes. Es el error más fácil de cometer aquí y el más difícil
      de ver después. */
   const completos = serie.filter((p) => !p.parcial);
+
+  /* El tramo se adapta a lo que hay: tres meses a cada lado cuando se puede,
+     y la mitad de lo disponible cuando no. Exigir siempre seis meses enteros
+     dejaba sin tendencia a casi cualquier chat de medio año, que es
+     justamente cuando a la gente le interesa. Con dos meses la comparación
+     es ruidosa, y por eso la interfaz enseña la serie entera al lado. */
+  const mesesPorTramo =
+    opciones.mesesPorTramo ?? Math.max(1, Math.min(3, Math.floor(completos.length / 2)));
 
   let comparacion: Tendencias["comparacion"] = null;
   if (completos.length >= mesesPorTramo * 2) {
@@ -185,5 +194,5 @@ export function tendencias(
     };
   }
 
-  return { medida, serie, masActivo, comparacion };
+  return { medida, serie, mesesEnteros: completos.length, masActivo, comparacion };
 }

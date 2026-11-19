@@ -242,42 +242,17 @@ export const PanelAnalisis: FC<{
   }
 
   if (!analisis.suficiente) {
-    const faltan = MIN_MENSAJES - analisis.mensajesContables;
+    /* Esto ya no es «hay pocos datos»: es que no hay nada que contar. Un
+       archivo vacío, o un chat donde solo ha escrito una persona. */
     return (
       <div className="br-an">
         <Tarjeta titulo={enTexto(t("Análisis"))}>
-          <Titular>{t("Aún no hay bastante conversación")}</Titular>
-          {/* Decir cuánto falta y no solo que falta: así se sabe si es
-              cuestión de un día o de que este chat nunca va a dar. */}
-          <Reparto
-            partes={[
-              {
-                etiqueta: conNombre(analisis.mensajesContables, "{{n}} mensaje", "{{n}} mensajes", t, idioma),
-                porcentaje: Math.round((analisis.mensajesContables / MIN_MENSAJES) * 100),
-              },
-              {
-                etiqueta: enTexto(t("faltan {{n}}", { n: numero(faltan, idioma) })),
-                porcentaje: Math.round((faltan / MIN_MENSAJES) * 100),
-              },
-            ]}
-          />
+          <Titular>{t("Aquí no hay conversación que contar")}</Titular>
           <Detalle>
-            {t(
-              "A partir de {{min}} mensajes las cifras empiezan a decir algo de la conversación y no de una tarde suelta. Con menos, «escribe el 70 %» significa que alguien mandó catorce mensajes y el otro seis.",
-              { min: MIN_MENSAJES }
-            )}
+            {analisis.autores.length < 2
+              ? t("Solo hay mensajes de una persona, así que no hay a quién comparar con quién.")
+              : t("El archivo no tiene mensajes con fecha que se puedan contar.")}
           </Detalle>
-          {analisis.eliminados + analisis.sistema + analisis.sinFecha > 0 && (
-            <Detalle>
-              {t("De las {{n}} líneas del archivo, {{fuera}} no son mensajes de nadie: avisos del sistema, eliminados o con una fecha que no se entendió.", {
-                n: numero(analisis.totalFilas, idioma),
-                fuera: numero(
-                  analisis.eliminados + analisis.sistema + analisis.sinFecha,
-                  idioma
-                ),
-              })}
-            </Detalle>
-          )}
         </Tarjeta>
       </div>
     );
@@ -386,9 +361,15 @@ export const PanelAnalisis: FC<{
 
       {vistaActual === "resumen" && (
         <EnNumeros>
-          {t("{{n}} mensajes en {{meses}} meses.", {
-            n: numero(analisis.mensajesContables, idioma),
-            meses,
+          {t("{{mensajes}} en {{tiempo}}.", {
+            mensajes: conNombre(
+              analisis.mensajesContables,
+              "{{n}} mensaje",
+              "{{n}} mensajes",
+              t,
+              idioma
+            ),
+            tiempo: conNombre(meses, "{{n}} mes", "{{n}} meses", t, idioma),
           })}
           {hayPatron && punta
             ? " " +

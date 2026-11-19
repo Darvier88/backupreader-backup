@@ -17,23 +17,40 @@
  * respuesta es «parecido», que además suele ser la verdad.
  */
 
-/** Mensajes contables mínimos para enseñar cualquier métrica del chat. */
+/**
+ * Los mínimos van POR MÉTRICA, no para el panel entero.
+ *
+ * Antes bastaba con no llegar a cien mensajes para que no se enseñara nada.
+ * Pero contar mensajes y palabras se puede hacer con cuarenta: lo que no se
+ * puede es hablar de ritmos. Cada cifra pide lo suyo, y lo que no llega
+ * dice qué le falta en vez de desaparecer.
+ */
+
+/** Mensajes mínimos para comparar cuánto escribe cada uno. */
 export const MIN_MENSAJES = 100;
 
 /** Conversaciones mínimas para hablar de quién empieza. */
-export const MIN_CONVERSACIONES = 20;
+export const MIN_CONVERSACIONES = 10;
 
-/** Respuestas mínimas para hablar de tiempos de respuesta. */
+/** Respuestas mínimas POR PERSONA para hablar de tiempos de respuesta. */
 export const MIN_RESPUESTAS = 30;
 
+/** Días distintos con mensajes para que el mapa de horas diga algo. */
+export const MIN_DIAS = 14;
+
+/** Meses enteros para hablar de tendencia. */
+export const MIN_MESES = 2;
+
 /**
- * Margen para considerar dos repartos el mismo: diez puntos.
+ * Margen para considerar dos repartos el mismo: cinco puntos.
  *
- * Es decir, de 45/55 para dentro es «parecido». Sale de que lo que la gente
- * nota en una conversación es «uno de los dos escribe bastante más», y eso
- * empieza a notarse alrededor de 60/40.
+ * Es decir, de 47,5/52,5 para dentro es «parecido». Empecé con diez, que
+ * es donde la diferencia se nota leyendo el chat, pero diez puntos se come
+ * casos como 56/44 que sí son una diferencia real y que la gente reconoce
+ * al ver las cifras. Con cinco, el empate sigue siendo empate y lo demás se
+ * nombra con el reparto delante para que cada cual juzgue.
  */
-export const MARGEN_PARECIDO = 10;
+export const MARGEN_PARECIDO = 5;
 
 /** Quién sale por delante, o `null` si la diferencia cabe en el margen. */
 export type Comparacion<T> = { mayor: T | null; parecido: boolean };

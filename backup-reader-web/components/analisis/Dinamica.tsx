@@ -6,6 +6,7 @@ import type { Medida } from "../../lib/analisis/tendencias";
 import { fechaCorta, numero } from "../../lib/analisis/formatear";
 import {
   DIAS,
+  Insuficiente,
   DIAS_LARGO,
   Detalle,
   EstoNoCuadra,
@@ -71,7 +72,7 @@ export const Dinamica: FC<{
   onNoCuadra: (metrica: string) => void;
 }> = ({ analisis, medida, marcadas, onNoCuadra }) => {
   const idioma = i18n.language || "es";
-  const { actividad, tendencias } = analisis;
+  const { actividad, tendencias, cobertura } = analisis;
 
   const valor = (c: { mensajes: number; palabras: number; notasDeVoz: number }) => c[medida];
   const maxCubo = Math.max(1, ...actividad.mapaPorCubos.flat().map(valor));
@@ -110,6 +111,18 @@ export const Dinamica: FC<{
   return (
     <>
       <Tarjeta titulo={enTexto(t("Cuándo habláis"))} accion={accion("horas")}>
+        {!cobertura.dias.llega ? (
+          <Insuficiente
+            tiene={cobertura.dias.tiene}
+            pide={cobertura.dias.pide}
+            unidad={enTexto(t("días con mensajes"))}
+          >
+            {t(
+              "Tres días con mil mensajes dibujan tres franjas oscuras y seis vacías: eso no es vuestro horario, es el de esos tres días."
+            )}
+          </Insuficiente>
+        ) : (
+        <>
         <Titular>
           {punta
             ? t("Sobre todo los {{dia}} {{franja}}", {
@@ -195,9 +208,22 @@ export const Dinamica: FC<{
         <Detalle>
           {t("Son las horas del teléfono que exportó el chat, no las de donde estés ahora.")}
         </Detalle>
+        </>
+        )}
       </Tarjeta>
 
       <Tarjeta titulo={enTexto(t("Mes a mes"))} accion={accion("tendencias")}>
+        {!cobertura.meses.llega && (
+          <Insuficiente
+            tiene={cobertura.meses.tiene}
+            pide={cobertura.meses.pide}
+            unidad={enTexto(t("meses enteros"))}
+          >
+            {t(
+              "El primero y el último mes del archivo están a medias, así que no cuentan para comparar. La serie se enseña igual."
+            )}
+          </Insuficiente>
+        )}
         {tendencias.comparacion && (
           <Titular>
             {tendencias.comparacion.direccion === "parecido"

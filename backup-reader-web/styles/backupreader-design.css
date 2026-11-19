@@ -1053,3 +1053,14 @@ body {
   background: var(--ink-900); border-color: var(--ink-900); color: var(--text-on-ink);
 }
 .br-an-conmutador--activo:hover { background: var(--ink-800); border-color: var(--ink-800); }
+
+/* «Qué falta para esta cifra»: lo que hay, lo que pide y por qué. */
+.br-an-falta { display: flex; flex-direction: column; gap: 8px; }
+.br-an-falta-cuenta { display: flex; align-items: baseline; gap: 8px; }
+.br-an-falta-cifra {
+  font-family: var(--font-mono); font-size: 18px; color: var(--text-strong);
+}
+.br-an-falta-unidad {
+  font-family: var(--font-mono); font-size: 10.5px;
+  letter-spacing: 0.12em; text-transform: uppercase; color: var(--text-muted);
+}
