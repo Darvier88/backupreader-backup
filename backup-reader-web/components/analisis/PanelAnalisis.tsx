@@ -81,7 +81,9 @@ export const PanelAnalisis: FC<{
   yoPorDefecto?: string;
   /** Saltar a un mensaje del chat. */
   onIrAlMensaje?: (indice: number) => void;
-}> = ({ filas, handle, yoPorDefecto, onIrAlMensaje }) => {
+  /** Dejar el chat marcado con unos términos, para ver de dónde sale la cifra. */
+  onFiltrar?: (etiqueta: string, terminos: string[]) => void;
+}> = ({ filas, handle, yoPorDefecto, onIrAlMensaje, onFiltrar }) => {
   const idioma = i18n.language || "es";
   const { leerAnalisis, escribirAnalisis, bovedaAbierta } = useContext(StorageContext);
 
@@ -480,6 +482,7 @@ export const PanelAnalisis: FC<{
           marcadas={marcadas}
           onNoCuadra={marcarNoCuadra}
           onIrAlMensaje={onIrAlMensaje}
+          onFiltrar={onFiltrar}
         />
       )}
 

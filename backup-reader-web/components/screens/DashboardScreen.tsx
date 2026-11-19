@@ -13,6 +13,7 @@ import { ChatView } from "../chat";
 import { ManageFileCard } from "../cards";
 import { ConversationsDrawer } from "../drawers";
 import { BuscadorEnChat } from "../chat/BuscadorEnChat";
+import { FiltroDelAnalisis } from "../chat/FiltroDelAnalisis";
 import { ControlSegmentado } from "../ui/ControlSegmentado";
 import { cuantasVeces } from "../../lib/busqueda/resaltar";
 import { claveDeDia, etiquetaDeDia } from "../../lib/fechas-de-chat";
@@ -115,6 +116,23 @@ export const DashboardScreen: FC = () => {
      viene a leerlo. */
   const [panelLateral, setPanelLateral] = useState(false);
 
+  /* El filtro que viene del análisis (pantalla 1g).
+     Tocar «perdona · 26» no debería dejarte en un mensaje suelto: lo que
+     hace falta es ver los 26 y poder recorrerlos. Reusa el contador y las
+     flechas de la búsqueda del chat, que ya existen y ya funcionan; lo
+     único nuevo es que la consulta puede ser una lista de palabras,
+     porque «disculpas» no es una palabra sino tres. */
+  const [filtro, setFiltro] = useState<{ etiqueta: string; terminos: string[] } | null>(null);
+
+  /* Lo que se busca ahora mismo: el filtro manda sobre lo tecleado. */
+  const consultaActiva: string | string[] = filtro ? filtro.terminos : chatSearch;
+
+  /* Al cambiar de chat el filtro se cae: «❤️ · 3 de 11» encima de otra
+     conversación cuenta otra cosa, y la etiqueta diría que no. */
+  useEffect(() => {
+    setFiltro(null);
+  }, [rutaAbierta]);
+
   /* El formato de fecha, deducido una vez por chat. Hace falta para restar
      dos mensajes, y deducirlo por mensaje sería recorrer el chat entero en
      cada fila. */
@@ -193,19 +211,22 @@ export const DashboardScreen: FC = () => {
     const desplazamientos: number[] = [];
     let acumulado = 0;
 
-    if (chatSearch.trim().length < 2) {
+    const hayQueBuscar = filtro
+      ? filtro.terminos.length > 0
+      : chatSearch.trim().length >= 2;
+    if (!hayQueBuscar) {
       return { porMensaje, desplazamientos, total: 0 };
     }
 
     for (const item of visibleMessages) {
-      const n = cuantasVeces((item as any)[2] || "", chatSearch);
+      const n = cuantasVeces((item as any)[2] || "", consultaActiva);
       desplazamientos.push(acumulado);
       porMensaje.push(n);
       acumulado += n;
     }
 
     return { porMensaje, desplazamientos, total: acumulado };
-  }, [visibleMessages, chatSearch]);
+  }, [visibleMessages, chatSearch, filtro, consultaActiva]);
 
   /* En qué mensaje vive la coincidencia activa. Hace falta para dos cosas:
      ampliar la lista si está más allá de lo pintado, y desplazarse hasta ella. */
@@ -272,7 +293,7 @@ export const DashboardScreen: FC = () => {
   // Al cambiar de chat, de pestaña o de búsqueda, reiniciar el conteo.
   useEffect(() => {
     setVisibleCount(CHUNK);
-  }, [chat, toShow, chatSearch]);
+  }, [chat, toShow, chatSearch, filtro]);
 
   // Centinela al final de la lista: cuando se acerca a la vista, carga más.
   // Es más robusto que escuchar el scroll de un contenedor concreto, porque
@@ -393,6 +414,14 @@ export const DashboardScreen: FC = () => {
       yoPorDefecto={myName}
       /* Tocar un emoji o una palabra lleva al mensaje. Con el panel al
          lado no hace falta cambiar de vista; en la pestaña del móvil sí. */
+      /* Tocar una cifra deja el chat marcado con lo que la produjo (1g).
+         Se pone antes de saltar: así el salto aterriza con la barra puesta
+         y el recuento ya hecho. */
+      onFiltrar={(etiqueta, terminos) => {
+        setChatSearch("");
+        setFiltro({ etiqueta, terminos });
+        setActiva(0);
+      }}
       onIrAlMensaje={(indice) => {
         if (!panelLateral) setToShow("message");
         setVisibleCount((c) => Math.max(c, indice + CHUNK));
@@ -519,14 +548,28 @@ export const DashboardScreen: FC = () => {
               {/* Buscador del chat abierto, a ancho completo (1a/1c). No
                   filtra: resalta y deja saltar entre coincidencias. */}
               <Box marginTop={ocultarCabecera ? 0 : 1.5}>
-                <BuscadorEnChat
-                  onAbierto={setBuscando}
-                  consulta={chatSearch}
-                  onConsulta={setChatSearch}
-                  total={coincidencias.total}
-                  activa={activa}
-                  onActiva={setActiva}
-                />
+                {filtro ? (
+                  /* Mientras se mira de dónde sale una cifra, la barra ocupa
+                     el sitio del buscador en vez de añadirse debajo: son la
+                     misma pregunta («qué estoy viendo marcado»), y dos filas
+                     a la vez dejarían dos contadores distintos en pantalla. */
+                  <FiltroDelAnalisis
+                    etiqueta={filtro.etiqueta}
+                    total={coincidencias.total}
+                    activa={activa}
+                    onActiva={setActiva}
+                    onQuitar={() => setFiltro(null)}
+                  />
+                ) : (
+                  <BuscadorEnChat
+                    onAbierto={setBuscando}
+                    consulta={chatSearch}
+                    onConsulta={setChatSearch}
+                    total={coincidencias.total}
+                    activa={activa}
+                    onActiva={setActiva}
+                  />
+                )}
               </Box>
 
               {/* Mensajes y Media son dos vistas de lo mismo, no dos acciones. */}
@@ -637,7 +680,7 @@ export const DashboardScreen: FC = () => {
                         date={item[0]}
                         message={item[2]}
                         messenger={item[1]}
-                        chatSearch={chatSearch}
+                        chatSearch={consultaActiva}
                         gallery
                       />
                     ))}
@@ -722,9 +765,13 @@ export const DashboardScreen: FC = () => {
                             date={item[0]}
                             message={item[2]}
                             messenger={item[1]}
-                            chatSearch={chatSearch}
+                            chatSearch={consultaActiva}
                             coincidenciaActiva={activa}
                             desplazamiento={coincidencias.desplazamientos[i] ?? 0}
+                            /* Con el filtro puesto, lo que no coincide se
+                               apaga: así se ve de un vistazo cuáles son los
+                               35 sin perder la conversación de alrededor. */
+                            atenuado={!!filtro && (coincidencias.porMensaje[i] ?? 0) === 0}
                             isMine={!!myName && (item[1] || "").trim() === myName}
                             /* El nombre solo en el primero de una racha del
                                mismo remitente el mismo día (1a). */

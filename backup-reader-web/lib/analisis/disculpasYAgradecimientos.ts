@@ -62,6 +62,56 @@ const AGRADECIMIENTOS = palabras([
   "grazie",
 ]);
 
+/**
+ * Las mismas expresiones, en texto plano, para filtrar el chat desde la cifra.
+ *
+ * Contar y filtrar no pueden usar lo mismo: contar necesita expresiones
+ * regulares («graciasss» es una vez), y el resaltado del chat busca trozos de
+ * texto. Estas son las formas que de verdad aparecen en un chat en español,
+ * sin tildes porque el buscador ya las ignora, y cortadas para que una sola
+ * pille sus variantes: «perdon» marca «perdona» y «perdoname».
+ *
+ * No están todos los idiomas de arriba a propósito: una lista larga marcaría
+ * trozos sueltos dentro de palabras y ensuciaría el chat sin añadir nada.
+ */
+export const TERMINOS_DISCULPA = [
+  /* De la más larga a la más corta: cuando dos encajan en el mismo sitio
+     gana la larga, y así «perdoname» se marca entero en vez de dejar «me»
+     fuera de la marca con media palabra subrayada. */
+  "perdonadme",
+  "perdoname",
+  "perdonad",
+  "perdones",
+  "perdona",
+  "perdon",
+  "lo siento",
+  "disculpame",
+  "disculpas",
+  "disculpa",
+  "disculpe",
+  "sorry",
+  "my bad",
+  "desculpa",
+];
+
+export const TERMINOS_GRACIAS = [
+  "te lo agradezco",
+  "agradecida",
+  "agradecido",
+  "agradezco",
+  "gracias",
+  "gracinas",
+  "thank you",
+  "thanks",
+  "thank",
+  "thx",
+  "obrigado",
+  "obrigada",
+  "merci",
+  "danke",
+  "grazie",
+];
+
 export type Expresion = {
   autor: string;
   total: number;

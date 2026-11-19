@@ -63,24 +63,50 @@ function normalizarConMapa(texto: string): { plano: string; mapa: number[] } {
 }
 
 /**
+ * ¿Vale la pena buscar este término?
+ *
+ * Una sola letra coincidiría con casi todo y dejaría el mensaje lleno de
+ * marcas que no ayudan a leer. Un emoji suelto no: «❤» es un carácter de
+ * longitud 1, pero marcarlo es justamente lo que se pide al tocar «❤️ · 47»
+ * en el análisis, y no aparece dentro de ninguna palabra.
+ */
+const vale = (c: string) => c.length >= 2 || (c.length === 1 && !/[\p{L}\p{N}]/u.test(c));
+
+/**
  * Parte un texto en trozos, marcando dónde aparece la consulta.
  *
  * Devuelve el texto entero, no solo las coincidencias: quien lo pinta necesita
  * lo de alrededor para que el mensaje se siga leyendo.
+ *
+ * VARIOS TÉRMINOS A LA VEZ
+ * ------------------------
+ * La consulta puede ser una lista. Hace falta para filtrar el chat desde el
+ * análisis: «disculpas» no es una palabra, son «perdón», «lo siento» y
+ * «disculpa», y el contador tiene que decir cuántas hay de las tres juntas.
+ * Con un término suelto se comporta exactamente igual que antes.
+ *
+ * Cuando dos términos coinciden en el mismo sitio gana el más largo: con
+ * «perdón» y «perdona» en la lista, marcar solo «perdón» dejaría la «a»
+ * suelta fuera de la marca.
  */
-export function partirPorCoincidencias(texto: string, consulta: string): Trozo[] {
+export function partirPorCoincidencias(
+  texto: string,
+  consulta: string | string[]
+): Trozo[] {
   const limpio = (texto ?? "").toString();
-  const termino = (consulta ?? "").trim();
+  const lista = (Array.isArray(consulta) ? consulta : [consulta])
+    .map((c) => (c ?? "").trim())
+    .filter(vale);
 
-  /* Una sola letra coincidiría con casi todo y dejaría el mensaje lleno de
-     marcas que no ayudan a leer. */
-  if (!limpio || termino.length < 2) {
+  if (!limpio || lista.length === 0) {
     return [{ texto: limpio, coincide: false, indice: -1 }];
   }
 
   const { plano, mapa } = normalizarConMapa(limpio);
-  const { plano: aguja } = normalizarConMapa(termino);
-  if (!aguja) return [{ texto: limpio, coincide: false, indice: -1 }];
+  const agujas = lista
+    .map((c) => normalizarConMapa(c).plano)
+    .filter(Boolean);
+  if (agujas.length === 0) return [{ texto: limpio, coincide: false, indice: -1 }];
 
   const trozos: Trozo[] = [];
   let cursorOriginal = 0;
@@ -88,7 +114,17 @@ export function partirPorCoincidencias(texto: string, consulta: string): Trozo[]
   let nEncontradas = 0;
 
   while (true) {
-    const posPlano = plano.indexOf(aguja, desde);
+    /* La más temprana de todas; a igual posición, la más larga. */
+    let posPlano = -1;
+    let aguja = "";
+    for (const a of agujas) {
+      const p = plano.indexOf(a, desde);
+      if (p === -1) continue;
+      if (posPlano === -1 || p < posPlano || (p === posPlano && a.length > aguja.length)) {
+        posPlano = p;
+        aguja = a;
+      }
+    }
     if (posPlano === -1) break;
 
     /* De vuelta al original: dónde empieza, y dónde empieza lo siguiente. El
@@ -128,16 +164,20 @@ export function partirPorCoincidencias(texto: string, consulta: string): Trozo[]
 }
 
 /** ¿Aparece la consulta en este texto? Más barato que partirlo entero. */
-export function contiene(texto: string, consulta: string): boolean {
-  const termino = (consulta ?? "").trim();
-  if (!texto || termino.length < 2) return false;
+export function contiene(texto: string, consulta: string | string[]): boolean {
+  const lista = (Array.isArray(consulta) ? consulta : [consulta])
+    .map((c) => (c ?? "").trim())
+    .filter(vale);
+  if (!texto || lista.length === 0) return false;
   const { plano } = normalizarConMapa(texto);
-  const { plano: aguja } = normalizarConMapa(termino);
-  return !!aguja && plano.includes(aguja);
+  return lista.some((c) => {
+    const { plano: aguja } = normalizarConMapa(c);
+    return !!aguja && plano.includes(aguja);
+  });
 }
 
 /** Cuántas veces aparece la consulta en el texto. */
-export function cuantasVeces(texto: string, consulta: string): number {
+export function cuantasVeces(texto: string, consulta: string | string[]): number {
   return partirPorCoincidencias(texto, consulta).filter((t) => t.coincide).length;
 }
 

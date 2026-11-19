@@ -3,6 +3,10 @@ import i18n, { t } from "i18next";
 
 import type { Analisis } from "../../lib/analisis/analizar";
 import { numero } from "../../lib/analisis/formatear";
+import {
+  TERMINOS_DISCULPA,
+  TERMINOS_GRACIAS,
+} from "../../lib/analisis/disculpasYAgradecimientos";
 import { Barra, Detalle, EstoNoCuadra, Tarjeta, Titular, enTexto } from "./piezas";
 
 /**
@@ -39,7 +43,15 @@ export const Palabras: FC<{
   onNoCuadra: (metrica: string) => void;
   /** Saltar al mensaje número `indice` del chat. */
   onIrAlMensaje?: (indice: number) => void;
-}> = ({ analisis, yo, marcadas, onNoCuadra, onIrAlMensaje }) => {
+  /**
+   * Dejar el chat marcado con estos términos (1g).
+   *
+   * Va aparte de `onIrAlMensaje` porque son dos cosas distintas: saltar lleva
+   * a UN mensaje, y filtrar deja marcados LOS 47. Se llaman juntas: se
+   * aterriza en el primero con la barra puesta para recorrer el resto.
+   */
+  onFiltrar?: (etiqueta: string, terminos: string[]) => void;
+}> = ({ analisis, yo, marcadas, onNoCuadra, onIrAlMensaje, onFiltrar }) => {
   const idioma = i18n.language || "es";
   const { emojis, palabras, expresiones } = analisis;
 
@@ -48,25 +60,44 @@ export const Palabras: FC<{
     <EstoNoCuadra metrica={metrica} marcada={marcadas.includes(metrica)} onMarcar={onNoCuadra} />
   );
 
-  /** Una fila que se puede tocar para ir a un mensaje. */
-  const Fila: FC<{ indice?: number; children: React.ReactNode }> = ({ indice, children }) => {
+  /** Una fila que se puede tocar para ir a un mensaje y marcar los demás. */
+  const Fila: FC<{
+    indice?: number;
+    /** Cómo se llama lo que se tocó, para la barra del chat. */
+    etiqueta?: string;
+    /** Lo que hay que marcar en el chat. */
+    terminos?: string[];
+    children: React.ReactNode;
+  }> = ({ indice, etiqueta, terminos, children }) => {
     const sePuede = typeof indice === "number" && !!onIrAlMensaje;
+    const abrir = () => {
+      if (etiqueta && terminos && terminos.length > 0) onFiltrar?.(etiqueta, terminos);
+      if (typeof indice === "number") onIrAlMensaje?.(indice);
+    };
     return (
       <div
         role={sePuede ? "button" : undefined}
         tabIndex={sePuede ? 0 : undefined}
-        onClick={sePuede ? () => onIrAlMensaje!(indice!) : undefined}
+        onClick={sePuede ? abrir : undefined}
         onKeyDown={
           sePuede
             ? (e) => {
                 if (e.key === "Enter" || e.key === " ") {
                   e.preventDefault();
-                  onIrAlMensaje!(indice!);
+                  abrir();
                 }
               }
             : undefined
         }
-        title={sePuede ? enTexto(t("Ver un mensaje donde aparece")) : undefined}
+        title={
+          sePuede
+            ? enTexto(
+                terminos && terminos.length > 0
+                  ? t("Verlos en el chat")
+                  : t("Ver un mensaje donde aparece")
+              )
+            : undefined
+        }
         className="br-an-fila"
       >
         {children}
@@ -89,7 +120,7 @@ export const Palabras: FC<{
             </Titular>
             <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
               {emojis.top.map((e) => (
-                <Fila key={e.emoji} indice={e.ejemplo}>
+                <Fila key={e.emoji} indice={e.ejemplo} etiqueta={paraVer(e.emoji)} terminos={[e.emoji, paraVer(e.emoji)]}>
                   <span style={{ fontSize: 20, width: 28 }}>{paraVer(e.emoji)}</span>
                   <div style={{ flex: 1 }}>
                     <Barra parte={e.total} total={maxEmoji} />
@@ -129,7 +160,7 @@ export const Palabras: FC<{
             <Titular>{t("De lo que más habláis")}</Titular>
             <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
               {palabras.top.map((p) => (
-                <Fila key={p.palabra} indice={p.ejemplo}>
+                <Fila key={p.palabra} indice={p.ejemplo} etiqueta={p.palabra} terminos={[p.palabra]}>
                   <span
                     style={{
                       fontFamily: "var(--font-sans)",
@@ -183,7 +214,12 @@ export const Palabras: FC<{
               })}
             </Titular>
             {expresiones.disculpas.map((d) => (
-              <Fila key={d.autor} indice={d.ejemplos[0]}>
+              <Fila
+                key={d.autor}
+                indice={d.ejemplos[0]}
+                etiqueta={enTexto(t("Perdones"))}
+                terminos={TERMINOS_DISCULPA}
+              >
                 <span style={{ fontFamily: "var(--font-sans)", fontSize: 13.5, flex: 1 }}>
                   {comoSeLlama(d.autor)}
                 </span>
@@ -210,7 +246,12 @@ export const Palabras: FC<{
               })}
             </Titular>
             {expresiones.agradecimientos.map((a) => (
-              <Fila key={a.autor} indice={a.ejemplos[0]}>
+              <Fila
+                key={a.autor}
+                indice={a.ejemplos[0]}
+                etiqueta={enTexto(t("Gracias"))}
+                terminos={TERMINOS_GRACIAS}
+              >
                 <span style={{ fontFamily: "var(--font-sans)", fontSize: 13.5, flex: 1 }}>
                   {comoSeLlama(a.autor)}
                 </span>
