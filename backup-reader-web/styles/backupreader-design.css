@@ -965,3 +965,39 @@ body {
   .br-an-numeros { padding: 18px; }
   .br-an-numeros-frase { font-size: 21px; }
 }
+
+/* Avisos del análisis: cosas que cambian cómo se leen las cifras de debajo.
+   Van en ocre y no en rojo: no es un error, es una advertencia sobre lo que
+   el archivo deja saber. */
+.br-an-aviso {
+  display: flex; gap: 10px; align-items: flex-start;
+  padding: 12px 14px;
+  background: var(--status-review-bg);
+  border: 1px solid rgba(184,132,43,0.3);
+  border-radius: var(--radius-lg);
+  font-family: var(--font-sans); font-size: 13px; line-height: 1.5;
+  color: var(--slate-900);
+}
+.br-an-aviso-punto {
+  flex-shrink: 0; width: 7px; height: 7px; margin-top: 7px;
+  border-radius: 50%; background: var(--ochre-600);
+}
+.br-an-enlace {
+  padding: 0; border: 0; background: none; cursor: pointer;
+  font-family: inherit; font-size: inherit;
+  color: var(--text-accent); text-decoration: underline; text-underline-offset: 2px;
+}
+.br-an-enlace:focus-visible { outline: none; box-shadow: var(--focus-ring); border-radius: 2px; }
+
+/* Esqueleto de carga */
+.br-an-esqueleto { gap: 14px; }
+.br-an-hueso {
+  display: block; border-radius: var(--radius-sm);
+  background: var(--border-on-ink);
+  animation: br-an-latido 1.4s var(--ease-standard) infinite;
+}
+.br-an-tarjeta .br-an-hueso { background: var(--surface-sunken); }
+@keyframes br-an-latido { 0%, 100% { opacity: 1; } 50% { opacity: 0.45; } }
+@media (prefers-reduced-motion: reduce) {
+  .br-an-hueso { animation: none; }
+}

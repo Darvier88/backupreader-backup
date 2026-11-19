@@ -117,6 +117,19 @@ export const Barra: FC<{ parte: number; total: number; alto?: number }> = ({
   </div>
 );
 
+/**
+ * Un aviso sobre lo que el archivo deja saber.
+ *
+ * En ocre y no en rojo: no es un error de la aplicación, es una limitación
+ * del export. El rojo haría pensar que algo se ha roto.
+ */
+export const Aviso: FC<{ children: ReactNode }> = ({ children }) => (
+  <div className="br-an-aviso">
+    <span className="br-an-aviso-punto" aria-hidden="true" />
+    <span>{children}</span>
+  </div>
+);
+
 /** Lo que se enseña cuando una métrica no tiene datos suficientes. */
 export const Insuficiente: FC<{ children: ReactNode }> = ({ children }) => (
   <Detalle>{children}</Detalle>

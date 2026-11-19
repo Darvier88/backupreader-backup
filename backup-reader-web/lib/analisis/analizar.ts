@@ -21,6 +21,7 @@
  */
 
 import { normalizar, contables, type OpcionesNormalizar } from "./normalizar";
+import { deducirFormato, type FormatoFecha } from "./fechaHora";
 import { agruparEnTurnos } from "./turnos";
 import { escribeMas, type Volumen } from "./escribeMas";
 import {
@@ -46,8 +47,9 @@ import { MIN_MENSAJES } from "./umbrales";
  *
  * 2: mapa por cubos de cuatro horas, meses incompletos marcados y el tramo
  *    de cinco minutos en los tiempos de respuesta.
+ * 3: el formato de fecha deducido, para poder avisar cuando no es seguro.
  */
-export const VERSION_ANALISIS = 2;
+export const VERSION_ANALISIS = 3;
 
 export type OpcionesAnalisis = OpcionesNormalizar & {
   /** Horas de silencio que separan dos conversaciones. */
@@ -72,6 +74,16 @@ export type Analisis = {
   autores: string[];
   /** Si el chat llega al mínimo para enseñar algo. */
   suficiente: boolean;
+  /**
+   * Qué formato de fecha se dedujo y si el chat lo demuestra.
+   *
+   * Cuando `seguro` es falso, el chat no tiene ninguna fecha con un número
+   * mayor que 12 y no hay manera de saber si 3/4 es el 3 de abril o el 4 de
+   * marzo. Las cifras del día a día aguantan, pero «mensajes por mes» puede
+   * estar entero desplazado, y eso hay que decirlo antes de enseñar la
+   * gráfica, no después.
+   */
+  formatoFecha: FormatoFecha;
 
   volumen: Volumen;
   inicios: QuienInicia;
@@ -90,7 +102,12 @@ export function analizar(filas: string[][], opciones: OpcionesAnalisis = {}): An
   const medida: Medida = opciones.medida ?? "mensajes";
   const idioma = opciones.idioma || "es";
 
-  const chat = normalizar(filas, opciones);
+  /* El formato se deduce aparte para poder devolverlo: `normalizar` lo usa
+     por dentro pero no lo cuenta, y la interfaz necesita saber si es fiable. */
+  const formatoFecha =
+    opciones.formato ?? deducirFormato(filas, opciones.diaPrimeroPorDefecto ?? true);
+
+  const chat = normalizar(filas, { ...opciones, formato: formatoFecha });
   const mensajes = contables(chat);
   const turnos = agruparEnTurnos(mensajes);
   const conversaciones = partirEnConversaciones(mensajes, umbralHoras);
@@ -109,6 +126,7 @@ export function analizar(filas: string[][], opciones: OpcionesAnalisis = {}): An
     sinFecha: chat.sinFecha,
     autores: chat.autores,
     suficiente: mensajes.length >= MIN_MENSAJES,
+    formatoFecha,
 
     volumen: escribeMas(mensajes, turnos),
     inicios: iniciaMas(mensajes, umbralHoras, conversaciones),

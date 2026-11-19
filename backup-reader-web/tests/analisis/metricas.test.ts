@@ -7,6 +7,7 @@ import { tiempoDeRespuesta } from "../../lib/analisis/tiempoDeRespuesta";
 import { actividad } from "../../lib/analisis/actividad";
 import { tendencias } from "../../lib/analisis/tendencias";
 import { compararDuraciones, compararReparto } from "../../lib/analisis/umbrales";
+import { conNombre } from "../../lib/analisis/formatear";
 import { RAFAGAS, filasDe } from "./ejemplos";
 
 const MINUTO = 60 * 1000;
@@ -555,5 +556,24 @@ describe("respuestas en cinco minutos o menos", () => {
 
   it("sin respuestas, cero y no una división por cero", () => {
     expect(tiempoDeRespuesta([], 4).porAutor).toEqual([]);
+  });
+});
+
+describe("conNombre", () => {
+  /* `t` de mentira: devuelve la clave con el número puesto, que es lo que
+     hace i18next en español al no haber recursos para ese idioma. */
+  const t = (clave: string, o?: any) => clave.replace("{{n}}", String(o?.n ?? ""));
+
+  it("usa el singular con uno", () => {
+    expect(conNombre(1, "{{n}} palabra", "{{n}} palabras", t)).toBe("1 palabra");
+  });
+
+  it("y el plural con el resto, incluido el cero", () => {
+    expect(conNombre(0, "{{n}} palabra", "{{n}} palabras", t)).toBe("0 palabras");
+    expect(conNombre(5, "{{n}} palabra", "{{n}} palabras", t)).toBe("5 palabras");
+  });
+
+  it("no se lía con los decimales", () => {
+    expect(conNombre(1.5, "{{n}} palabra", "{{n}} palabras", t)).toBe("1,5 palabras");
   });
 });

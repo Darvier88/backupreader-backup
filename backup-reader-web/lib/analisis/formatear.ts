@@ -48,3 +48,25 @@ export function fechaCorta(fecha: Date, idioma = "es"): string {
     return fecha.toISOString().slice(0, 10);
   }
 }
+
+/**
+ * Un número con su nombre, en singular o plural.
+ *
+ * Las claves de i18n de esta aplicación son la frase en español, así que el
+ * plural automático de i18next no funciona (sin recursos para «es», `t`
+ * devuelve la propia clave). Esto lo resuelve a mano, que para dos formas no
+ * hace falta más: sin ello sale «1 palabras por turno».
+ *
+ * `traducir` es la `t` de i18next, que se pasa para no acoplar este módulo
+ * a la instancia.
+ */
+export function conNombre(
+  n: number,
+  singular: string,
+  plural: string,
+  traducir: (clave: string, opciones?: any) => unknown,
+  idioma = "es"
+): string {
+  const clave = Math.abs(n) === 1 ? singular : plural;
+  return String(traducir(clave, { n: numero(n, idioma) }) ?? "");
+}

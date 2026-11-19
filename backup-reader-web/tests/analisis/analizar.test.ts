@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { analizar, VERSION_ANALISIS } from "../../lib/analisis/analizar";
-import { ANDROID_DIA_PRIMERO, GRUPO, CORTO, chatGrande, filasDe } from "./ejemplos";
+import { AMBIGUO, ANDROID_DIA_PRIMERO, GRUPO, CORTO, chatGrande, filasDe } from "./ejemplos";
 
 describe("analizar", () => {
   const a = analizar(filasDe(ANDROID_DIA_PRIMERO));
@@ -71,6 +71,17 @@ describe("analizar", () => {
     expect(json).not.toContain("contraseña del wifi");
     /* Los ejemplos son posiciones, no frases. */
     expect(r.expresiones.agradecimientos[0].ejemplos).toEqual([1]);
+  });
+
+  it("dice qué formato de fecha dedujo y si el chat lo demuestra", () => {
+    /* Con un 13 en el día, el chat lo demuestra solo. */
+    expect(analizar(filasDe(ANDROID_DIA_PRIMERO)).formatoFecha).toEqual({
+      diaPrimero: true,
+      seguro: true,
+    });
+    /* Si todo cae en los doce primeros días del mes, no hay manera: la
+       interfaz tiene que avisar antes de enseñar «mes a mes». */
+    expect(analizar(filasDe(AMBIGUO)).formatoFecha.seguro).toBe(false);
   });
 
   it("un chat vacío da un resultado vacío y no una excepción", () => {

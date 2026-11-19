@@ -3,7 +3,7 @@ import i18n, { t } from "i18next";
 
 import type { Analisis } from "../../lib/analisis/analizar";
 import { MIN_CONVERSACIONES, MIN_RESPUESTAS } from "../../lib/analisis/umbrales";
-import { duracion, numero } from "../../lib/analisis/formatear";
+import { conNombre, duracion, numero } from "../../lib/analisis/formatear";
 import {
   Barra,
   Detalle,
@@ -106,16 +106,23 @@ export const Resumen: FC<{
         </Detalle>
         <Detalle>
           {volumen.porAutor
-            .map((a) =>
-              soyYo(a.autor)
-                ? t("Escribes {{n}} palabras por turno, de costumbre", {
-                    n: numero(a.medianaPorTurno, idioma),
-                  })
-                : t("{{quien}} escribe {{n}} palabras por turno, de costumbre", {
+            .map((a) => {
+              /* «1 palabras por turno» no es español, y con medianas bajas
+                 pasa constantemente. */
+              const cuantas = conNombre(
+                a.medianaPorTurno,
+                "{{n}} palabra",
+                "{{n}} palabras",
+                t,
+                idioma
+              );
+              return soyYo(a.autor)
+                ? t("Escribes {{cuantas}} por turno, de costumbre", { cuantas })
+                : t("{{quien}} escribe {{cuantas}} por turno, de costumbre", {
                     quien: a.autor,
-                    n: numero(a.medianaPorTurno, idioma),
-                  })
-            )
+                    cuantas,
+                  });
+            })
             .join(" · ")}
         </Detalle>
       </Tarjeta>

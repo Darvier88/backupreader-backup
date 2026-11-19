@@ -8,9 +8,19 @@ import { analisisVigente, type AnalisisGuardado } from "../../lib/analisis/pieza
 import { UMBRAL_POR_DEFECTO, type UmbralHoras } from "../../lib/analisis/iniciaMas";
 import type { Medida } from "../../lib/analisis/tendencias";
 import { MIN_MENSAJES } from "../../lib/analisis/umbrales";
-import { fechaCorta, numero } from "../../lib/analisis/formatear";
+import { conNombre, fechaCorta, numero } from "../../lib/analisis/formatear";
 import { ControlSegmentado } from "../ui/ControlSegmentado";
-import { DIAS_LARGO, Detalle, EnNumeros, FRANJAS, Tarjeta, Titular, enTexto } from "./piezas";
+import {
+  Aviso,
+  DIAS_LARGO,
+  Detalle,
+  EnNumeros,
+  FRANJAS,
+  Reparto,
+  Tarjeta,
+  Titular,
+  enTexto,
+} from "./piezas";
 import { Resumen } from "./Resumen";
 import { Dinamica } from "./Dinamica";
 import { Palabras } from "./Palabras";
@@ -210,26 +220,64 @@ export const PanelAnalisis: FC<{
   }
 
   if (!analisis) {
+    /* Esperar sin saber cuánto es lo que hace que una pantalla parezca rota.
+       Las barras muertas dicen «esto va a tener esta forma» y quitan la duda
+       de si ha pasado algo. */
     return (
       <div className="br-an">
-        <Tarjeta titulo={enTexto(t("Análisis"))}>
-          <Detalle>{t("Calculando…")}</Detalle>
-        </Tarjeta>
+        <div className="br-an-numeros br-an-esqueleto">
+          <span className="br-an-numeros-label">{t("En números")}</span>
+          <span className="br-an-hueso" style={{ width: "70%", height: 24 }} />
+        </div>
+        {[0, 1, 2].map((i) => (
+          <Tarjeta key={i}>
+            <span className="br-an-hueso" style={{ width: 120, height: 11 }} />
+            <span className="br-an-hueso" style={{ width: "55%", height: 22 }} />
+            <span className="br-an-hueso" style={{ width: "100%", height: 8 }} />
+          </Tarjeta>
+        ))}
+        <p className="br-an-pie">{t("Calculando en tu navegador…")}</p>
       </div>
     );
   }
 
   if (!analisis.suficiente) {
+    const faltan = MIN_MENSAJES - analisis.mensajesContables;
     return (
       <div className="br-an">
         <Tarjeta titulo={enTexto(t("Análisis"))}>
           <Titular>{t("Aún no hay bastante conversación")}</Titular>
+          {/* Decir cuánto falta y no solo que falta: así se sabe si es
+              cuestión de un día o de que este chat nunca va a dar. */}
+          <Reparto
+            partes={[
+              {
+                etiqueta: conNombre(analisis.mensajesContables, "{{n}} mensaje", "{{n}} mensajes", t, idioma),
+                porcentaje: Math.round((analisis.mensajesContables / MIN_MENSAJES) * 100),
+              },
+              {
+                etiqueta: enTexto(t("faltan {{n}}", { n: numero(faltan, idioma) })),
+                porcentaje: Math.round((faltan / MIN_MENSAJES) * 100),
+              },
+            ]}
+          />
           <Detalle>
             {t(
-              "Este chat tiene {{n}} mensajes. A partir de {{min}} las cifras empiezan a decir algo de la conversación y no de una tarde suelta.",
-              { n: numero(analisis.mensajesContables, idioma), min: MIN_MENSAJES }
+              "A partir de {{min}} mensajes las cifras empiezan a decir algo de la conversación y no de una tarde suelta. Con menos, «escribe el 70 %» significa que alguien mandó catorce mensajes y el otro seis.",
+              { min: MIN_MENSAJES }
             )}
           </Detalle>
+          {analisis.eliminados + analisis.sistema + analisis.sinFecha > 0 && (
+            <Detalle>
+              {t("De las {{n}} líneas del archivo, {{fuera}} no son mensajes de nadie: avisos del sistema, eliminados o con una fecha que no se entendió.", {
+                n: numero(analisis.totalFilas, idioma),
+                fuera: numero(
+                  analisis.eliminados + analisis.sistema + analisis.sinFecha,
+                  idioma
+                ),
+              })}
+            </Detalle>
+          )}
         </Tarjeta>
       </div>
     );
@@ -285,6 +333,29 @@ export const PanelAnalisis: FC<{
         )}
         {calculando && <span>{t("Calculando…")}</span>}
       </div>
+
+      {/* Dos avisos que van ANTES de cualquier cifra, porque cambian cómo se
+          leen todas las de debajo. */}
+
+      {/* 1. No se sabe si 3/4 es el 3 de abril o el 4 de marzo. */}
+      {!analisis.formatoFecha.seguro && (
+        <Aviso>
+          {t(
+            "En este chat ningún día pasa del 12, así que no hay forma de saber si las fechas son día/mes o mes/día. Lo demás aguanta, pero «mes a mes» podría estar desplazado."
+          )}
+        </Aviso>
+      )}
+
+      {/* 2. Sin saber quién eres, todo se lee en tercera persona y la mitad
+             de las frases pierden sentido. */}
+      {!yo && analisis.autores.length === 2 && (
+        <Aviso>
+          {t("¿Cuál de los dos eres tú? Elígelo en Ajustes y las tarjetas te nombrarán.")}{" "}
+          <button type="button" className="br-an-enlace" onClick={() => setVista("ajustes")}>
+            {t("Ir a Ajustes")}
+          </button>
+        </Aviso>
+      )}
 
       {/* Lo que queda FUERA de los conteos, dicho antes de enseñar cifras. */}
       {(analisis.eliminados > 0 || analisis.sinFecha > 0) && (
