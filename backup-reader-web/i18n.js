@@ -510,6 +510,12 @@ const resources = {
       /* Dinámica */
       "Cuándo habláis":"When you talk",
       "En números":"In numbers",
+      "Tiempos de respuesta":"Reply times",
+      "respuesta en {{tiempo}}":"replied in {{tiempo}}",
+      "Con otros umbrales":"With other thresholds",
+      "{{h}} h · {{pct}} %":"{{h}} h · {{pct}} %",
+      "Se mantiene con los tres, así que no depende de dónde cortemos.":"It holds with all three, so it doesn't hang on where we cut.",
+      "Cambia según dónde cortemos, así que esta cifra no es firme.":"It changes depending on where we cut, so this figure isn't firm.",
       "Calculando en tu navegador…":"Working it out in your browser…",
       "{{n}} mensajes":"{{n}} messages",
       "faltan {{n}}":"{{n}} to go",

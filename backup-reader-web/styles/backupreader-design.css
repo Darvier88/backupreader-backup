@@ -1001,3 +1001,55 @@ body {
 @media (prefers-reduced-motion: reduce) {
   .br-an-hueso { animation: none; }
 }
+
+/* La prueba del umbral: la misma cifra con 1, 4 y 8 horas. Va en hundido y
+   pequeño porque es la letra chica de la tarjeta, no otra métrica. */
+.br-an-prueba {
+  display: flex; flex-direction: column; gap: 8px;
+  padding: 12px 14px;
+  background: var(--surface-sunken);
+  border-radius: var(--radius-lg);
+}
+.br-an-prueba-label {
+  font-family: var(--font-mono); font-size: 10px; font-weight: 500;
+  letter-spacing: 0.14em; text-transform: uppercase; color: var(--text-muted);
+}
+.br-an-prueba-filas { display: flex; flex-wrap: wrap; gap: 6px; }
+.br-an-prueba-dato {
+  padding: 3px 9px; border-radius: var(--radius-pill);
+  background: var(--surface-raised); border: 1px solid var(--border);
+  font-family: var(--font-mono); font-size: 11.5px; color: var(--text-muted);
+}
+.br-an-prueba-dato--activo {
+  background: var(--ink-900); border-color: var(--ink-900); color: var(--text-on-ink);
+}
+.br-an-prueba .br-an-detalle { font-size: 12px; color: var(--text-muted); }
+
+/* Tiempo de respuesta entre dos mensajes del chat. Discreto a propósito:
+   acompaña a la conversación, no compite con ella. */
+.br-an-espera {
+  align-self: center;
+  margin: 6px 0 2px;
+  padding: 3px 10px;
+  border-radius: var(--radius-pill);
+  background: var(--surface-sunken);
+  font-family: var(--font-mono); font-size: 10.5px;
+  letter-spacing: 0.08em; text-transform: uppercase;
+  color: var(--text-muted);
+}
+.br-an-conmutador {
+  margin-top: 8px; padding: 5px 12px;
+  border: 1px solid var(--border); border-radius: var(--radius-pill);
+  background: transparent; cursor: pointer;
+  font-family: var(--font-sans); font-size: 12px; color: var(--text-muted);
+}
+/* El hover solo cuando NO está encendido: si no, al pasar por encima del
+   activo quedaba el verdigris sobre el azul tinta, 2,6:1 de contraste. */
+.br-an-conmutador:hover:not(.br-an-conmutador--activo) {
+  color: var(--text-accent); border-color: var(--accent);
+}
+.br-an-conmutador:focus-visible { outline: none; box-shadow: var(--focus-ring); }
+.br-an-conmutador--activo {
+  background: var(--ink-900); border-color: var(--ink-900); color: var(--text-on-ink);
+}
+.br-an-conmutador--activo:hover { background: var(--ink-800); border-color: var(--ink-800); }

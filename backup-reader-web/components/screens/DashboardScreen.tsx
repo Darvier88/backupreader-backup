@@ -1,4 +1,4 @@
-import { FC, Fragment, useContext, useState, useEffect, useMemo, useRef } from "react";
+import { FC, Fragment, useCallback, useContext, useState, useEffect, useMemo, useRef } from "react";
 
 import {
   Box,
@@ -21,6 +21,8 @@ import { usePanelChats } from "../../context/PanelChatsContext";
 import { pedirBusqueda } from "../../lib/pedir-busqueda";
 import { fechaDeSubida } from "../../lib/fecha-de-guardado";
 import { ANALISIS_ACTIVO } from "../../lib/analisis/activo";
+import { aMarcaDeTiempo, deducirFormato } from "../../lib/analisis/fechaHora";
+import { duracion, numero } from "../../lib/analisis/formatear";
 import { PanelAnalisis } from "../analisis/PanelAnalisis";
 
 /** `t()` puede devolver null segun sus tipos; esto lo deja en string. */
@@ -83,11 +85,51 @@ const styles = {
   },
 };
 
+/** Media hora: por debajo, una etiqueta por mensaje taparía el chat. */
+const ESPERA_MINIMA_MS = 30 * 60 * 1000;
+
+const ETIQUETA_ESPERA = {
+  segundos: "{{valor}} s",
+  minutos: "{{valor}} min",
+  horas: "{{valor}} h",
+  dias: "{{valor}} días",
+} as const;
+
+const numeroCorto = (n: number) => numero(n, i18n.language || "es");
+
 export const DashboardScreen: FC = () => {
   const [chatSearch, setChatSearch] = useState<string>("");
   const { getFile, chat, chatName, uploadStatus, cerrarChat, fullPath: rutaAbierta } = useContext(StorageContext);
   const { loading } = useLoading();
   const [toShow, setToShow] = useState<"photos" | "message" | "analisis">("message");
+
+  /* Los tiempos de respuesta dentro del chat.
+     Apagados por defecto: quien abre un chat viene a leerlo, y una etiqueta
+     cada pocos mensajes cambia la lectura sin que nadie lo haya pedido. */
+  const [mostrarEsperas, setMostrarEsperas] = useState(false);
+
+  /* El formato de fecha, deducido una vez por chat. Hace falta para restar
+     dos mensajes, y deducirlo por mensaje sería recorrer el chat entero en
+     cada fila. */
+  const formatoFecha = useMemo(
+    () => deducirFormato((chat || []) as string[][]),
+    [chat]
+  );
+
+  /** Milisegundos entre dos mensajes, si pasa del mínimo y cambia de autor. */
+  const esperaEntre = useCallback(
+    (anterior: any, actual: any): number | null => {
+      /* Entre dos mensajes de la misma persona no hay respuesta que medir:
+         es alguien que sigue escribiendo. */
+      if (!anterior || !actual || anterior[1] === actual[1]) return null;
+      const a = aMarcaDeTiempo(anterior[0], formatoFecha);
+      const b = aMarcaDeTiempo(actual[0], formatoFecha);
+      if (!a || !b) return null;
+      const ms = b.getTime() - a.getTime();
+      return ms >= ESPERA_MINIMA_MS ? ms : null;
+    },
+    [formatoFecha]
+  );
   const [state, setState] = useState<boolean>(true);
   const { fileList } = useContext(StorageContext);
   const {
@@ -483,6 +525,23 @@ export const DashboardScreen: FC = () => {
                       : []),
                   ]}
                 />
+                {/* Los tiempos de respuesta, encima del chat y no escondidos
+                    en Ajustes: es una forma de leer el chat, no una
+                    preferencia que se configura una vez. */}
+                {ANALISIS_ACTIVO && toShow === "message" && (
+                  <button
+                    type="button"
+                    className={
+                      mostrarEsperas
+                        ? "br-an-conmutador br-an-conmutador--activo"
+                        : "br-an-conmutador"
+                    }
+                    aria-pressed={mostrarEsperas}
+                    onClick={() => setMostrarEsperas((v) => !v)}
+                  >
+                    {t("Tiempos de respuesta")}
+                  </button>
+                )}
               </Box>
 
             </Container>
@@ -574,6 +633,18 @@ export const DashboardScreen: FC = () => {
                         i > 0 ? claveDeDia(visibleMessages[i - 1][0]) : null;
                       const cambiaDeDia = !!dia && dia !== diaAnterior;
 
+                      /* Cuánto se tardó en contestar, cuando se nota.
+                         El dato está delante de los ojos desde siempre (dos
+                         horas en los relojes de dos mensajes seguidos), pero
+                         nadie lo resta mientras lee. Dicho, cambia cómo se
+                         lee la conversación. Por debajo de media hora no se
+                         enseña: sería una etiqueta en cada mensaje y dejaría
+                         de verse el chat. */
+                      const espera =
+                        mostrarEsperas && i > 0 && !cambiaDeDia
+                          ? esperaEntre(visibleMessages[i - 1], item)
+                          : null;
+
                       return (
                         <Fragment key={i}>
                           {/* Ancla sin alto: sirve para saltar aquí desde el
@@ -598,6 +669,17 @@ export const DashboardScreen: FC = () => {
                                 hoy: (t("Hoy") as string) || "Hoy",
                                 ayer: (t("Ayer") as string) || "Ayer",
                                 corta: true,
+                              })}
+                            </div>
+                          )}
+                          {espera !== null && (
+                            <div role="separator" className="br-an-espera">
+                              {t("respuesta en {{tiempo}}", {
+                                tiempo: enTexto(
+                                  t(ETIQUETA_ESPERA[duracion(espera).unidad], {
+                                    valor: numeroCorto(duracion(espera).valor),
+                                  })
+                                ),
                               })}
                             </div>
                           )}

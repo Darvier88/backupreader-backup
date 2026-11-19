@@ -577,3 +577,43 @@ describe("conNombre", () => {
     expect(conNombre(1.5, "{{n}} palabra", "{{n}} palabras", t)).toBe("1,5 palabras");
   });
 });
+
+describe("sensibilidad del umbral", () => {
+  it("da el mismo reparto con 1, 4 y 8 horas", () => {
+    const r = iniciaMas(mensajesDe(filasDe(RAFAGAS)), 4);
+    expect(r.sensibilidad.map((s) => s.horas)).toEqual([1, 4, 8]);
+    expect(r.sensibilidad.every((s) => s.conversaciones >= 0)).toBe(true);
+  });
+
+  it("menos umbral, más conversaciones: nunca al revés", () => {
+    const filas = cronologia([
+      [0, "Ana", "a"],
+      [5, "Beto", "b"],
+      [130, "Ana", "c"], /* hueco de 2 h: nueva con 1 h, no con 4 ni 8 */
+      [135, "Beto", "d"],
+      [700, "Ana", "e"], /* hueco de 9 h: nueva con los tres */
+    ]);
+    const r = iniciaMas(mensajesDe(filas), 4);
+    const [una, cuatro, ocho] = r.sensibilidad;
+    expect(una.conversaciones).toBeGreaterThanOrEqual(cuatro.conversaciones);
+    expect(cuatro.conversaciones).toBeGreaterThanOrEqual(ocho.conversaciones);
+    expect(una.conversaciones).toBe(3);
+    expect(ocho.conversaciones).toBe(2);
+  });
+
+  it("es estable si los tres señalan a la misma persona", () => {
+    /* Ana abre siempre, con huecos largos: ningún umbral lo cambia. */
+    const pasos: Array<[number, string, string]> = [];
+    for (let i = 0; i < 12; i++) {
+      pasos.push([i * 600, "Ana", "hola"]);
+      pasos.push([i * 600 + 5, "Beto", "hola"]);
+    }
+    const r = iniciaMas(mensajesDe(cronologia(pasos)), 4);
+    expect(r.estable).toBe(true);
+    expect(new Set(r.sensibilidad.map((s) => s.mayor))).toEqual(new Set(["Ana"]));
+  });
+
+  it("sin conversaciones no se declara estable", () => {
+    expect(iniciaMas([], 4).estable).toBe(false);
+  });
+});

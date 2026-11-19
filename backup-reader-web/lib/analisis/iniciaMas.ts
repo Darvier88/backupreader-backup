@@ -85,6 +85,26 @@ export function partirEnConversaciones(
   return conversaciones;
 }
 
+/**
+ * El mismo reparto con los tres umbrales, para poder enseñar si el resultado
+ * depende del número que elegimos nosotros.
+ *
+ * POR QUÉ ESTO SE ENSEÑA
+ * ----------------------
+ * «Empiezas 7 de cada 10 conversaciones» suena a hecho, pero depende de una
+ * decisión nuestra: cuánto silencio separa una conversación de la siguiente.
+ * Si con una hora sale 68 %, con cuatro 70 % y con ocho 71 %, el dato
+ * aguanta y se puede decir. Si saltara de 70 % a 45 % al cambiar el umbral,
+ * lo honesto es no afirmar nada, y para eso hay que haberlo mirado.
+ */
+export type Sensibilidad = {
+  horas: number;
+  conversaciones: number;
+  /** Porcentaje del que más empieza, para comparar de un vistazo. */
+  porcentajeMayor: number;
+  mayor: string | null;
+};
+
 export type QuienInicia = {
   conversaciones: number;
   /** Cuántas conversaciones rompe el silencio cada persona. */
@@ -95,6 +115,15 @@ export type QuienInicia = {
   masInicios: Comparacion<string>;
   /** El umbral con el que se calculó, para poder enseñarlo. */
   umbralHoras: number;
+  /** El mismo cálculo con 1, 4 y 8 horas. */
+  sensibilidad: Sensibilidad[];
+  /**
+   * El veredicto no cambia al mover el umbral.
+   *
+   * Es lo que decide si «empiezas tú» se puede decir como un hecho o hay que
+   * decir que depende de dónde se corte.
+   */
+  estable: boolean;
 };
 
 /**
@@ -130,5 +159,35 @@ export function iniciaMas(
       ? compararReparto(autores[0], porAutor[autores[0]], autores[1], porAutor[autores[1]])
       : { mayor: null, parecido: true };
 
-  return { conversaciones: total, porAutor, porcentajes, masInicios, umbralHoras };
+  /* Los otros dos umbrales. Es barato: partir en conversaciones es lo rápido
+     del análisis, y sin esto no hay forma de saber si la cifra aguanta. */
+  const sensibilidad: Sensibilidad[] = UMBRALES_HORAS.map((horas) => {
+    const suyas = horas === umbralHoras ? lista : partirEnConversaciones(mensajes, horas);
+    const cuenta: Record<string, number> = {};
+    for (const c of suyas) cuenta[c.inicia] = (cuenta[c.inicia] || 0) + 1;
+    const orden = Object.entries(cuenta).sort((a, b) => b[1] - a[1]);
+    const mayor = orden[0]?.[0] ?? null;
+    return {
+      horas,
+      conversaciones: suyas.length,
+      mayor,
+      porcentajeMayor:
+        suyas.length > 0 && orden[0] ? Math.round((orden[0][1] / suyas.length) * 1000) / 10 : 0,
+    };
+  });
+
+  /* Estable si los tres señalan a la misma persona. Si uno discrepa, la
+     cifra depende de dónde cortemos y eso hay que decirlo. */
+  const quienes = new Set(sensibilidad.map((s) => s.mayor));
+  const estable = quienes.size === 1 && !quienes.has(null);
+
+  return {
+    conversaciones: total,
+    porAutor,
+    porcentajes,
+    masInicios,
+    umbralHoras,
+    sensibilidad,
+    estable,
+  };
 }

@@ -160,6 +160,38 @@ export const Resumen: FC<{
                 { n: numero(inicios.conversaciones, idioma), horas: inicios.umbralHoras }
               )}
             </Detalle>
+
+            {/* La prueba del umbral.
+                «Empiezas 7 de cada 10» suena a hecho, pero depende de un
+                número que elegimos nosotros. Enseñar las tres cuentas deja
+                ver si el resultado aguanta o si solo pasa con este corte. */}
+            <div className="br-an-prueba">
+              <span className="br-an-prueba-label">
+                {t("Con otros umbrales")}
+              </span>
+              <div className="br-an-prueba-filas">
+                {inicios.sensibilidad.map((s) => (
+                  <span
+                    key={s.horas}
+                    className={
+                      s.horas === inicios.umbralHoras
+                        ? "br-an-prueba-dato br-an-prueba-dato--activo"
+                        : "br-an-prueba-dato"
+                    }
+                  >
+                    {t("{{h}} h · {{pct}} %", {
+                      h: s.horas,
+                      pct: numero(s.porcentajeMayor, idioma),
+                    })}
+                  </span>
+                ))}
+              </div>
+              <Detalle>
+                {inicios.estable
+                  ? t("Se mantiene con los tres, así que no depende de dónde cortemos.")
+                  : t("Cambia según dónde cortemos, así que esta cifra no es firme.")}
+              </Detalle>
+            </div>
           </>
         )}
       </Tarjeta>
