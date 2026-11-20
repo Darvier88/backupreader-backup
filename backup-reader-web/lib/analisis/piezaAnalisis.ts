@@ -31,8 +31,20 @@
  * UNA VERSIÓN VIEJA NO ES UN ERROR
  * --------------------------------
  * Si la forma del resultado cambió, o los ajustes guardados no son los que se
- * piden ahora, esto devuelve null y quien llama recalcula. Es trabajo
- * pendiente, no un fallo.
+ * piden ahora, `analisisVigente` dice que no sirve y quien llama recalcula. Es
+ * trabajo pendiente, no un fallo.
+ *
+ * LO QUE DECIDIÓ EL USUARIO SOBREVIVE A LA VERSIÓN
+ * -----------------------------------------------
+ * Quién eres y qué formato tienen las fechas no son parte del resultado: son
+ * respuestas que dio una persona. Atarlas a la versión del análisis hacía que
+ * cada vez que yo cambiaba una métrica, todos los grupos volvieran a preguntar
+ * «¿cuál de estas personas eres tú?» a gente que ya lo había contestado. Desde
+ * fuera eso no se lee como «se recalculó», se lee como que la aplicación no te
+ * escucha.
+ *
+ * Por eso descifrar y entender el JSON basta para devolverlo. La versión la
+ * mira `analisisVigente`, que es quien decide si las CIFRAS valen.
  */
 
 import {
@@ -138,7 +150,9 @@ export async function abrirAnalisis(
       aad: aadDelAnalisis(backupId),
     });
     const datos = JSON.parse(await plano.text()) as AnalisisGuardado;
-    return datos && datos.v === VERSION_ANALISIS ? datos : null;
+    /* Se devuelve aunque la versión sea vieja: las cifras las descartará
+       `analisisVigente`, pero las respuestas del usuario siguen valiendo. */
+    return datos && typeof datos.v === "number" ? datos : null;
   } catch (error) {
     console.warn("El análisis de", backupId, "no se pudo leer:", error);
     return null;

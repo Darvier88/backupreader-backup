@@ -126,3 +126,29 @@ describe("analisisVigente", () => {
     expect(analisisVigente(null, ajustes)).toBe(false);
   });
 });
+
+describe("lo que contestó el usuario sobrevive a un cambio de versión", () => {
+  it("devuelve la elección aunque las cifras sean de una versión vieja", async () => {
+    const dek = new Uint8Array(32).fill(7);
+    const backupId = "b1";
+    const guardado = {
+      /* Una versión que ya no existe: las cifras no valen, la respuesta sí. */
+      v: VERSION_ANALISIS - 1,
+      analisis: { ajustes: { umbralHoras: 4, medida: "mensajes", idioma: "es" } } as any,
+      yo: "Yasmín",
+      diaPrimero: true,
+      cuando: Date.now(),
+    };
+    const blob = await empaquetarAnalisis(guardado as any, dek, backupId);
+
+    const leido = await abrirAnalisis(blob, dek, backupId);
+    expect(leido).not.toBeNull();
+    expect(leido!.yo).toBe("Yasmín");
+    expect(leido!.diaPrimero).toBe(true);
+
+    /* Pero las cifras siguen sin servir: hay que recalcular. */
+    expect(
+      analisisVigente(leido, { umbralHoras: 4, medida: "mensajes", idioma: "es", yo: "Yasmín" })
+    ).toBe(false);
+  });
+});

@@ -180,8 +180,14 @@ export const PanelAnalisis: FC<{
                sería mover datos cifrados de todos para nada. */
             senales: guardado?.senales ?? [],
             cuando: Date.now(),
-          }).catch(() => {
-            /* Guardar es una comodidad, no parte del resultado. */
+          }).catch((e) => {
+            /* Guardar es una comodidad para las CIFRAS, pero también es lo
+               único que recuerda lo que el usuario contestó. Si falla en
+               silencio, el síntoma que ve él es que la aplicación le vuelve a
+               preguntar quién es una y otra vez, y desde fuera no hay forma
+               de relacionarlo con un permiso o un cuota. Al menos que quede
+               dicho en la consola, con el motivo de verdad. */
+            console.warn("No se pudo guardar el análisis:", e);
           });
         }
       } catch (e: any) {
@@ -231,7 +237,11 @@ export const PanelAnalisis: FC<{
         yo,
         cuando: Date.now(),
         ...cambios,
-      }).catch(() => {});
+      }).catch((e) => {
+        /* Lo mismo con las respuestas del usuario: si esto falla, lo que se
+           pierde es su elección, no una comodidad. */
+        console.warn("No se pudo guardar tu elección:", e);
+      });
     },
     [handle, escribirAnalisis, analisis, yo]
   );
