@@ -1,4 +1,5 @@
 import { FC } from "react";
+import type { Terminos } from "../../lib/busqueda/resaltar";
 
 import { partirPorCoincidencias } from "../../lib/busqueda/resaltar";
 
@@ -20,7 +21,7 @@ import { partirPorCoincidencias } from "../../lib/busqueda/resaltar";
 export const TextoResaltado: FC<{
   texto: string;
   /* Puede ser una lista: el filtro del análisis busca varias palabras. */
-  consulta: string | string[];
+  consulta: Terminos;
   /** Índice global de la coincidencia activa, o null si no hay ninguna. */
   activa?: number | null;
   /** Índice global de la primera coincidencia de ESTE texto. */

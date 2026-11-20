@@ -1,4 +1,8 @@
 import { describe, it, expect } from "vitest";
+import {
+  PATRON_ENLACE,
+  separarEnlaces,
+} from "../../lib/analisis/palabrasFrecuentes";
 
 import {
   partirPorCoincidencias,
@@ -177,5 +181,44 @@ describe("términos de un solo carácter", () => {
 
   it("cuenta el emoji lo escriba el teclado con variante o sin ella", () => {
     expect(cuantasVeces("uno ❤ dos ❤️", ["❤", "❤️"])).toBe(2);
+  });
+});
+
+describe("buscar por una forma, no por un texto", () => {
+  const ENLACES = { patron: PATRON_ENLACE };
+
+  it("marca el enlace entero una sola vez, lleve o no «www»", () => {
+    /* Con los trozos sueltos («http», «www.») esto contaba dos veces, porque
+       `https://www.…` lleva los dos dentro. */
+    expect(cuantasVeces("mira https://www.youtube.com/watch?v=abc", ENLACES)).toBe(1);
+    expect(cuantasVeces("mira https://open.spotify.com/track/1", ENLACES)).toBe(1);
+  });
+
+  it("también cuenta el que no empieza por http ni por www", () => {
+    /* Y este no lo cogía ninguno de los dos trozos. */
+    expect(cuantasVeces("en github.com/Darvier88/x está", ENLACES)).toBe(1);
+  });
+
+  it("cuenta los dos cuando hay dos", () => {
+    expect(cuantasVeces("https://a.com/1 y www.b.org/2", ENLACES)).toBe(2);
+  });
+
+  it("no marca un punto que no es un enlace", () => {
+    expect(cuantasVeces("quedamos a las 10 a.m. etc.", ENLACES)).toBe(0);
+    expect(contiene("quedamos a las 10 a.m.", ENLACES)).toBe(false);
+  });
+
+  it("la cifra de la tarjeta y la del filtro son la misma", () => {
+    /* Lo que hace comprobable una cifra: que al tocarla salgan esas. */
+    const mensajes = [
+      "mira https://www.youtube.com/watch?v=abc",
+      "en github.com/x está",
+      "nada por aquí",
+      "https://a.com/1 y www.b.org/2",
+    ];
+    const contadas = mensajes.reduce((n, m) => n + separarEnlaces(m).enlaces, 0);
+    const marcadas = mensajes.reduce((n, m) => n + cuantasVeces(m, ENLACES), 0);
+    expect(marcadas).toBe(contadas);
+    expect(contadas).toBe(4);
   });
 });

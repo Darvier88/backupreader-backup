@@ -12,6 +12,7 @@ import { Grid, Loading } from "@nextui-org/react";
 import { ChatView } from "../chat";
 import { ManageFileCard } from "../cards";
 import { ConversationsDrawer } from "../drawers";
+import type { Terminos } from "../../lib/busqueda/resaltar";
 import { BuscadorEnChat } from "../chat/BuscadorEnChat";
 import { FiltroDelAnalisis } from "../chat/FiltroDelAnalisis";
 import { ControlSegmentado } from "../ui/ControlSegmentado";
@@ -122,10 +123,10 @@ export const DashboardScreen: FC = () => {
      flechas de la búsqueda del chat, que ya existen y ya funcionan; lo
      único nuevo es que la consulta puede ser una lista de palabras,
      porque «disculpas» no es una palabra sino tres. */
-  const [filtro, setFiltro] = useState<{ etiqueta: string; terminos: string[] } | null>(null);
+  const [filtro, setFiltro] = useState<{ etiqueta: string; terminos: Terminos } | null>(null);
 
   /* Lo que se busca ahora mismo: el filtro manda sobre lo tecleado. */
-  const consultaActiva: string | string[] = filtro ? filtro.terminos : chatSearch;
+  const consultaActiva: Terminos = filtro ? filtro.terminos : chatSearch;
 
   /* Al cambiar de chat el filtro se cae: «❤️ · 3 de 11» encima de otra
      conversación cuenta otra cosa, y la etiqueta diría que no. */
@@ -212,7 +213,7 @@ export const DashboardScreen: FC = () => {
     let acumulado = 0;
 
     const hayQueBuscar = filtro
-      ? filtro.terminos.length > 0
+      ? !Array.isArray(filtro.terminos) || filtro.terminos.length > 0
       : chatSearch.trim().length >= 2;
     if (!hayQueBuscar) {
       return { porMensaje, desplazamientos, total: 0 };

@@ -52,8 +52,12 @@ export const FILA_ENLACE = "compartir link";
  * No se intenta cazar un dominio suelto sin barra («nos vemos en casa.com»
  * es raro, pero «etc.» o «a.m.» no son enlaces y saldrían marcados).
  */
-const ENLACE =
-  /(?:https?:\/\/|www\.)[^\s]+|\b[a-z0-9-]+(?:\.[a-z0-9-]+)*\.[a-z]{2,}\/[^\s]*/gi;
+export const PATRON_ENLACE =
+  "(?:https?://|www\\.)[^\\s]+|\\b[a-z0-9-]+(?:\\.[a-z0-9-]+)*\\.[a-z]{2,}/[^\\s]*";
+
+/* La misma forma que usa el filtro del chat: contar y marcar tienen que dar
+   la misma cifra, o la tarjeta deja de ser comprobable. */
+const ENLACE = new RegExp(PATRON_ENLACE, "gi");
 
 /** Cuántos enlaces hay en un texto, y el texto sin ellos. */
 export function separarEnlaces(texto: string): { enlaces: number; resto: string } {

@@ -70,6 +70,28 @@ function normalizarConMapa(texto: string): { plano: string; mapa: number[] } {
  * longitud 1, pero marcarlo es justamente lo que se pide al tocar «❤️ · 47»
  * en el análisis, y no aparece dentro de ninguna palabra.
  */
+/**
+ * Una consulta que no es un texto literal, sino una forma.
+ *
+ * Existe por los enlaces: «compartir link» no es una palabra que aparezca
+ * escrita en ningún mensaje, y buscar sus trozos («http», «www.») cuenta mal
+ * —`https://www.x.com` llevaría dos marcas y `github.com/x` ninguna—, de modo
+ * que la cifra de la tarjeta y la del filtro dejaban de coincidir, que es lo
+ * único que hace comprobable una cifra.
+ *
+ * Viaja como texto y no como `RegExp` porque vive en el estado de React y se
+ * pasa por props: una expresión con bandera global arrastra `lastIndex` entre
+ * llamadas y acabaría saltándose coincidencias según quién buscara antes.
+ * Aquí se construye una nueva en cada búsqueda.
+ */
+export type Patron = { patron: string };
+
+/** Lo que se puede buscar: una palabra, varias, o una forma. */
+export type Terminos = string | string[] | Patron;
+
+const esPatron = (c: unknown): c is Patron =>
+  !!c && typeof c === "object" && typeof (c as Patron).patron === "string";
+
 const vale = (c: string) => c.length >= 2 || (c.length === 1 && !/[\p{L}\p{N}]/u.test(c));
 
 /**
@@ -91,22 +113,29 @@ const vale = (c: string) => c.length >= 2 || (c.length === 1 && !/[\p{L}\p{N}]/u
  */
 export function partirPorCoincidencias(
   texto: string,
-  consulta: string | string[]
+  consulta: Terminos
 ): Trozo[] {
   const limpio = (texto ?? "").toString();
-  const lista = (Array.isArray(consulta) ? consulta : [consulta])
-    .map((c) => (c ?? "").trim())
-    .filter(vale);
+  const patron = esPatron(consulta) ? consulta.patron : null;
+  const lista = patron
+    ? []
+    : (Array.isArray(consulta) ? consulta : [consulta as string])
+        .map((c) => (c ?? "").trim())
+        .filter(vale);
 
-  if (!limpio || lista.length === 0) {
+  if (!limpio || (!patron && lista.length === 0)) {
     return [{ texto: limpio, coincide: false, indice: -1 }];
   }
 
   const { plano, mapa } = normalizarConMapa(limpio);
-  const agujas = lista
-    .map((c) => normalizarConMapa(c).plano)
-    .filter(Boolean);
-  if (agujas.length === 0) return [{ texto: limpio, coincide: false, indice: -1 }];
+  const agujas = lista.map((c) => normalizarConMapa(c).plano).filter(Boolean);
+  if (!patron && agujas.length === 0) {
+    return [{ texto: limpio, coincide: false, indice: -1 }];
+  }
+
+  /* Una por búsqueda, nunca compartida: con bandera global, `lastIndex` se
+     queda donde acabó la anterior. */
+  const regex = patron ? new RegExp(patron, "gi") : null;
 
   const trozos: Trozo[] = [];
   let cursorOriginal = 0;
@@ -116,13 +145,23 @@ export function partirPorCoincidencias(
   while (true) {
     /* La más temprana de todas; a igual posición, la más larga. */
     let posPlano = -1;
-    let aguja = "";
-    for (const a of agujas) {
-      const p = plano.indexOf(a, desde);
-      if (p === -1) continue;
-      if (posPlano === -1 || p < posPlano || (p === posPlano && a.length > aguja.length)) {
-        posPlano = p;
-        aguja = a;
+    let largo = 0;
+    if (regex) {
+      regex.lastIndex = desde;
+      const m = regex.exec(plano);
+      /* Una coincidencia vacía no avanzaría y dejaría el bucle girando. */
+      if (m && m[0].length > 0) {
+        posPlano = m.index;
+        largo = m[0].length;
+      }
+    } else {
+      for (const a of agujas) {
+        const p = plano.indexOf(a, desde);
+        if (p === -1) continue;
+        if (posPlano === -1 || p < posPlano || (p === posPlano && a.length > largo)) {
+          posPlano = p;
+          largo = a.length;
+        }
       }
     }
     if (posPlano === -1) break;
@@ -131,7 +170,7 @@ export function partirPorCoincidencias(
        final es el principio del carácter de después, no `mapa[fin]`, porque un
        carácter del original puede ocupar varias posiciones del normalizado. */
     const iniOriginal = mapa[posPlano];
-    const finPlano = posPlano + aguja.length;
+    const finPlano = posPlano + largo;
     const finOriginal = finPlano < mapa.length ? mapa[finPlano] : limpio.length;
 
     if (iniOriginal > cursorOriginal) {
@@ -164,7 +203,12 @@ export function partirPorCoincidencias(
 }
 
 /** ¿Aparece la consulta en este texto? Más barato que partirlo entero. */
-export function contiene(texto: string, consulta: string | string[]): boolean {
+export function contiene(texto: string, consulta: Terminos): boolean {
+  /* Con una forma no hay atajo barato: se busca igual que al partir, para
+     que responda exactamente lo mismo. */
+  if (esPatron(consulta)) {
+    return partirPorCoincidencias(texto, consulta).some((t) => t.coincide);
+  }
   const lista = (Array.isArray(consulta) ? consulta : [consulta])
     .map((c) => (c ?? "").trim())
     .filter(vale);
@@ -177,7 +221,7 @@ export function contiene(texto: string, consulta: string | string[]): boolean {
 }
 
 /** Cuántas veces aparece la consulta en el texto. */
-export function cuantasVeces(texto: string, consulta: string | string[]): number {
+export function cuantasVeces(texto: string, consulta: Terminos): number {
   return partirPorCoincidencias(texto, consulta).filter((t) => t.coincide).length;
 }
 

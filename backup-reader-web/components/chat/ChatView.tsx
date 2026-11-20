@@ -1,4 +1,5 @@
 import { FC, useRef, useContext, useState, useEffect } from "react";
+import type { Terminos } from "../../lib/busqueda/resaltar";
 
 import { ChatAudioPlayer } from ".";
 
@@ -43,7 +44,7 @@ type ChatViewProps = {
   message: string;
   messenger: string;
   /* Puede ser una lista cuando viene del filtro del análisis. */
-  chatSearch: string | string[];
+  chatSearch: Terminos;
   /** Indice global de la coincidencia en la que esta el usuario. */
   coincidenciaActiva?: number | null;
   /** En que numero global empiezan las coincidencias de este mensaje. */
@@ -242,10 +243,15 @@ export const ChatView: FC<ChatViewProps> = ({
   const isMedia = isAudioUri(message) || isImageUri(message) || isVideoUri(message) || !!archivoDocumento || omitido;
   /* Solo la burbuja con la coincidencia actual lleva aro ocre (1c); el resto
      de coincidencias se marcan dentro del texto, sin tocar la burbuja. */
-  /* Con una lista no vale `.trim()`: se mira si hay algo que buscar. */
-  const hayConsulta = Array.isArray(chatSearch)
-    ? chatSearch.length > 0
-    : (chatSearch || "").trim().length >= 2;
+  /* Ni una lista ni una forma tienen `.trim()`: solo el texto tecleado
+     necesita el mínimo de dos letras, porque es el único que se escribe
+     carácter a carácter mientras se mira el resultado. */
+  const hayConsulta =
+    typeof chatSearch === "string"
+      ? chatSearch.trim().length >= 2
+      : Array.isArray(chatSearch)
+      ? chatSearch.length > 0
+      : true;
   const enEsta = hayConsulta && !isMedia ? cuantasVeces(message || "", chatSearch) : 0;
   const highlighted =
     enEsta > 0 &&

@@ -7,7 +7,8 @@ import {
   TERMINOS_DISCULPA,
   TERMINOS_GRACIAS,
 } from "../../lib/analisis/disculpasYAgradecimientos";
-import { FILA_ENLACE } from "../../lib/analisis/palabrasFrecuentes";
+import type { Terminos } from "../../lib/busqueda/resaltar";
+import { FILA_ENLACE, PATRON_ENLACE } from "../../lib/analisis/palabrasFrecuentes";
 import { Barra, Detalle, Tarjeta, Titular, enTexto } from "./piezas";
 
 /**
@@ -37,6 +38,10 @@ import { Barra, Detalle, Tarjeta, Titular, enTexto } from "./piezas";
 const paraVer = (emoji: string) =>
   [...emoji].length === 1 ? emoji + "️" : emoji;
 
+/* Una forma siempre busca algo; una lista, solo si tiene palabras. */
+const hayTerminos = (t?: Terminos): boolean =>
+  !!t && (Array.isArray(t) ? t.length > 0 : true);
+
 export const Palabras: FC<{
   analisis: Analisis;
   yo?: string;
@@ -49,7 +54,7 @@ export const Palabras: FC<{
    * a UN mensaje, y filtrar deja marcados LOS 47. Se llaman juntas: se
    * aterriza en el primero con la barra puesta para recorrer el resto.
    */
-  onFiltrar?: (etiqueta: string, terminos: string[]) => void;
+  onFiltrar?: (etiqueta: string, terminos: Terminos) => void;
 }> = ({ analisis, yo, onIrAlMensaje, onFiltrar }) => {
   const idioma = i18n.language || "es";
   const { emojis, palabras, expresiones } = analisis;
@@ -62,7 +67,7 @@ export const Palabras: FC<{
     /** Cómo se llama lo que se tocó, para la barra del chat. */
     etiqueta?: string;
     /** Lo que hay que marcar en el chat. */
-    terminos?: string[];
+    terminos?: Terminos;
     children: React.ReactNode;
   }> = ({ indice, etiqueta, terminos, children }) => {
     const sePuede = typeof indice === "number" && !!onIrAlMensaje;
@@ -72,7 +77,7 @@ export const Palabras: FC<{
          en otro mensaje: dos desplazamientos compitiendo y una cifra que no
          describe lo que se ve. Si hay términos manda el filtro, que ya
          coloca en la primera coincidencia; si no los hay, el ejemplo. */
-      if (etiqueta && terminos && terminos.length > 0) {
+      if (etiqueta && terminos && hayTerminos(terminos)) {
         onFiltrar?.(etiqueta, terminos);
         return;
       }
@@ -96,7 +101,7 @@ export const Palabras: FC<{
         title={
           sePuede
             ? enTexto(
-                terminos && terminos.length > 0
+                hayTerminos(terminos)
                   ? t("Verlos en el chat")
                   : t("Ver un mensaje donde aparece")
               )
@@ -174,7 +179,9 @@ export const Palabras: FC<{
                     p.palabra === FILA_ENLACE ? enTexto(t(FILA_ENLACE)) : p.palabra
                   }
                   terminos={
-                    p.palabra === FILA_ENLACE ? ["http", "www."] : [p.palabra]
+                    p.palabra === FILA_ENLACE
+                      ? { patron: PATRON_ENLACE }
+                      : [p.palabra]
                   }
                 >
                   <span

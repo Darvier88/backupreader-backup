@@ -1,4 +1,5 @@
 import { FC, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
+import type { Terminos } from "../../lib/busqueda/resaltar";
 import i18n, { t } from "i18next";
 
 import { StorageContext } from "../../context/StorageContext";
@@ -81,7 +82,7 @@ export const PanelAnalisis: FC<{
   /** Saltar a un mensaje del chat. */
   onIrAlMensaje?: (indice: number) => void;
   /** Dejar el chat marcado con unos términos, para ver de dónde sale la cifra. */
-  onFiltrar?: (etiqueta: string, terminos: string[]) => void;
+  onFiltrar?: (etiqueta: string, terminos: Terminos) => void;
 }> = ({ filas, handle, yoPorDefecto, onIrAlMensaje, onFiltrar }) => {
   const idioma = i18n.language || "es";
   const { leerAnalisis, escribirAnalisis, bovedaAbierta } = useContext(StorageContext);
