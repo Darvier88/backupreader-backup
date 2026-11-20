@@ -7,7 +7,8 @@ import {
   TERMINOS_DISCULPA,
   TERMINOS_GRACIAS,
 } from "../../lib/analisis/disculpasYAgradecimientos";
-import { Barra, Detalle, EstoNoCuadra, Tarjeta, Titular, enTexto } from "./piezas";
+import { FILA_ENLACE } from "../../lib/analisis/palabrasFrecuentes";
+import { Barra, Detalle, Tarjeta, Titular, enTexto } from "./piezas";
 
 /**
  * Emojis, palabras, perdones y gracias.
@@ -39,8 +40,6 @@ const paraVer = (emoji: string) =>
 export const Palabras: FC<{
   analisis: Analisis;
   yo?: string;
-  marcadas: string[];
-  onNoCuadra: (metrica: string) => void;
   /** Saltar al mensaje número `indice` del chat. */
   onIrAlMensaje?: (indice: number) => void;
   /**
@@ -51,14 +50,11 @@ export const Palabras: FC<{
    * aterriza en el primero con la barra puesta para recorrer el resto.
    */
   onFiltrar?: (etiqueta: string, terminos: string[]) => void;
-}> = ({ analisis, yo, marcadas, onNoCuadra, onIrAlMensaje, onFiltrar }) => {
+}> = ({ analisis, yo, onIrAlMensaje, onFiltrar }) => {
   const idioma = i18n.language || "es";
   const { emojis, palabras, expresiones } = analisis;
 
   const comoSeLlama = (autor: string) => (yo && autor === yo ? enTexto(t("Tú")) : autor);
-  const accion = (metrica: string) => (
-    <EstoNoCuadra metrica={metrica} marcada={marcadas.includes(metrica)} onMarcar={onNoCuadra} />
-  );
 
   /** Una fila que se puede tocar para ir a un mensaje y marcar los demás. */
   const Fila: FC<{
@@ -118,7 +114,7 @@ export const Palabras: FC<{
 
   return (
     <>
-      <Tarjeta titulo={enTexto(t("Emojis"))} accion={accion("emojis")}>
+      <Tarjeta titulo={enTexto(t("Emojis"))}>
         {emojis.total === 0 ? (
           <Detalle>{t("En este chat no se usan emojis.")}</Detalle>
         ) : (
@@ -160,7 +156,7 @@ export const Palabras: FC<{
         )}
       </Tarjeta>
 
-      <Tarjeta titulo={enTexto(t("Palabras"))} accion={accion("palabras")}>
+      <Tarjeta titulo={enTexto(t("Palabras"))}>
         {palabras.top.length === 0 ? (
           <Detalle>{t("Aún no hay bastante texto para sacar palabras.")}</Detalle>
         ) : (
@@ -168,7 +164,19 @@ export const Palabras: FC<{
             <Titular>{t("De lo que más habláis")}</Titular>
             <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
               {palabras.top.map((p) => (
-                <Fila key={p.palabra} indice={p.ejemplo} etiqueta={p.palabra} terminos={[p.palabra]}>
+                <Fila
+                  key={p.palabra}
+                  indice={p.ejemplo}
+                  /* La fila de los enlaces se traduce y, al tocarla, marca
+                     los enlaces del chat en vez de buscar su propio texto,
+                     que no aparece escrito en ningún mensaje. */
+                  etiqueta={
+                    p.palabra === FILA_ENLACE ? enTexto(t(FILA_ENLACE)) : p.palabra
+                  }
+                  terminos={
+                    p.palabra === FILA_ENLACE ? ["http", "www."] : [p.palabra]
+                  }
+                >
                   <span
                     style={{
                       fontFamily: "var(--font-sans)",
@@ -180,7 +188,7 @@ export const Palabras: FC<{
                       whiteSpace: "nowrap",
                     }}
                   >
-                    {p.palabra}
+                    {p.palabra === FILA_ENLACE ? t(FILA_ENLACE) : p.palabra}
                   </span>
                   <div style={{ flex: 1 }}>
                     <Barra parte={p.total} total={maxPalabra} />
@@ -212,7 +220,7 @@ export const Palabras: FC<{
 
       <Tarjeta
         titulo={enTexto(t("Perdones y gracias"))}
-        accion={accion("expresiones")}
+       
       >
         <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
           <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>

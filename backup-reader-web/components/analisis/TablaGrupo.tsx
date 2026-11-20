@@ -4,7 +4,7 @@ import i18n, { t } from "i18next";
 import type { Analisis } from "../../lib/analisis/analizar";
 import type { FilaDeGrupo } from "../../lib/analisis/grupos";
 import { fechaCorta, numero } from "../../lib/analisis/formatear";
-import { Detalle, EstoNoCuadra, Tarjeta, Titular, enTexto } from "./piezas";
+import { Detalle, Tarjeta, Titular, enTexto } from "./piezas";
 
 /**
  * La tabla del grupo.
@@ -72,9 +72,7 @@ const COLUMNAS: Columna[] = [
 export const TablaGrupo: FC<{
   analisis: Analisis;
   yo?: string;
-  marcadas: string[];
-  onNoCuadra: (metrica: string) => void;
-}> = ({ analisis, yo, marcadas, onNoCuadra }) => {
+}> = ({ analisis, yo }) => {
   const idioma = i18n.language || "es";
   const [orden, setOrden] = useState<keyof FilaDeGrupo>("mensajes");
   const { grupo } = analisis;
@@ -95,13 +93,6 @@ export const TablaGrupo: FC<{
   return (
     <Tarjeta
       titulo={enTexto(t("Quién habla en el grupo"))}
-      accion={
-        <EstoNoCuadra
-          metrica="grupo"
-          marcada={marcadas.includes("grupo")}
-          onMarcar={onNoCuadra}
-        />
-      }
     >
       <Titular>
         {t("{{n}} personas, {{m}} mensajes", {

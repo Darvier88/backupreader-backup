@@ -177,29 +177,3 @@ export const Insuficiente: FC<{
   </div>
 );
 
-/**
- * «Esto no cuadra».
- *
- * Una cifra sobre la propia conversación puede estar mal por cosas que desde
- * fuera no se ven: un apodo que cambió, un chat exportado dos veces, un
- * formato de fecha raro. Sin un sitio donde decirlo, la única reacción
- * posible es dejar de fiarse de todo el panel en silencio.
- *
- * Solo registra QUÉ métrica y CUÁNDO. Ni el texto del chat, ni los nombres,
- * ni las cifras: nada de eso hace falta para saber qué métrica se tuerce.
- */
-export const EstoNoCuadra: FC<{
-  metrica: string;
-  marcada: boolean;
-  onMarcar: (metrica: string) => void;
-}> = ({ metrica, marcada, onMarcar }) => (
-  <button
-    type="button"
-    className="br-an-senal"
-    onClick={() => onMarcar(metrica)}
-    disabled={marcada}
-    title={enTexto(t("Solo se guarda qué métrica y por qué. Nada del chat."))}
-  >
-    {marcada ? t("Anotado") : t("¿No cuadra?")}
-  </button>
-);

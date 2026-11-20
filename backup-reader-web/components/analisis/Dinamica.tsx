@@ -9,7 +9,6 @@ import {
   Insuficiente,
   DIAS_LARGO,
   Detalle,
-  EstoNoCuadra,
   FRANJAS,
   HORA_INICIAL,
   Tarjeta,
@@ -93,9 +92,7 @@ function mesLargo(anio: number, mes: number, idioma: string): string {
 export const Dinamica: FC<{
   analisis: Analisis;
   medida: Medida;
-  marcadas: string[];
-  onNoCuadra: (metrica: string) => void;
-}> = ({ analisis, medida, marcadas, onNoCuadra }) => {
+}> = ({ analisis, medida }) => {
   const idioma = i18n.language || "es";
   const { actividad, tendencias, cobertura } = analisis;
   const iniciales = diasIniciales(idioma);
@@ -130,13 +127,9 @@ export const Dinamica: FC<{
     0
   );
 
-  const accion = (metrica: string) => (
-    <EstoNoCuadra metrica={metrica} marcada={marcadas.includes(metrica)} onMarcar={onNoCuadra} />
-  );
-
   return (
     <>
-      <Tarjeta titulo={enTexto(t("Cuándo habláis"))} accion={accion("horas")}>
+      <Tarjeta titulo={enTexto(t("Cuándo habláis"))}>
         {!cobertura.dias.llega ? (
           <Insuficiente
             tiene={cobertura.dias.tiene}
@@ -238,7 +231,7 @@ export const Dinamica: FC<{
         )}
       </Tarjeta>
 
-      <Tarjeta titulo={enTexto(t("Mes a mes"))} accion={accion("tendencias")}>
+      <Tarjeta titulo={enTexto(t("Mes a mes"))}>
         {!cobertura.meses.llega && (
           <Insuficiente
             tiene={cobertura.meses.tiene}

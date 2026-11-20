@@ -6,7 +6,6 @@ import { conNombre, duracion, numero } from "../../lib/analisis/formatear";
 import {
   Barra,
   Detalle,
-  EstoNoCuadra,
   Insuficiente,
   Reparto,
   Tarjeta,
@@ -33,9 +32,7 @@ const ETIQUETA_DURACION = {
 export const Resumen: FC<{
   analisis: Analisis;
   yo?: string;
-  marcadas: string[];
-  onNoCuadra: (metrica: string) => void;
-}> = ({ analisis, yo, marcadas, onNoCuadra }) => {
+}> = ({ analisis, yo }) => {
   const idioma = i18n.language || "es";
   const { volumen, inicios, respuestas, cobertura } = analisis;
 
@@ -52,17 +49,9 @@ export const Resumen: FC<{
      que responde antes. */
   const masRapido = respuestas.porAutor[0]?.autor;
 
-  const accion = (metrica: string) => (
-    <EstoNoCuadra
-      metrica={metrica}
-      marcada={marcadas.includes(metrica)}
-      onMarcar={onNoCuadra}
-    />
-  );
-
   return (
     <>
-      <Tarjeta titulo={enTexto(t("Quién escribe más"))} accion={accion("volumen")}>
+      <Tarjeta titulo={enTexto(t("Quién escribe más"))}>
         {/* El titular dice QUÉ cuenta. En un chat de fotos, «escribe más»
             por mensajes y por palabras pueden señalar a personas distintas,
             y sin decirlo la cifra parece un hecho en vez de una medida. */}
@@ -147,7 +136,7 @@ export const Resumen: FC<{
 
       <Tarjeta
         titulo={enTexto(t("Quién empieza las conversaciones"))}
-        accion={accion("inicios")}
+       
       >
         {!cobertura.conversaciones.llega ? (
           <Insuficiente
@@ -217,7 +206,7 @@ export const Resumen: FC<{
         )}
       </Tarjeta>
 
-      <Tarjeta titulo={enTexto(t("Cuánto se tarda en contestar"))} accion={accion("respuestas")}>
+      <Tarjeta titulo={enTexto(t("Cuánto se tarda en contestar"))}>
         {!cobertura.respuestas.llega ? (
           <Insuficiente
             tiene={cobertura.respuestas.tiene}

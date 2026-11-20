@@ -79,13 +79,10 @@ export const PantallaDesbloqueo: FC<{ onOmitir: () => void }> = ({ onOmitir }) =
   /* «Recordar en este dispositivo por 30 días» (8a). Desmarcada por defecto y
      solo en escritorio: en un teléfono la pantalla sigue siendo la de 4c. */
   const [recordar, setRecordar] = useState(false);
-  const [nombre, setNombre] = useState("");
   /* El correo de la cuenta, para saber con cuál se entró: el nombre solo
      («luistest003») no basta si se tienen varias cuentas. */
   const [correo, setCorreo] = useState("");
   useEffect(() => {
-    const completo = FirebaseAuth.currentUser?.displayName?.trim() ?? "";
-    setNombre(completo.split(/\s+/)[0] ?? "");
     setCorreo(FirebaseAuth.currentUser?.email ?? "");
   }, []);
   const campoRef = useRef<HTMLInputElement>(null);
@@ -149,9 +146,12 @@ export const PantallaDesbloqueo: FC<{ onOmitir: () => void }> = ({ onOmitir }) =
   return (
     <div className="br-paso">
       <ColumnaPasos
+        /* El correo y no el nombre: con varias cuentas, «Hola de nuevo,
+           Luis» no dice con cuál estás entrando, y es justo lo que hay que
+           saber antes de teclear una contraseña. */
         encabezado={
-          nombre
-            ? enTexto(t("Hola de nuevo, {{nombre}}", { nombre }))
+          correo
+            ? enTexto(t("Hola de nuevo, {{correo}}", { correo }))
             : enTexto(t("Hola de nuevo"))
         }
         titulo={enTexto(t("Tus chats están cifrados en este dispositivo."))}
@@ -220,10 +220,12 @@ export const PantallaDesbloqueo: FC<{ onOmitir: () => void }> = ({ onOmitir }) =
             </span>
           </p>
 
-          {/* Con qué cuenta se entró: va aquí y no solo en la columna oscura,
-              que en el móvil no se ve. */}
+          {/* Con qué cuenta se entró. Solo en el móvil: la columna oscura
+              está oculta por debajo de 900 px, así que ahí arriba el correo
+              no se ve y esta línea es el único sitio donde aparece. En
+              escritorio sobra, porque el encabezado ya lo lleva. */}
           {correo && (
-            <p style={{ fontFamily: "var(--font-sans)", fontSize: 13.5, lineHeight: 1.4, color: "var(--paso-apagado)", margin: "-12px 0 24px", overflowWrap: "anywhere" }}>
+            <p className="br-solo-movil" style={{ fontFamily: "var(--font-sans)", fontSize: 13.5, lineHeight: 1.4, color: "var(--paso-apagado)", margin: "-12px 0 24px", overflowWrap: "anywhere" }}>
               {t("Cuenta")}: <strong style={{ fontWeight: 600, color: "var(--paso-texto)" }}>{correo}</strong>
             </p>
           )}

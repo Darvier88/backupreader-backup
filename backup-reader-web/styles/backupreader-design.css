@@ -936,17 +936,6 @@ body {
 .br-an-leyenda span { font-family: var(--font-mono); font-size: 11.5px; color: var(--text-muted); }
 .br-an-leyenda span:first-child { color: var(--text-strong); }
 
-/* «Esto no cuadra» */
-.br-an-senal {
-  padding: 4px 10px; border: 1px solid var(--border); background: transparent;
-  border-radius: var(--radius-pill); cursor: pointer; white-space: nowrap;
-  font-family: var(--font-sans); font-size: 11px; color: var(--text-muted);
-  transition: color var(--dur-fast) var(--ease-standard),
-              border-color var(--dur-fast) var(--ease-standard);
-}
-.br-an-senal:hover:not(:disabled) { color: var(--text-accent); border-color: var(--accent); }
-.br-an-senal:focus-visible { outline: none; box-shadow: var(--focus-ring); }
-.br-an-senal:disabled { background: var(--surface-sunken); cursor: default; }
 
 /* Filas que se pueden tocar para ir a un mensaje */
 .br-an-fila {
@@ -1155,20 +1144,6 @@ body {
 
 /* La hoja de «¿no cuadra?». No es un modal que tape la pantalla: aparece
    bajo la tarjeta, para no perder de vista la cifra de la que se habla. */
-.br-an-hoja {
-  display: flex; flex-direction: column; gap: 12px;
-  padding: 16px 18px 18px;
-  background: var(--surface-sunken);
-  border: 1px solid var(--border); border-radius: var(--radius-lg);
-}
-.br-an-hoja-cabecera { display: flex; align-items: center; gap: 12px; }
-.br-an-hoja-cabecera .br-an-numeros-label { flex: 1; color: var(--text-muted); }
-.br-an-hoja-cerrar {
-  border: 0; background: none; cursor: pointer; padding: 0 4px;
-  font-size: 20px; line-height: 1; color: var(--text-muted);
-}
-.br-an-hoja-cerrar:focus-visible { outline: none; box-shadow: var(--focus-ring); border-radius: 4px; }
-.br-an-hoja .br-an-opcion { padding: 10px 14px; }
 
 /* El análisis al lado del chat, en escritorio.
    Dos columnas con scroll propio: con un scroll común, bajar en el análisis

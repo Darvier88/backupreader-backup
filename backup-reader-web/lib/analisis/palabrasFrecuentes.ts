@@ -16,6 +16,14 @@
  * palabras. Pasarlas por una regla casera («quita la -s final») rompe más de
  * lo que arregla: «mes» no es el plural de «me».
  *
+ * UN ENLACE NO SON SIETE PALABRAS
+ * -------------------------------
+ * `https://www.youtube.com/watch?v=...` se parte en «https», «www»,
+ * «youtube», «com», «watch»..., y esos trozos se colaban en la lista como si
+ * fueran cosas de las que habláis. No lo son: nadie dice «https». Los
+ * enlaces se sacan del texto antes de contar y se suman en una sola fila,
+ * «compartir link», que sí dice algo: cuántas veces os pasáis cosas.
+ *
  * CADA PALABRA GUARDA DÓNDE SE DIJO
  * ---------------------------------
  * Para poder tocar una palabra y saltar a un mensaje donde aparece, que es
@@ -24,6 +32,40 @@
 
 import { esRuido } from "./stopwords";
 import type { Mensaje } from "./tipos";
+
+/**
+ * La fila de los enlaces.
+ *
+ * Es una clave de i18n, no un texto suelto: en inglés la lista dice
+ * «shared link». Y lleva un hueco al empezar para que no choque con una
+ * palabra real que alguien escriba, porque las palabras van en minúscula y
+ * sin espacios.
+ */
+export const FILA_ENLACE = "compartir link";
+
+/**
+ * Qué se considera un enlace.
+ *
+ * Tres formas, que son las que de verdad aparecen en un chat: con esquema
+ * (`https://…`), empezando por `www.`, y el dominio pelado con barra
+ * (`youtube.com/algo`), que es lo que queda cuando alguien copia a medias.
+ * No se intenta cazar un dominio suelto sin barra («nos vemos en casa.com»
+ * es raro, pero «etc.» o «a.m.» no son enlaces y saldrían marcados).
+ */
+const ENLACE =
+  /(?:https?:\/\/|www\.)[^\s]+|\b[a-z0-9-]+(?:\.[a-z0-9-]+)*\.[a-z]{2,}\/[^\s]*/gi;
+
+/** Cuántos enlaces hay en un texto, y el texto sin ellos. */
+export function separarEnlaces(texto: string): { enlaces: number; resto: string } {
+  let enlaces = 0;
+  const resto = (texto || "").replace(ENLACE, () => {
+    enlaces++;
+    /* Un espacio y no vacío: pegar lo de antes con lo de después inventaría
+       una palabra que nadie escribió. */
+    return " ";
+  });
+  return { enlaces, resto };
+}
 
 /* Tipos de mensaje cuyo texto lo escribió una persona. */
 const CON_TEXTO = new Set(["texto", "imagen", "video", "audio", "documento", "sticker", "multimedia"]);
@@ -87,7 +129,20 @@ export function palabrasFrecuentes(
     if (!CON_TEXTO.has(m.tipo)) continue;
     /* Un adjunto sin pie no aporta palabras, y su nombre de archivo tampoco:
        `normalizar` ya dejó el texto limpio, pero el pie puede estar vacío. */
-    for (const palabra of partirEnPalabras(m.contenido, idioma)) {
+    const { enlaces, resto } = separarEnlaces(m.contenido);
+    if (enlaces > 0) {
+      let fila = cuenta.get(FILA_ENLACE);
+      if (!fila) {
+        fila = { palabra: FILA_ENLACE, total: 0, porAutor: {}, ejemplo: m.indice };
+        cuenta.set(FILA_ENLACE, fila);
+      }
+      /* Cada enlace cuenta: dos en un mensaje son dos veces que se comparte
+         algo, no una. */
+      fila.total += enlaces;
+      fila.porAutor[m.autor] = (fila.porAutor[m.autor] || 0) + enlaces;
+    }
+
+    for (const palabra of partirEnPalabras(resto, idioma)) {
       if (esRuido(palabra)) continue;
       let fila = cuenta.get(palabra);
       if (!fila) {

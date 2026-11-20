@@ -21,7 +21,6 @@ import {
   Titular,
   enTexto,
 } from "./piezas";
-import { HojaNoCuadra } from "./HojaNoCuadra";
 import { PreguntaFecha } from "./PreguntaFecha";
 import { PreguntaQuienEres } from "./PreguntaQuienEres";
 import { Resumen } from "./Resumen";
@@ -94,9 +93,7 @@ export const PanelAnalisis: FC<{
   const [analisis, setAnalisis] = useState<Analisis | null>(null);
   const [calculando, setCalculando] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [marcadas, setMarcadas] = useState<string[]>([]);
   /** La métrica cuya hoja de motivos está abierta, si hay alguna. */
-  const [preguntando, setPreguntando] = useState<string | null>(null);
   /* El formato que el usuario confirmó, si tuvo que confirmarlo. */
   const [diaPrimero, setDiaPrimero] = useState<boolean | undefined>(undefined);
 
@@ -136,10 +133,17 @@ export const PanelAnalisis: FC<{
 
       if (guardado?.diaPrimero !== undefined) setDiaPrimero(guardado.diaPrimero);
 
+      /* Quién eres se recupera SIEMPRE, sirva o no el análisis guardado.
+         Es un ajuste tuyo, no parte del resultado: que las cifras estén
+         caducadas no es motivo para olvidar lo que contestaste. Leerlo solo
+         en la rama de abajo hacía que, en un grupo —donde el nombre no se
+         puede deducir—, la pregunta volviera a salir cada vez que tocaba
+         recalcular, y en el móvil tocaba a menudo, porque cambiar de
+         pestaña desmonta el panel y corta el cálculo a medias. */
+      if (!yoElegido.current && guardado?.yo) setYo(guardado.yo);
+
       if (guardado && analisisVigente(guardado, ajustes)) {
         setAnalisis(guardado.analisis);
-        setMarcadas(guardado.senales?.map((s) => s.metrica) ?? []);
-        if (!yoElegido.current && guardado.yo) setYo(guardado.yo);
         setCalculando(false);
         return;
       }
@@ -159,7 +163,6 @@ export const PanelAnalisis: FC<{
         );
         if (!vigente) return;
         setAnalisis(nuevo);
-        setMarcadas(guardado?.senales?.map((s) => s.metrica) ?? []);
 
         /* 3. Se guarda para la próxima. Si falla, no pasa nada: el análisis
            ya está en pantalla y la próxima vez se recalcula. */
@@ -168,6 +171,10 @@ export const PanelAnalisis: FC<{
             v: VERSION_ANALISIS,
             analisis: nuevo,
             yo: yoElegido.current ? yo : guardado?.yo ?? yo,
+            /* Lo que algún usuario marcó con el viejo «¿No cuadra?» se
+               conserva tal cual: el botón ya no existe, pero reescribir la
+               pieza de cada chat solo para borrar un campo que nadie lee
+               sería mover datos cifrados de todos para nada. */
             senales: guardado?.senales ?? [],
             cuando: Date.now(),
           }).catch(() => {
@@ -198,12 +205,11 @@ export const PanelAnalisis: FC<{
         v: VERSION_ANALISIS,
         analisis,
         yo,
-        senales: marcadas.map((metrica) => ({ metrica, cuando: Date.now() })),
         cuando: Date.now(),
         ...cambios,
       }).catch(() => {});
     },
-    [handle, escribirAnalisis, analisis, yo, marcadas]
+    [handle, escribirAnalisis, analisis, yo]
   );
 
   /** El formato que el usuario dice que usa su teléfono. */
@@ -218,34 +224,7 @@ export const PanelAnalisis: FC<{
     guardarEleccion({ yo: autor });
   };
 
-  /**
-   * «Esto no cuadra»: se anota la métrica y cuándo, y nada más.
-   *
-   * Va dentro de la misma pieza cifrada que el resto, por lo mismo que la
-   * elección de «quién eres tú»: es una nota sobre esta conversación y no
-   * tiene por qué salir de la bóveda. Mandarla a un servidor obligaría a
-   * crear una colección, escribir reglas y desplegarlas, y a que algo de
-   * este panel saliera del dispositivo por primera vez, que es justo lo que
-   * la función promete que no pasa.
-   */
-  const marcarNoCuadra = (metrica: string) => {
-    if (marcadas.includes(metrica)) return;
-    setPreguntando(metrica);
-  };
 
-  /** Ya con el motivo elegido. */
-  const anotarMotivo = (metrica: string, motivo: string) => {
-    const nuevas = [...marcadas, metrica];
-    setMarcadas(nuevas);
-    setPreguntando(null);
-    guardarEleccion({
-      senales: nuevas.map((m) => ({
-        metrica: m,
-        motivo: m === metrica ? motivo : undefined,
-        cuando: Date.now(),
-      })),
-    });
-  };
 
   /* --- Estados que no son el análisis --- */
 
@@ -292,13 +271,6 @@ export const PanelAnalisis: FC<{
             <span className="br-an-hueso" style={{ width: "100%", height: 8 }} />
           </Tarjeta>
         ))}
-        {preguntando && (
-        <HojaNoCuadra
-          titulo={enTexto(t(NOMBRE_METRICA[preguntando] ?? preguntando))}
-          onElegir={(motivo) => anotarMotivo(preguntando, motivo)}
-          onCerrar={() => setPreguntando(null)}
-        />
-      )}
 
       <p className="br-an-pie">{t("Calculando en tu navegador…")}</p>
       </div>
@@ -454,15 +426,11 @@ export const PanelAnalisis: FC<{
           <TablaGrupo
             analisis={analisis}
             yo={yo}
-            marcadas={marcadas}
-            onNoCuadra={marcarNoCuadra}
           />
         ) : (
           <Resumen
             analisis={analisis}
             yo={yo}
-            marcadas={marcadas}
-            onNoCuadra={marcarNoCuadra}
           />
         ))}
 
@@ -470,8 +438,6 @@ export const PanelAnalisis: FC<{
         <Dinamica
           analisis={analisis}
           medida={medida}
-          marcadas={marcadas}
-          onNoCuadra={marcarNoCuadra}
         />
       )}
 
@@ -479,8 +445,6 @@ export const PanelAnalisis: FC<{
         <Palabras
           analisis={analisis}
           yo={yo}
-          marcadas={marcadas}
-          onNoCuadra={marcarNoCuadra}
           onIrAlMensaje={onIrAlMensaje}
           onFiltrar={onFiltrar}
         />
@@ -495,14 +459,6 @@ export const PanelAnalisis: FC<{
           onUmbral={setUmbralHoras}
           onMedida={setMedida}
           onYo={elegirYo}
-        />
-      )}
-
-      {preguntando && (
-        <HojaNoCuadra
-          titulo={enTexto(t(NOMBRE_METRICA[preguntando] ?? preguntando))}
-          onElegir={(motivo) => anotarMotivo(preguntando, motivo)}
-          onCerrar={() => setPreguntando(null)}
         />
       )}
 

@@ -581,19 +581,30 @@ export const DashboardScreen: FC = () => {
                 <ControlSegmentado
                   completo
                   valor={toShow}
-                  onCambio={(v) => setToShow(v as "photos" | "message" | "analisis")}
+                  onCambio={(v) => {
+                    /* En escritorio «Análisis» no es una vista: abre y
+                       cierra el panel de al lado y deja el chat donde
+                       está. En el móvil no cabe esa columna, así que ahí
+                       sí sustituye a la pantalla. */
+                    if (v === "analisis" && !phone) {
+                      setPanelLateral((abierto) => !abierto);
+                      return;
+                    }
+                    setToShow(v as "photos" | "message" | "analisis");
+                  }}
                   opciones={[
                     { valor: "message", etiqueta: enTexto(t("Mensajes")) },
                     { valor: "photos", etiqueta: enTexto(t("Media")) },
-                    /* La pestaña solo existe con la función encendida, y
-                       solo en el móvil: en escritorio el análisis va al
-                       lado del chat, no en lugar de él. */
-                    ...(ANALISIS_ACTIVO && phone
+                    /* La misma barra en los dos tamaños. Lo que cambia es
+                       qué hace al pulsarla, no dónde está. */
+                    ...(ANALISIS_ACTIVO
                       ? [
                           {
                             valor: "analisis",
                             etiqueta: enTexto(t("Análisis")),
                             insignia: enTexto(t("Nuevo")),
+                            conmutador: !phone,
+                            encendido: panelLateral,
                           },
                         ]
                       : []),
@@ -615,21 +626,6 @@ export const DashboardScreen: FC = () => {
                       onClick={() => setMostrarEsperas((v) => !v)}
                     >
                       {t("Tiempos de respuesta")}
-                    </button>
-                  )}
-                  {ANALISIS_ACTIVO && !phone && (
-                    <button
-                      type="button"
-                      className={
-                        panelLateral
-                          ? "br-an-conmutador br-an-conmutador--activo"
-                          : "br-an-conmutador"
-                      }
-                      aria-pressed={panelLateral}
-                      onClick={() => setPanelLateral((v) => !v)}
-                    >
-                      {panelLateral ? t("Solo chat") : t("Con estadísticas")}
-                      {!panelLateral && <span className="br-an-conmutador-nuevo">{t("Nuevo")}</span>}
                     </button>
                   )}
                 </div>

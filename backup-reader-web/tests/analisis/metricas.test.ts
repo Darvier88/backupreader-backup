@@ -8,6 +8,11 @@ import { actividad } from "../../lib/analisis/actividad";
 import { tendencias } from "../../lib/analisis/tendencias";
 import { compararDuraciones, compararReparto } from "../../lib/analisis/umbrales";
 import { conNombre } from "../../lib/analisis/formatear";
+import {
+  FILA_ENLACE,
+  palabrasFrecuentes,
+  separarEnlaces,
+} from "../../lib/analisis/palabrasFrecuentes";
 import { RAFAGAS, filasDe } from "./ejemplos";
 
 const MINUTO = 60 * 1000;
@@ -712,5 +717,62 @@ describe("quiebre: una cuesta no es un escalón", () => {
     const t = tendencias(serieDe([100, 96, 92, 90, 20, 18, 16, 15]));
     expect(t.quiebre?.clave).toBe("2025-05");
     expect(t.quiebre?.direccion).toBe("baja");
+  });
+});
+
+describe("los enlaces no son palabras", () => {
+  const msg = (autor: string, contenido: string, indice: number) => ({
+    indice,
+    autor,
+    contenido,
+    texto: contenido,
+    tipo: "texto" as const,
+    fecha: new Date(2025, 0, 1 + indice),
+    palabras: contenido.split(/\s+/).length,
+    editado: false,
+  });
+
+  it("no cuenta «https», «www» ni «com» como cosas de las que se habla", () => {
+    const r = palabrasFrecuentes(
+      [msg("Ana", "mira esto https://www.youtube.com/watch?v=abc", 0)],
+      { idioma: "es" }
+    );
+    const palabras = r.top.map((p) => p.palabra);
+    expect(palabras).not.toContain("https");
+    expect(palabras).not.toContain("www");
+    expect(palabras).not.toContain("com");
+    expect(palabras).not.toContain("youtube");
+  });
+
+  it("los junta todos en una fila, con quién los manda", () => {
+    const r = palabrasFrecuentes(
+      [
+        msg("Ana", "https://a.com/x", 0),
+        msg("Ana", "toma www.b.org/y", 1),
+        msg("Beto", "mira youtube.com/watch", 2),
+      ],
+      { idioma: "es" }
+    );
+    const fila = r.top.find((p) => p.palabra === FILA_ENLACE);
+    expect(fila?.total).toBe(3);
+    expect(fila?.porAutor).toEqual({ Ana: 2, Beto: 1 });
+  });
+
+  it("dos enlaces en un mensaje son dos veces que se comparte algo", () => {
+    const { enlaces } = separarEnlaces("mira https://a.com/1 y también https://b.com/2");
+    expect(enlaces).toBe(2);
+  });
+
+  it("deja intacto lo que no es un enlace", () => {
+    /* «etc.» y «a.m.» llevan punto y no son enlaces; el texto tiene que
+       llegar entero a la cuenta de palabras. */
+    const { enlaces, resto } = separarEnlaces("quedamos a las 10 a.m. etc.");
+    expect(enlaces).toBe(0);
+    expect(resto).toBe("quedamos a las 10 a.m. etc.");
+  });
+
+  it("no pega las palabras de alrededor al quitar el enlace", () => {
+    const { resto } = separarEnlaces("mira https://a.com/x esto");
+    expect(resto).toBe("mira   esto");
   });
 });
