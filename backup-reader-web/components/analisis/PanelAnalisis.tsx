@@ -200,6 +200,27 @@ export const PanelAnalisis: FC<{
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [filas, handle, ajustes, diaPrimero]);
 
+  /* La sombra bajo las pestañas, solo cuando hay algo pasando por debajo.
+     Un centinela de un píxel encima: mientras se ve, no hay nada desplazado;
+     cuando sale de vista, sí. Más barato y más fiable que escuchar el scroll.
+
+     Va aquí arriba y no junto a las pestañas porque debajo hay salidas
+     tempranas (la bóveda cerrada, las dos preguntas, el error): un hook
+     detrás de un `return` se deja de llamar en cuanto se toma esa salida, y
+     al contestar la pregunta React se encuentra con más hooks que antes y
+     tumba la pantalla entera. */
+  const centinela = useRef<HTMLDivElement | null>(null);
+  const [pegada, setPegada] = useState(false);
+  useEffect(() => {
+    const nodo = centinela.current;
+    if (!nodo || typeof IntersectionObserver !== "function") return;
+    const obs = new IntersectionObserver(([e]) => setPegada(!e.isIntersecting), {
+      threshold: 0,
+    });
+    obs.observe(nodo);
+    return () => obs.disconnect();
+  }, [vista]);
+
   /** Guarda el cambio de ajuste manual dentro de la pieza cifrada. */
   const guardarEleccion = useCallback(
     (cambios: Partial<AnalisisGuardado>) => {
@@ -360,6 +381,7 @@ export const PanelAnalisis: FC<{
 
   return (
     <div className="br-an">
+      <div ref={centinela} style={{ height: 1, flexShrink: 0 }} aria-hidden="true" />
       {/* De cuándo a cuándo, arriba del todo: sin esto, cualquier cifra flota
           y nadie sabe si habla de este año o de siete. */}
       <div className="br-an-rango">
@@ -395,12 +417,18 @@ export const PanelAnalisis: FC<{
         </Detalle>
       )}
 
+      {/* Pegadas arriba: al bajar por una tabla larga, las pestañas se iban
+          de la vista y había que subir del todo para cambiar de sección. El
+          encabezado de arriba sí se va, que es información de contexto y se
+          lee una vez. */}
+      <div className={pegada ? "br-an-vistas br-an-vistas--pegada" : "br-an-vistas"}>
       <ControlSegmentado
         completo
         valor={vistaActual}
         onCambio={(v) => setVista(v as Vista)}
         opciones={vistas}
       />
+      </div>
 
       {vistaActual === "resumen" && (
         <EnNumeros>

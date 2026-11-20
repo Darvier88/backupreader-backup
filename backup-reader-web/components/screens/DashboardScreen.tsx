@@ -116,6 +116,8 @@ export const DashboardScreen: FC = () => {
      mensajes de los que habla. Apagado por defecto: quien abre un chat
      viene a leerlo. */
   const [panelLateral, setPanelLateral] = useState(false);
+  /** Dónde estaba el análisis al saltar a los mensajes, para volver ahí. */
+  const alturaDelAnalisis = useRef(0);
 
   /* El filtro que viene del análisis (pantalla 1g).
      Tocar «perdona · 26» no debería dejarte en un mensaje suelto: lo que
@@ -452,7 +454,13 @@ export const DashboardScreen: FC = () => {
         /* En el móvil el análisis ocupa la pantalla entera: sin esto, tocar
            una palabra filtraría un chat que no se está viendo y no pasaría
            nada a ojos de quien lo tocó. */
-        if (!panelLateral) setToShow("message");
+        if (!panelLateral) {
+          /* A qué altura se estaba mirando, para devolver ahí y no al
+             principio: volver al tope obliga a buscar otra vez la fila que
+             se acababa de tocar. */
+          alturaDelAnalisis.current = typeof window !== "undefined" ? window.scrollY : 0;
+          setToShow("message");
+        }
       }}
       onIrAlMensaje={(indice) => {
         if (!panelLateral) setToShow("message");
@@ -579,7 +587,10 @@ export const DashboardScreen: FC = () => {
 
               {/* Buscador del chat abierto, a ancho completo (1a/1c). No
                   filtra: resalta y deja saltar entre coincidencias. */}
-              <Box marginTop={ocultarCabecera ? 0 : 1.5}>
+              {/* Pegada arriba: al recorrer «1 de 8» hacia abajo, la barra
+                  se iba de la vista y había que volver al principio para
+                  usar las flechas, que es justo cuando hacen falta. */}
+              <Box className="br-barra-chat" marginTop={ocultarCabecera ? 0 : 1.5}>
                 {filtro ? (
                   /* Mientras se mira de dónde sale una cifra, la barra ocupa
                      el sitio del buscador en vez de añadirse debajo: son la
@@ -591,6 +602,18 @@ export const DashboardScreen: FC = () => {
                     activa={activa}
                     onActiva={setActiva}
                     onQuitar={() => setFiltro(null)}
+                    onVolver={
+                      phone && toShow !== "analisis"
+                        ? () => {
+                            setToShow("analisis");
+                            /* Tras pintar, no antes: el contenido todavía no
+                               está y el navegador ignoraría el salto. */
+                            requestAnimationFrame(() =>
+                              window.scrollTo({ top: alturaDelAnalisis.current })
+                            );
+                          }
+                        : undefined
+                    }
                     onTodos={
                       filtro.autor
                         ? () => {
@@ -693,7 +716,18 @@ export const DashboardScreen: FC = () => {
               }}
             >
               <div className={panelLateral ? "br-an-columna" : undefined}>
-              {loading ? (
+              {/* En el móvil el análisis se queda montado y solo se esconde.
+                  Si se desmontara, volver desde los mensajes empezaría en la
+                  primera sección y arriba del todo, perdiendo justo lo que
+                  se estaba mirando; y además habría que recalcularlo. Vive
+                  en una posición fija del árbol a propósito: moverlo de
+                  sitio al cambiar de vista lo desmontaría igual. */}
+              {phone && (
+                <div style={{ display: toShow === "analisis" ? "contents" : "none" }}>
+                  {elAnalisis}
+                </div>
+              )}
+              {phone && toShow === "analisis" ? null : loading ? (
                 <div
                   style={{
                     display: "flex",
@@ -711,6 +745,7 @@ export const DashboardScreen: FC = () => {
                   </span>
                 </div>
               ) : toShow === "analisis" ? (
+                /* Solo escritorio: en el móvil lo pinta el bloque de arriba. */
                 elAnalisis
               ) : toShow === "photos" ? (
                 <>

@@ -45,7 +45,9 @@ export const FiltroDelAnalisis: FC<{
    * mirando estos resultados, no volviendo a la lista.
    */
   onTodos?: () => void;
-}> = ({ etiqueta, total, activa, onActiva, onQuitar, onTodos }) => {
+  /** Volver al análisis, a la sección y la altura donde se dejó. */
+  onVolver?: () => void;
+}> = ({ etiqueta, total, activa, onActiva, onQuitar, onTodos, onVolver }) => {
   const { t } = useTranslation();
 
   const saltar = (paso: number) => {
@@ -83,6 +85,16 @@ export const FiltroDelAnalisis: FC<{
        viva con botones dentro hace que el lector de pantalla relea la barra
        completa —etiqueta, flechas y ✕— cada vez que cambia el número. */
     <div className="br-filtro">
+      {onVolver && (
+        <button
+          type="button"
+          className="br-filtro-volver"
+          onClick={onVolver}
+          title={enTexto(t("Volver al análisis"))}
+        >
+          ←
+        </button>
+      )}
       <span className="br-filtro-etiqueta" title={etiqueta}>
         {etiqueta}
       </span>

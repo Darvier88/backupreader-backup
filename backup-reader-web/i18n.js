@@ -624,6 +624,7 @@ const resources = {
       "Dice cuándo cambió el ritmo, no por qué.":"It says when the pace changed, not why.",
       "Quitar el filtro":"Clear the filter",
       "Ver de todos":"See everyone's",
+      "Volver al análisis":"Back to the analysis",
       "Perdones":"Sorries",
       "Gracias":"Thanks",
       "Aún no hay bastante texto para sacar palabras.":"There isn't enough text yet to pull out words.",

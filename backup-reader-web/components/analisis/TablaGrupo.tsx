@@ -127,6 +127,10 @@ export const TablaGrupo: FC<{
                 <th
                   key={String(c.clave)}
                   onClick={() => setOrden(c.clave)}
+                  /* La primera columna se queda quieta al deslizar: con los
+                     nombres fuera de la vista, los números de la derecha no
+                     son de nadie. */
+                  className={c.clave === "autor" ? "br-an-col-fija" : undefined}
                   style={{
                     textAlign: c.numerica ? "right" : "left",
                     padding: "6px 8px",
@@ -152,6 +156,7 @@ export const TablaGrupo: FC<{
                 {COLUMNAS.map((c) => (
                   <td
                     key={String(c.clave)}
+                    className={c.clave === "autor" ? "br-an-col-fija" : undefined}
                     style={{
                       textAlign: c.numerica ? "right" : "left",
                       padding: "8px",

@@ -1,4 +1,5 @@
 import { FC, useEffect, useState } from "react";
+import { bloquearScroll } from "../../lib/bloquear-scroll";
 import { useTranslation } from "react-i18next";
 
 /**
@@ -41,14 +42,13 @@ export const HojaSubirChat: FC<{
      siente como si la hoja se hubiera soltado de la pantalla. */
   useEffect(() => {
     if (!abierta) return;
-    const previo = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
+    const soltar = bloquearScroll();
     const alPulsar = (e: KeyboardEvent) => {
       if (e.key === "Escape") onCerrar();
     };
     window.addEventListener("keydown", alPulsar);
     return () => {
-      document.body.style.overflow = previo;
+      soltar();
       window.removeEventListener("keydown", alPulsar);
     };
   }, [abierta, onCerrar]);

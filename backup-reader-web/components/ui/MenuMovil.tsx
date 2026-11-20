@@ -1,4 +1,5 @@
 import { FC, useEffect } from "react";
+import { bloquearScroll } from "../../lib/bloquear-scroll";
 import { useRouter } from "next/router";
 import { useTranslation } from "react-i18next";
 
@@ -38,11 +39,7 @@ export const MenuMovil: FC<{ abierto: boolean; onCerrar: () => void }> = ({
      se encuentra en otro sitio de la página sin haberlo pedido. */
   useEffect(() => {
     if (!abierto) return;
-    const antes = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
-    return () => {
-      document.body.style.overflow = antes;
-    };
+    return bloquearScroll();
   }, [abierto]);
 
   /* Escape cierra. Es lo que espera cualquiera que llegue con un teclado

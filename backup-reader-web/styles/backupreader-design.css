@@ -1287,3 +1287,79 @@ body {
 }
 
 .br-filtro-todos:hover { color: var(--ink-900); }
+
+/* Las subpestañas del análisis, pegadas arriba de su columna.
+   Con una tabla de grupo o una lista de palabras larga, se iban de la vista
+   y para cambiar de sección había que subir hasta el principio. El fondo es
+   opaco a propósito: con transparencia, las filas se leerían por debajo. */
+.br-an-vistas {
+  position: sticky;
+  top: 0;
+  z-index: 3;
+  margin: 0 -16px;
+  padding: 6px 16px 8px;
+  background: var(--surface-page);
+  border-bottom: 1px solid transparent;
+}
+
+/* La sombra aparece solo cuando hay algo debajo desplazado, igual que la
+   de la tabla: una línea permanente sugiere un corte que no existe. */
+.br-an-columna { scroll-timeline: none; }
+.br-an-vistas::after {
+  content: "";
+  position: absolute;
+  left: 0; right: 0; bottom: -8px; height: 8px;
+  background: linear-gradient(to bottom, rgba(22, 35, 59, 0.07), rgba(22, 35, 59, 0));
+  opacity: 0;
+  transition: opacity 0.15s ease;
+  pointer-events: none;
+}
+.br-an-vistas--pegada::after { opacity: 1; }
+
+/* La barra del chat (buscador o filtro), pegada arriba.
+   Al recorrer «1 de 8» hacia abajo se iba de la vista, y había que volver
+   al principio justo cuando hacían falta las flechas. */
+.br-barra-chat {
+  position: sticky;
+  top: 0;
+  z-index: 4;
+  background: var(--paper-50);
+  padding-bottom: 6px;
+}
+
+/* La columna de nombres de la tabla del grupo, quieta al deslizar.
+   Sin ella se ven los números pero no de quién son, que es la mitad de la
+   información. El fondo opaco es obligatorio: si no, las otras columnas se
+   leen por debajo al pasar. */
+.br-an-col-fija {
+  position: sticky;
+  left: 0;
+  z-index: 2;
+  background: var(--surface-raised);
+  box-shadow: 1px 0 0 var(--border);
+}
+
+thead .br-an-col-fija {
+  z-index: 3;
+}
+
+/* «← Volver al análisis»: la vuelta desde los mensajes filtrados.
+   Va al principio de la barra, donde el pulgar espera una flecha atrás. */
+.br-filtro-volver {
+  width: 32px;
+  height: 32px;
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-left: -6px;
+  background: transparent;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 17px;
+  line-height: 1;
+  color: var(--ink-900);
+}
+
+.br-filtro-volver:hover { background: rgba(0, 0, 0, 0.06); }

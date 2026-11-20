@@ -93,7 +93,16 @@ export const ModalConsumer: React.FC = () => {
             width,
           },
         },
-      }) => (
+      }) =>
+        /* El Modal solo existe mientras se ve.
+           Montado y cerrado, NextUI deja `overflow: hidden` pegado al body
+           para siempre. Eso no solo impide desplazar la página: convierte al
+           body en el contenedor de desplazamiento de todo lo que hay dentro,
+           y como él no se desplaza, CUALQUIER `position: sticky` de la
+           aplicación deja de pegarse sin decir nada. Así es como la barra de
+           resultados del chat se iba de la vista al bajar aunque estuviera
+           declarada como pegada. */
+        !visible ? null : (
         <Modal
           open={visible}
           closeButton={withButtonClose}
@@ -110,7 +119,8 @@ export const ModalConsumer: React.FC = () => {
         >
           {render(modalContent)}
         </Modal>
-      )}
+      )
+      }
     </ModalContext.Consumer>
   );
 };
