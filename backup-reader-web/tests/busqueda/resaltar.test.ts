@@ -124,3 +124,58 @@ describe("fragmentoAlrededor", () => {
     expect(frag).toBe("mandé los documentos");
   });
 });
+
+describe("varios términos a la vez", () => {
+  it("marca cualquiera de la lista", () => {
+    const t = partirPorCoincidencias(
+      "Perdón, de verdad. Lo siento mucho.",
+      ["perdón", "lo siento", "disculpa"]
+    );
+    const marcados = t.filter((x) => x.coincide).map((x) => x.texto);
+    expect(marcados).toEqual(["Perdón", "Lo siento"]);
+  });
+
+  it("cuenta las de todos los términos juntos", () => {
+    expect(cuantasVeces("perdona, perdón, gracias", ["perdon", "gracias"])).toBe(3);
+  });
+
+  it("a igual posición gana el término más largo", () => {
+    /* Con «perdón» a secas, la «a» se quedaría fuera de la marca. */
+    const t = partirPorCoincidencias("perdona ya", ["perdón", "perdona"]);
+    expect(t.filter((x) => x.coincide).map((x) => x.texto)).toEqual(["perdona"]);
+  });
+
+  it("se salta los términos de una sola letra", () => {
+    expect(cuantasVeces("a b casa", ["a", "casa"])).toBe(1);
+  });
+
+  it("una lista vacía no marca nada", () => {
+    expect(cuantasVeces("lo que sea", [])).toBe(0);
+    expect(contiene("lo que sea", [])).toBe(false);
+  });
+
+  it("con un término suelto se comporta igual que antes", () => {
+    expect(cuantasVeces("casa casa", "casa")).toBe(cuantasVeces("casa casa", ["casa"]));
+  });
+
+  it("contiene acepta lista", () => {
+    expect(contiene("muchas gracias", ["perdón", "gracias"])).toBe(true);
+    expect(contiene("hola", ["perdón", "gracias"])).toBe(false);
+  });
+});
+
+describe("términos de un solo carácter", () => {
+  it("no marca una letra suelta: ensuciaría el mensaje entero", () => {
+    expect(cuantasVeces("casa amarilla", "a")).toBe(0);
+    expect(contiene("casa amarilla", ["a"])).toBe(false);
+  });
+
+  it("sí marca un emoji suelto, que es lo que se toca en el análisis", () => {
+    /* «❤» mide 1 en JavaScript, pero no aparece dentro de ninguna palabra. */
+    expect(cuantasVeces("te quiero ❤️ mucho ❤️", ["❤", "❤️"])).toBe(2);
+  });
+
+  it("cuenta el emoji lo escriba el teclado con variante o sin ella", () => {
+    expect(cuantasVeces("uno ❤ dos ❤️", ["❤", "❤️"])).toBe(2);
+  });
+});

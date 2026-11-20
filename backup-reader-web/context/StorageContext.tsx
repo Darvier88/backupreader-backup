@@ -27,7 +27,7 @@ import {
   borrarRegistroBackup,
 } from "../config/backupRepo";
 import { borrarChat, type ResultadoChat } from "../lib/borrar-chat";
-import { marcarIndexado } from "../config/backupRepo";
+import { marcarIndexado, anotarAnalisis } from "../config/backupRepo";
 import {
   buscarEnIndice,
   VERSION_INDICE,
@@ -35,6 +35,12 @@ import {
   type ResultadoEnChat,
 } from "../lib/busqueda/indice";
 import { abrirIndice, indexarYSubir, rutaDelIndice } from "../lib/busqueda/piezaIndice";
+import {
+  abrirAnalisis,
+  guardarAnalisis,
+  rutaDelAnalisis,
+  type AnalisisGuardado,
+} from "../lib/analisis/piezaAnalisis";
 import {
   indexarPendientes,
   estadoInicial,
@@ -117,6 +123,13 @@ type StorageContextProps = {
   fragmentosDeChat: (backupId: string, numeros: number[]) => Promise<FragmentoMensaje[]>;
   /** Progreso del indexado, para que la pantalla pueda avisar. */
   estadoIndexado: EstadoIndexado;
+
+  /** El análisis guardado de un chat, o null si aún no hay. */
+  leerAnalisis: (handle: string) => Promise<AnalisisGuardado | null>;
+  /** Guarda el análisis cifrado y apunta lo que ocupa. */
+  escribirAnalisis: (handle: string, guardado: AnalisisGuardado) => Promise<void>;
+  /** `true` cuando la bóveda está abierta y se puede analizar. */
+  bovedaAbierta: boolean;
   getFiles: (firestoreId: string) => void;
   getAsset: (fullpath: string) => Promise<string>;
   getMediaUrl: (nombreArchivo: string) => Promise<MediaResuelta>;
@@ -1167,6 +1180,42 @@ function parsearJsonInstagram(texto: string): string[][] {
     indicesAbiertos.current.set(backupId, indice);
   };
 
+  /* --- Caché del análisis ---
+     Mismo patrón que el índice: una pieza más del backup, con id fijo. Lo
+     único distinto es que aquí hay que apuntar lo que ocupa, porque el
+     espacio del usuario sale de `cipherBytes` y no de Storage. */
+
+  /** Lee el análisis guardado de un chat, si lo hay y sirve. */
+  const leerAnalisis = async (handle: string): Promise<AnalisisGuardado | null> => {
+    const backupId = backupIdDeHandle(handle);
+    if (!user?.uid || !dek || !backupId) return null;
+    try {
+      const blob = await descargar(rutaDelAnalisis(user.uid, backupId));
+      return await abrirAnalisis(blob, dek, backupId);
+    } catch {
+      /* No existe todavía: este chat aún no se ha analizado. */
+      return null;
+    }
+  };
+
+  /** Guarda el análisis cifrado y ajusta el espacio ocupado. */
+  const escribirAnalisis = async (
+    handle: string,
+    guardado: AnalisisGuardado
+  ): Promise<void> => {
+    const backupId = backupIdDeHandle(handle);
+    if (!user?.uid || !dek || !backupId) return;
+    const uid = user.uid;
+    await guardarAnalisis({
+      uid,
+      backupId,
+      guardado,
+      dek,
+      subir,
+      anotarTamano: (bytes) => anotarAnalisis(uid, backupId, bytes),
+    });
+  };
+
   /** Lee el índice de un backup, de la caché o de Storage. */
   const obtenerIndice = async (backupId: string): Promise<IndiceChat | null> => {
     if (!user?.uid || !dek) return null;
@@ -1435,6 +1484,9 @@ const getFiles = async (firestoreId: string) => {
         buscarEnTodos,
         fragmentosDeChat,
         estadoIndexado,
+        leerAnalisis,
+        escribirAnalisis,
+        bovedaAbierta: !!dek,
         fetchBucketSize,
         migrarBackup,
         migracion,

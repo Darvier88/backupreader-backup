@@ -42,7 +42,8 @@ type ChatViewProps = {
   date: string;
   message: string;
   messenger: string;
-  chatSearch: string;
+  /* Puede ser una lista cuando viene del filtro del análisis. */
+  chatSearch: string | string[];
   /** Indice global de la coincidencia en la que esta el usuario. */
   coincidenciaActiva?: number | null;
   /** En que numero global empiezan las coincidencias de este mensaje. */
@@ -51,6 +52,14 @@ type ChatViewProps = {
   isMine?: boolean;
   /** Falso en los mensajes seguidos del mismo remitente (1a). */
   mostrarRemitente?: boolean;
+  /**
+   * Apagado porque no es de lo que se vino a ver (1g).
+   *
+   * Solo con el filtro del análisis puesto. Se apaga, no se esconde: al
+   * mirar de dónde salen 35 risas, el mensaje de al lado es lo que les da
+   * sentido, y quitarlo dejaría una lista de emojis sueltos.
+   */
+  atenuado?: boolean;
   gallery?: boolean;
 };
 
@@ -64,6 +73,7 @@ export const ChatView: FC<ChatViewProps> = ({
   toShow,
   isMine,
   mostrarRemitente = true,
+  atenuado = false,
   gallery,
 }) => {
 
@@ -232,7 +242,11 @@ export const ChatView: FC<ChatViewProps> = ({
   const isMedia = isAudioUri(message) || isImageUri(message) || isVideoUri(message) || !!archivoDocumento || omitido;
   /* Solo la burbuja con la coincidencia actual lleva aro ocre (1c); el resto
      de coincidencias se marcan dentro del texto, sin tocar la burbuja. */
-  const enEsta = chatSearch && chatSearch.trim().length >= 2 && !isMedia ? cuantasVeces(message || "", chatSearch) : 0;
+  /* Con una lista no vale `.trim()`: se mira si hay algo que buscar. */
+  const hayConsulta = Array.isArray(chatSearch)
+    ? chatSearch.length > 0
+    : (chatSearch || "").trim().length >= 2;
+  const enEsta = hayConsulta && !isMedia ? cuantasVeces(message || "", chatSearch) : 0;
   const highlighted =
     enEsta > 0 &&
     typeof coincidenciaActiva === "number" &&
@@ -282,7 +296,7 @@ export const ChatView: FC<ChatViewProps> = ({
   return (
     <Container style={gallery ? { marginTop: 0, padding: 0, width: "100%", minWidth: 0, display: "block" } : { marginTop: mostrarRemitente ? 10 : 6, display: "flex", justifyContent: isMine ? "flex-end" : "flex-start", padding: 0 }} key={'chatview'}>
       <div
-        className="br-burbuja"
+        className={atenuado ? "br-burbuja br-burbuja--atenuada" : "br-burbuja"}
         style={{
           background: cardBg,
           border: cardBorder,

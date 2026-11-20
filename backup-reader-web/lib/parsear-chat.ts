@@ -32,8 +32,21 @@
  * (lib/busqueda/indice.ts) para que los índices viejos se rehagan.
  */
 
-/** Marcas invisibles que WhatsApp mete en el texto (LRM, RLM, ZWSP, BOM…). */
-const INVISIBLES = /[​-‏‪-‮⁦-⁩﻿]/g;
+/**
+ * Marcas invisibles que WhatsApp mete en el texto (LRM, RLM, ZWSP, BOM…).
+ *
+ * OJO CON EL RANGO: AQUÍ VIVEN LOS UNIONES DE EMOJI
+ * ------------------------------------------------
+ * El rango \u200B-\u200F se lleva por delante el U+200D (ZWJ) y el U+200C
+ * (ZWNJ), que no son marcas de maquetación: son lo que UNE un emoji
+ * compuesto. Sin el ZWJ, «👨‍👩‍👧» deja de ser una familia y se convierte en un
+ * hombre, una mujer y una niña sueltos, en el chat y en cualquier cuenta que
+ * se haga sobre el texto. Por eso se listan uno a uno los que sí sobran.
+ *
+ * Esto no cambia dónde empieza cada mensaje, así que la numeración del índice
+ * de búsqueda sigue siendo la misma y no hace falta subir VERSION_INDICE.
+ */
+const INVISIBLES = /[​‎‏‪-‮⁦-⁩﻿]/g;
 
 /* Fecha (con / . o -), coma opcional, hora con o sin segundos y AM/PM en
    cualquiera de sus formas, corchetes opcionales (iPhone) y guion opcional

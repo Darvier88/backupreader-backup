@@ -19,7 +19,8 @@ import { partirPorCoincidencias } from "../../lib/busqueda/resaltar";
  */
 export const TextoResaltado: FC<{
   texto: string;
-  consulta: string;
+  /* Puede ser una lista: el filtro del análisis busca varias palabras. */
+  consulta: string | string[];
   /** Índice global de la coincidencia activa, o null si no hay ninguna. */
   activa?: number | null;
   /** Índice global de la primera coincidencia de ESTE texto. */

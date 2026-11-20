@@ -1,4 +1,4 @@
-import { FC, Fragment, useContext, useState, useEffect, useMemo, useRef } from "react";
+import { FC, Fragment, useCallback, useContext, useState, useEffect, useMemo, useRef } from "react";
 
 import {
   Box,
@@ -13,6 +13,7 @@ import { ChatView } from "../chat";
 import { ManageFileCard } from "../cards";
 import { ConversationsDrawer } from "../drawers";
 import { BuscadorEnChat } from "../chat/BuscadorEnChat";
+import { FiltroDelAnalisis } from "../chat/FiltroDelAnalisis";
 import { ControlSegmentado } from "../ui/ControlSegmentado";
 import { cuantasVeces } from "../../lib/busqueda/resaltar";
 import { claveDeDia, etiquetaDeDia } from "../../lib/fechas-de-chat";
@@ -20,6 +21,10 @@ import { nombreDelContacto } from "../../lib/nombres-de-chat";
 import { usePanelChats } from "../../context/PanelChatsContext";
 import { pedirBusqueda } from "../../lib/pedir-busqueda";
 import { fechaDeSubida } from "../../lib/fecha-de-guardado";
+import { ANALISIS_ACTIVO } from "../../lib/analisis/activo";
+import { aMarcaDeTiempo, deducirFormato } from "../../lib/analisis/fechaHora";
+import { duracion, numero } from "../../lib/analisis/formatear";
+import { PanelAnalisis } from "../analisis/PanelAnalisis";
 
 /** `t()` puede devolver null segun sus tipos; esto lo deja en string. */
 const enTexto = (traducido: unknown): string =>
@@ -81,11 +86,75 @@ const styles = {
   },
 };
 
+/** Media hora: por debajo, una etiqueta por mensaje taparía el chat. */
+const ESPERA_MINIMA_MS = 30 * 60 * 1000;
+
+const ETIQUETA_ESPERA = {
+  segundos: "{{valor}} s",
+  minutos: "{{valor}} min",
+  horas: "{{valor}} h",
+  dias: "{{valor}} días",
+} as const;
+
+const numeroCorto = (n: number) => numero(n, i18n.language || "es");
+
 export const DashboardScreen: FC = () => {
   const [chatSearch, setChatSearch] = useState<string>("");
   const { getFile, chat, chatName, uploadStatus, cerrarChat, fullPath: rutaAbierta } = useContext(StorageContext);
   const { loading } = useLoading();
-  const [toShow, setToShow] = useState<"photos" | "message">("message");
+  const [toShow, setToShow] = useState<"photos" | "message" | "analisis">("message");
+
+  /* Los tiempos de respuesta dentro del chat.
+     Apagados por defecto: quien abre un chat viene a leerlo, y una etiqueta
+     cada pocos mensajes cambia la lectura sin que nadie lo haya pedido. */
+  const [mostrarEsperas, setMostrarEsperas] = useState(false);
+
+  /* El análisis AL LADO del chat, en escritorio.
+     En el móvil no cabe y sigue siendo una pestaña; aquí sí cabe, y verlo
+     al lado es lo que deja comprobar una cifra sin perder de vista los
+     mensajes de los que habla. Apagado por defecto: quien abre un chat
+     viene a leerlo. */
+  const [panelLateral, setPanelLateral] = useState(false);
+
+  /* El filtro que viene del análisis (pantalla 1g).
+     Tocar «perdona · 26» no debería dejarte en un mensaje suelto: lo que
+     hace falta es ver los 26 y poder recorrerlos. Reusa el contador y las
+     flechas de la búsqueda del chat, que ya existen y ya funcionan; lo
+     único nuevo es que la consulta puede ser una lista de palabras,
+     porque «disculpas» no es una palabra sino tres. */
+  const [filtro, setFiltro] = useState<{ etiqueta: string; terminos: string[] } | null>(null);
+
+  /* Lo que se busca ahora mismo: el filtro manda sobre lo tecleado. */
+  const consultaActiva: string | string[] = filtro ? filtro.terminos : chatSearch;
+
+  /* Al cambiar de chat el filtro se cae: «❤️ · 3 de 11» encima de otra
+     conversación cuenta otra cosa, y la etiqueta diría que no. */
+  useEffect(() => {
+    setFiltro(null);
+  }, [rutaAbierta]);
+
+  /* El formato de fecha, deducido una vez por chat. Hace falta para restar
+     dos mensajes, y deducirlo por mensaje sería recorrer el chat entero en
+     cada fila. */
+  const formatoFecha = useMemo(
+    () => deducirFormato((chat || []) as string[][]),
+    [chat]
+  );
+
+  /** Milisegundos entre dos mensajes, si pasa del mínimo y cambia de autor. */
+  const esperaEntre = useCallback(
+    (anterior: any, actual: any): number | null => {
+      /* Entre dos mensajes de la misma persona no hay respuesta que medir:
+         es alguien que sigue escribiendo. */
+      if (!anterior || !actual || anterior[1] === actual[1]) return null;
+      const a = aMarcaDeTiempo(anterior[0], formatoFecha);
+      const b = aMarcaDeTiempo(actual[0], formatoFecha);
+      if (!a || !b) return null;
+      const ms = b.getTime() - a.getTime();
+      return ms >= ESPERA_MINIMA_MS ? ms : null;
+    },
+    [formatoFecha]
+  );
   const [state, setState] = useState<boolean>(true);
   const { fileList } = useContext(StorageContext);
   const {
@@ -142,19 +211,22 @@ export const DashboardScreen: FC = () => {
     const desplazamientos: number[] = [];
     let acumulado = 0;
 
-    if (chatSearch.trim().length < 2) {
+    const hayQueBuscar = filtro
+      ? filtro.terminos.length > 0
+      : chatSearch.trim().length >= 2;
+    if (!hayQueBuscar) {
       return { porMensaje, desplazamientos, total: 0 };
     }
 
     for (const item of visibleMessages) {
-      const n = cuantasVeces((item as any)[2] || "", chatSearch);
+      const n = cuantasVeces((item as any)[2] || "", consultaActiva);
       desplazamientos.push(acumulado);
       porMensaje.push(n);
       acumulado += n;
     }
 
     return { porMensaje, desplazamientos, total: acumulado };
-  }, [visibleMessages, chatSearch]);
+  }, [visibleMessages, chatSearch, filtro, consultaActiva]);
 
   /* En qué mensaje vive la coincidencia activa. Hace falta para dos cosas:
      ampliar la lista si está más allá de lo pintado, y desplazarse hasta ella. */
@@ -221,7 +293,7 @@ export const DashboardScreen: FC = () => {
   // Al cambiar de chat, de pestaña o de búsqueda, reiniciar el conteo.
   useEffect(() => {
     setVisibleCount(CHUNK);
-  }, [chat, toShow, chatSearch]);
+  }, [chat, toShow, chatSearch, filtro]);
 
   // Centinela al final de la lista: cuando se acerca a la vista, carga más.
   // Es más robusto que escuchar el scroll de un contenedor concreto, porque
@@ -332,6 +404,38 @@ export const DashboardScreen: FC = () => {
   /* En el móvil, al enfocar la búsqueda toma la cabecera (1c). */
   const [buscando, setBuscando] = useState(false);
   const ocultarCabecera = phone && buscando;
+
+  /* El panel, montado una sola vez: la pestaña del móvil y la columna de
+     escritorio pintan exactamente lo mismo. */
+  const elAnalisis = (
+    <PanelAnalisis
+      filas={(chat || []) as string[][]}
+      handle={rutaAbierta}
+      yoPorDefecto={myName}
+      /* Tocar un emoji o una palabra lleva al mensaje. Con el panel al
+         lado no hace falta cambiar de vista; en la pestaña del móvil sí. */
+      /* Tocar una cifra deja el chat marcado con lo que la produjo (1g).
+         Se pone antes de saltar: así el salto aterriza con la barra puesta
+         y el recuento ya hecho. */
+      onFiltrar={(etiqueta, terminos) => {
+        setChatSearch("");
+        setFiltro({ etiqueta, terminos });
+        setActiva(0);
+        /* En el móvil el análisis ocupa la pantalla entera: sin esto, tocar
+           una palabra filtraría un chat que no se está viendo y no pasaría
+           nada a ojos de quien lo tocó. */
+        if (!panelLateral) setToShow("message");
+      }}
+      onIrAlMensaje={(indice) => {
+        if (!panelLateral) setToShow("message");
+        setVisibleCount((c) => Math.max(c, indice + CHUNK));
+        window.setTimeout(() => {
+          const fila = document.querySelector(`[data-mensaje="${indice}"]`);
+          fila?.scrollIntoView({ block: "center", behavior: "smooth" });
+        }, 120);
+      }}
+    />
+  );
 
   /* Alto del chat abierto: desde donde empieza la columna hasta el borde de
      abajo de la pantalla, igual que el panel de chats, que ocupa la pantalla
@@ -448,14 +552,28 @@ export const DashboardScreen: FC = () => {
               {/* Buscador del chat abierto, a ancho completo (1a/1c). No
                   filtra: resalta y deja saltar entre coincidencias. */}
               <Box marginTop={ocultarCabecera ? 0 : 1.5}>
-                <BuscadorEnChat
-                  onAbierto={setBuscando}
-                  consulta={chatSearch}
-                  onConsulta={setChatSearch}
-                  total={coincidencias.total}
-                  activa={activa}
-                  onActiva={setActiva}
-                />
+                {filtro ? (
+                  /* Mientras se mira de dónde sale una cifra, la barra ocupa
+                     el sitio del buscador en vez de añadirse debajo: son la
+                     misma pregunta («qué estoy viendo marcado»), y dos filas
+                     a la vez dejarían dos contadores distintos en pantalla. */
+                  <FiltroDelAnalisis
+                    etiqueta={filtro.etiqueta}
+                    total={coincidencias.total}
+                    activa={activa}
+                    onActiva={setActiva}
+                    onQuitar={() => setFiltro(null)}
+                  />
+                ) : (
+                  <BuscadorEnChat
+                    onAbierto={setBuscando}
+                    consulta={chatSearch}
+                    onConsulta={setChatSearch}
+                    total={coincidencias.total}
+                    activa={activa}
+                    onActiva={setActiva}
+                  />
+                )}
               </Box>
 
               {/* Mensajes y Media son dos vistas de lo mismo, no dos acciones. */}
@@ -463,29 +581,80 @@ export const DashboardScreen: FC = () => {
                 <ControlSegmentado
                   completo
                   valor={toShow}
-                  onCambio={(v) => setToShow(v as "photos" | "message")}
+                  onCambio={(v) => setToShow(v as "photos" | "message" | "analisis")}
                   opciones={[
                     { valor: "message", etiqueta: enTexto(t("Mensajes")) },
                     { valor: "photos", etiqueta: enTexto(t("Media")) },
+                    /* La pestaña solo existe con la función encendida, y
+                       solo en el móvil: en escritorio el análisis va al
+                       lado del chat, no en lugar de él. */
+                    ...(ANALISIS_ACTIVO && phone
+                      ? [
+                          {
+                            valor: "analisis",
+                            etiqueta: enTexto(t("Análisis")),
+                            insignia: enTexto(t("Nuevo")),
+                          },
+                        ]
+                      : []),
                   ]}
                 />
+                {/* Los tiempos de respuesta, encima del chat y no escondidos
+                    en Ajustes: es una forma de leer el chat, no una
+                    preferencia que se configura una vez. */}
+                <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                  {ANALISIS_ACTIVO && toShow === "message" && (
+                    <button
+                      type="button"
+                      className={
+                        mostrarEsperas
+                          ? "br-an-conmutador br-an-conmutador--activo"
+                          : "br-an-conmutador"
+                      }
+                      aria-pressed={mostrarEsperas}
+                      onClick={() => setMostrarEsperas((v) => !v)}
+                    >
+                      {t("Tiempos de respuesta")}
+                    </button>
+                  )}
+                  {ANALISIS_ACTIVO && !phone && (
+                    <button
+                      type="button"
+                      className={
+                        panelLateral
+                          ? "br-an-conmutador br-an-conmutador--activo"
+                          : "br-an-conmutador"
+                      }
+                      aria-pressed={panelLateral}
+                      onClick={() => setPanelLateral((v) => !v)}
+                    >
+                      {panelLateral ? t("Solo chat") : t("Con estadísticas")}
+                      {!panelLateral && <span className="br-an-conmutador-nuevo">{t("Nuevo")}</span>}
+                    </button>
+                  )}
+                </div>
               </Box>
 
             </Container>
             <Grid
               xs={12}
+              className={panelLateral ? "br-an-partido" : undefined}
               style={{
                 flexDirection: "column",
-                overflowY: "scroll",
+                /* Con el panel al lado, el scroll pasa a cada columna: si lo
+                   mantuviera aquí, bajar en el análisis arrastraría el chat
+                   y las dos cosas se perderían a la vez. */
+                overflowY: panelLateral ? "hidden" : "scroll",
                 overflowX: "hidden",
                 width: "100%",
                 minWidth: 0,
                 marginTop: 12,
-                padding: "4px 16px 24px",
+                padding: panelLateral ? 0 : "4px 16px 24px",
                 background: "var(--paper-100)",
                 borderTop: "1px solid var(--border)",
               }}
             >
+              <div className={panelLateral ? "br-an-columna" : undefined}>
               {loading ? (
                 <div
                   style={{
@@ -503,6 +672,8 @@ export const DashboardScreen: FC = () => {
                     {t("Obteniendo mensajes del backup...")}
                   </span>
                 </div>
+              ) : toShow === "analisis" ? (
+                elAnalisis
               ) : toShow === "photos" ? (
                 <>
                   <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(240px, 1fr))", gap: 16, padding: "4px 0", width: "100%" }}>
@@ -513,7 +684,7 @@ export const DashboardScreen: FC = () => {
                         date={item[0]}
                         message={item[2]}
                         messenger={item[1]}
-                        chatSearch={chatSearch}
+                        chatSearch={consultaActiva}
                         gallery
                       />
                     ))}
@@ -543,8 +714,23 @@ export const DashboardScreen: FC = () => {
                         i > 0 ? claveDeDia(visibleMessages[i - 1][0]) : null;
                       const cambiaDeDia = !!dia && dia !== diaAnterior;
 
+                      /* Cuánto se tardó en contestar, cuando se nota.
+                         El dato está delante de los ojos desde siempre (dos
+                         horas en los relojes de dos mensajes seguidos), pero
+                         nadie lo resta mientras lee. Dicho, cambia cómo se
+                         lee la conversación. Por debajo de media hora no se
+                         enseña: sería una etiqueta en cada mensaje y dejaría
+                         de verse el chat. */
+                      const espera =
+                        mostrarEsperas && i > 0 && !cambiaDeDia
+                          ? esperaEntre(visibleMessages[i - 1], item)
+                          : null;
+
                       return (
                         <Fragment key={i}>
+                          {/* Ancla sin alto: sirve para saltar aquí desde el
+                              análisis sin tocar cómo se pinta la burbuja. */}
+                          <div data-mensaje={i} style={{ height: 0 }} />
                           {cambiaDeDia && (
                             <div
                               role="separator"
@@ -567,14 +753,29 @@ export const DashboardScreen: FC = () => {
                               })}
                             </div>
                           )}
+                          {espera !== null && (
+                            <div role="separator" className="br-an-espera">
+                              {t("respuesta en {{tiempo}}", {
+                                tiempo: enTexto(
+                                  t(ETIQUETA_ESPERA[duracion(espera).unidad], {
+                                    valor: numeroCorto(duracion(espera).valor),
+                                  })
+                                ),
+                              })}
+                            </div>
+                          )}
                           <ChatView
                             toShow={toShow}
                             date={item[0]}
                             message={item[2]}
                             messenger={item[1]}
-                            chatSearch={chatSearch}
+                            chatSearch={consultaActiva}
                             coincidenciaActiva={activa}
                             desplazamiento={coincidencias.desplazamientos[i] ?? 0}
+                            /* Con el filtro puesto, lo que no coincide se
+                               apaga: así se ve de un vistazo cuáles son los
+                               35 sin perder la conversación de alrededor. */
+                            atenuado={!!filtro && (coincidencias.porMensaje[i] ?? 0) === 0}
                             isMine={!!myName && (item[1] || "").trim() === myName}
                             /* El nombre solo en el primero de una racha del
                                mismo remitente el mismo día (1a). */
@@ -616,6 +817,12 @@ export const DashboardScreen: FC = () => {
                     </>
                   )}
                 </>
+              )}
+              </div>
+              {/* El análisis, a la derecha y con su propio scroll. Mismo
+                  componente que la pestaña del móvil. */}
+              {panelLateral && (
+                <aside className="br-an-columna br-an-columna--panel">{elAnalisis}</aside>
               )}
             </Grid>
           </>

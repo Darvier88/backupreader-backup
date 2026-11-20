@@ -79,4 +79,17 @@ describe("parsearTextoChat · varias líneas y avisos", () => {
     expect(parsearTextoChat("")).toEqual([]);
     expect(parsearTextoChat("sin fechas")).toEqual([]);
   });
+
+  it("no rompe los emojis compuestos al quitar los invisibles", () => {
+    /* El U+200D es lo que une la familia; si se borra con las marcas de
+       maquetación, queda un hombre, una mujer y una niña sueltos. */
+    const familia = "👨‍👩‍👧";
+    const [fila] = parsearTextoChat(`13/11/26 15:27 - Ana: ${familia}`);
+    expect(fila[2]).toBe(familia);
+  });
+
+  it("sigue quitando las marcas de maquetación que mete WhatsApp", () => {
+    const [fila] = parsearTextoChat("13/11/26 15:27 - Ana: ‎hola‏​");
+    expect(fila[2]).toBe("hola");
+  });
 });
