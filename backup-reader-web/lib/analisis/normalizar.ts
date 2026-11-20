@@ -157,6 +157,13 @@ export type OpcionesNormalizar = {
   diaPrimeroPorDefecto?: boolean;
   /** Formato ya deducido, si quien llama lo tiene. */
   formato?: FormatoFecha;
+  /**
+   * Cómo se llama el chat, para reconocer los avisos de un grupo.
+   *
+   * Sin esto no hay forma de distinguir «Backup Reader Dev: Eli te añadió»
+   * de un mensaje de alguien que se llamara así.
+   */
+  nombreChat?: string;
 };
 
 /**
@@ -172,6 +179,23 @@ export function normalizar(
   const idioma = opciones.idioma || "es";
   const formato =
     opciones.formato ?? deducirFormato(filas, opciones.diaPrimeroPorDefecto ?? true);
+
+  /**
+   * Los avisos de un grupo vienen firmados por el grupo.
+   *
+   * «Eli te añadió» o «creó el grupo» se exportan con el nombre del grupo en
+   * el sitio del remitente, no sin remitente, así que pasaban por mensajes de
+   * una persona más: el grupo salía en la tabla con sus dos mensajes, desviaba
+   * los porcentajes de todos y se ofrecía como respuesta a «quién eres tú».
+   *
+   * La condición de los tres autores no es un adorno, es lo que impide
+   * destrozar un chat de dos: ahí el nombre del chat ES la otra persona
+   * («Chat de WhatsApp con Beto»), y sin esa guarda sus mensajes se
+   * borrarían enteros del análisis.
+   */
+  const nombreChat = (opciones.nombreChat || "").trim().toLowerCase();
+  const distintos = new Set(filas.map((f) => (f[1] || "").trim()).filter(Boolean));
+  const firmaDelGrupo = nombreChat && distintos.size >= 3 ? nombreChat : "";
 
   const mensajes: Mensaje[] = [];
   const autores = new Set<string>();
@@ -192,8 +216,9 @@ export function normalizar(
       if (!hasta || fecha > hasta) hasta = fecha;
     }
 
-    /* Sin autor es un aviso de WhatsApp, no un mensaje de nadie. */
-    if (!autor) {
+    /* Sin autor, o firmado por el propio grupo: un aviso de WhatsApp, no un
+       mensaje de nadie. */
+    if (!autor || autor.toLowerCase() === firmaDelGrupo) {
       sistema++;
       mensajes.push({
         indice,

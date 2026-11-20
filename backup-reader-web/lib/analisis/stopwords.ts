@@ -79,9 +79,43 @@ tambem tem tudo
 um uma
 vai voce vou`;
 
+/* Alemán, francés e italiano. Van aquí por lo mismo que el portugués: quien
+   lee la aplicación en español puede estar en un grupo que escribe en otro
+   idioma, y entonces «alles» o «anche» se colaban en «de lo que más habláis»
+   como si fueran un tema. */
+const DE = `aber alle allem allen aller alles als also am an andere anderem anderen anderer anderes
+auch auf aus bei beim bin bis bist da damit dann das dass dem den denn der deren des dessen
+dich die dies diese diesem diesen dieser dieses dir doch dort du durch ein eine einem einen
+einer eines er es etwas euch euer eure für gegen gewesen hab habe haben hat hatte hatten hier
+hin hinter ich ihm ihn ihnen ihr ihre ihrem ihren ihrer ihres im immer in indem ins ist jede
+jedem jeden jeder jedes jene jetzt kann kannst können könnte mal man mehr mein meine mich mir
+mit muss musste nach nicht nichts noch nun nur ob oder ohne schon sehr sein seine seinem seinen
+seiner seines selbst sich sie sind so solche sollte sondern sonst über um und uns unser unsere
+unter viel viele vom von vor war waren warum was weg weil weiter welche wenn wer werde werden
+wie wieder will wir wird wirst wo wollen wollte würde zu zum zur zwar zwischen
+gut gute guten ja nein heute morgen gestern mal schon echt genau klar okay`;
+
+const FR = `alors au aucun aussi autre avant avec avoir bon car ce cela ces cet cette ceux chaque
+comme comment dans des du dedans dehors depuis deux doit donc dos droite début elle elles en
+encore essai est et eu fait faites fois font force haut hors ici il ils je juste la le les leur
+là ma maintenant mais mes mine moins mon mot même ni nommés notre nous nouveaux ou où par parce
+parole pas personnes peut peu pièce plupart pour pourquoi quand que quel quelle quelles quels
+qui sa sans ses seulement si sien son sont sous soyez sujet sur ta tandis tellement tels tes ton
+tous tout trop très tu valeur voie voient vont votre vous vu ça étaient état étions été être
+bien bon oui non aujourd hui demain hier déjà vraiment`;
+
+const IT = `ad agli ai al alla alle allo anche avere aveva avevano chi che ci coi col come con contro
+cui da dal dalla dalle dallo degli dei del della delle dello dentro di dopo dove due ed essere
+fa fare fatto fra gli ha hai hanno ho il in io la le lei li lo loro lui ma me mi mia mie mio
+molto ne negli nei nel nella nelle nello noi non nostra nostro o oppure per perché più poi
+qualche quale quando quanto quella quelle quelli quello questa queste questi questo qui sarà
+se sei si sia siamo siete solo sono sua sue sugli sui sul sulla sulle suo suoi ti tra tu tua
+tue tuo tutti tutto un una uno voi vostra vostro è
+bene buono sì no oggi domani ieri già davvero`;
+
 /** Todas las listas juntas: un chat puede mezclar idiomas. */
 const TODAS = new Set(
-  `${ES} ${EN} ${PT}`
+  `${ES} ${EN} ${PT} ${DE} ${FR} ${IT}`
     .split(/\s+/)
     .map((p) => p.trim())
     .filter(Boolean)

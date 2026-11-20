@@ -77,13 +77,15 @@ export const PanelAnalisis: FC<{
   filas: string[][];
   /** Handle del backup abierto, para la caché cifrada. */
   handle?: string | null;
+  /** Cómo se llama el chat: hace falta para reconocer los avisos del grupo. */
+  nombreChat?: string;
   /** Quién es «tú», si la pantalla lo ha deducido del título. */
   yoPorDefecto?: string;
   /** Saltar a un mensaje del chat. */
   onIrAlMensaje?: (indice: number) => void;
   /** Dejar el chat marcado con unos términos, para ver de dónde sale la cifra. */
-  onFiltrar?: (etiqueta: string, terminos: Terminos) => void;
-}> = ({ filas, handle, yoPorDefecto, onIrAlMensaje, onFiltrar }) => {
+  onFiltrar?: (etiqueta: string, terminos: Terminos, autor?: string) => void;
+}> = ({ filas, handle, nombreChat, yoPorDefecto, onIrAlMensaje, onFiltrar }) => {
   const idioma = i18n.language || "es";
   const { leerAnalisis, escribirAnalisis, bovedaAbierta } = useContext(StorageContext);
 
@@ -105,8 +107,8 @@ export const PanelAnalisis: FC<{
   /* `yo` entra en los ajustes porque cambia el resultado: «quién escribe
      detrás de ti» no se puede calcular sin saber quién eres. */
   const ajustes = useMemo(
-    () => ({ umbralHoras, medida, idioma, yo }),
-    [umbralHoras, medida, idioma, yo]
+    () => ({ umbralHoras, medida, idioma, yo, nombreChat }),
+    [umbralHoras, medida, idioma, yo, nombreChat]
   );
 
   useEffect(() => {

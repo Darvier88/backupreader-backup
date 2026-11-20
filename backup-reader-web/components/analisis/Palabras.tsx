@@ -54,7 +54,7 @@ export const Palabras: FC<{
    * a UN mensaje, y filtrar deja marcados LOS 47. Se llaman juntas: se
    * aterriza en el primero con la barra puesta para recorrer el resto.
    */
-  onFiltrar?: (etiqueta: string, terminos: Terminos) => void;
+  onFiltrar?: (etiqueta: string, terminos: Terminos, autor?: string) => void;
 }> = ({ analisis, yo, onIrAlMensaje, onFiltrar }) => {
   const idioma = i18n.language || "es";
   const { emojis, palabras, expresiones } = analisis;
@@ -64,12 +64,14 @@ export const Palabras: FC<{
   /** Una fila que se puede tocar para ir a un mensaje y marcar los demás. */
   const Fila: FC<{
     indice?: number;
+    /** Si se da, el filtro enseña solo los mensajes de esa persona. */
+    autor?: string;
     /** Cómo se llama lo que se tocó, para la barra del chat. */
     etiqueta?: string;
     /** Lo que hay que marcar en el chat. */
     terminos?: Terminos;
     children: React.ReactNode;
-  }> = ({ indice, etiqueta, terminos, children }) => {
+  }> = ({ indice, autor, etiqueta, terminos, children }) => {
     const sePuede = typeof indice === "number" && !!onIrAlMensaje;
     const abrir = () => {
       /* Filtrar y saltar a un ejemplo son dos destinos distintos, y pedir
@@ -78,7 +80,7 @@ export const Palabras: FC<{
          describe lo que se ve. Si hay términos manda el filtro, que ya
          coloca en la primera coincidencia; si no los hay, el ejemplo. */
       if (etiqueta && terminos && hayTerminos(terminos)) {
-        onFiltrar?.(etiqueta, terminos);
+        onFiltrar?.(etiqueta, terminos, autor);
         return;
       }
       if (typeof indice === "number") onIrAlMensaje?.(indice);
@@ -240,7 +242,10 @@ export const Palabras: FC<{
               <Fila
                 key={d.autor}
                 indice={d.ejemplos[0]}
-                etiqueta={enTexto(t("Perdones"))}
+                autor={d.autor}
+                /* Con el nombre dentro: tocar «Yasmín · 3» y ver «Perdones ·
+                   1 de 8» es la forma más rápida de no fiarse de la cifra. */
+                etiqueta={`${enTexto(t("Perdones"))} · ${comoSeLlama(d.autor)}`}
                 terminos={TERMINOS_DISCULPA}
               >
                 <span style={{ fontFamily: "var(--font-sans)", fontSize: 13.5, flex: 1 }}>
@@ -272,7 +277,8 @@ export const Palabras: FC<{
               <Fila
                 key={a.autor}
                 indice={a.ejemplos[0]}
-                etiqueta={enTexto(t("Gracias"))}
+                autor={a.autor}
+                etiqueta={`${enTexto(t("Gracias"))} · ${comoSeLlama(a.autor)}`}
                 terminos={TERMINOS_GRACIAS}
               >
                 <span style={{ fontFamily: "var(--font-sans)", fontSize: 13.5, flex: 1 }}>

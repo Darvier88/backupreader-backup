@@ -84,7 +84,7 @@ const medir = (tiene: number, pide: number): Medida3 => ({
  *    10 conversaciones, 30 respuestas por persona, 14 días, 2 meses).
  * 5: «quién escribe detrás de ti» en grupos, con su línea base.
  */
-export const VERSION_ANALISIS = 7;
+export const VERSION_ANALISIS = 8;
 
 export type OpcionesAnalisis = OpcionesNormalizar & {
   /** Quién es «tú»: hace falta para «quién escribe detrás de ti». */
@@ -93,6 +93,8 @@ export type OpcionesAnalisis = OpcionesNormalizar & {
   umbralHoras?: number;
   /** Qué se mide en las tendencias. */
   medida?: Medida;
+  /** Cómo se llama el chat, para reconocer los avisos de un grupo. */
+  nombreChat?: string;
 };
 
 export type Analisis = {
@@ -198,7 +200,7 @@ export function analizar(filas: string[][], opciones: OpcionesAnalisis = {}): An
        archivo empieza el día 12. */
     tendencias: serie,
     emojis: emojis(mensajes),
-    palabras: palabrasFrecuentes(mensajes, { idioma }),
+    palabras: palabrasFrecuentes(mensajes, { idioma, nombres: chat.autores }),
     expresiones: disculpasYAgradecimientos(mensajes),
     grupo: grupos(chat, mensajes, umbralHoras, opciones.yo),
   };

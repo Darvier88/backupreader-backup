@@ -123,7 +123,21 @@ export const DashboardScreen: FC = () => {
      flechas de la búsqueda del chat, que ya existen y ya funcionan; lo
      único nuevo es que la consulta puede ser una lista de palabras,
      porque «disculpas» no es una palabra sino tres. */
-  const [filtro, setFiltro] = useState<{ etiqueta: string; terminos: Terminos } | null>(null);
+  const [filtro, setFiltro] = useState<{
+    etiqueta: string;
+    terminos: Terminos;
+    /** Si se da, solo cuentan los mensajes de esta persona. */
+    autor?: string;
+  } | null>(null);
+
+  /* Qué se marca DENTRO de una burbuja. Con el filtro de una persona, en
+     los mensajes de los demás no se marca nada, o el texto contradiría al
+     contador de arriba: subrayaría «gracias» en mensajes que la cifra no
+     cuenta. */
+  const consultaDe = (autorDeLaFila: string): Terminos =>
+    filtro?.autor && (autorDeLaFila || "").trim() !== filtro.autor
+      ? ""
+      : consultaActiva;
 
   /* Lo que se busca ahora mismo: el filtro manda sobre lo tecleado. */
   const consultaActiva: Terminos = filtro ? filtro.terminos : chatSearch;
@@ -220,7 +234,12 @@ export const DashboardScreen: FC = () => {
     }
 
     for (const item of visibleMessages) {
-      const n = cuantasVeces((item as any)[2] || "", consultaActiva);
+      /* Con el filtro de una persona, los mensajes de los demás no cuentan:
+         tocar «Yasmín · 3» y que salgan los 8 del grupo convierte un dato
+         sobre ella en uno sobre todos, que es justo lo que no se pidió. */
+      const deOtro =
+        !!filtro?.autor && ((item as any)[1] || "").trim() !== filtro.autor;
+      const n = deOtro ? 0 : cuantasVeces((item as any)[2] || "", consultaActiva);
       desplazamientos.push(acumulado);
       porMensaje.push(n);
       acumulado += n;
@@ -412,15 +431,23 @@ export const DashboardScreen: FC = () => {
     <PanelAnalisis
       filas={(chat || []) as string[][]}
       handle={rutaAbierta}
+      /* El mismo nombre que enseña la cabecera del chat, con la misma
+         limpieza: `chatName` trae el prefijo «Chat de WhatsApp con», la
+         extensión y a veces una fecha pegada, y lo que hay que comparar es
+         contra el remitente que firma los avisos, que es el nombre pelado. */
+      nombreChat={
+        nombreDelContacto(splitChatName(extractUsername(chatName || "")).name) ||
+        splitChatName(extractUsername(chatName || "")).name
+      }
       yoPorDefecto={myName}
       /* Tocar un emoji o una palabra lleva al mensaje. Con el panel al
          lado no hace falta cambiar de vista; en la pestaña del móvil sí. */
       /* Tocar una cifra deja el chat marcado con lo que la produjo (1g).
          Se pone antes de saltar: así el salto aterriza con la barra puesta
          y el recuento ya hecho. */
-      onFiltrar={(etiqueta, terminos) => {
+      onFiltrar={(etiqueta, terminos, autor) => {
         setChatSearch("");
-        setFiltro({ etiqueta, terminos });
+        setFiltro({ etiqueta, terminos, autor });
         setActiva(0);
         /* En el móvil el análisis ocupa la pantalla entera: sin esto, tocar
            una palabra filtraría un chat que no se está viendo y no pasaría
@@ -564,6 +591,20 @@ export const DashboardScreen: FC = () => {
                     activa={activa}
                     onActiva={setActiva}
                     onQuitar={() => setFiltro(null)}
+                    onTodos={
+                      filtro.autor
+                        ? () => {
+                            /* La etiqueta pierde el nombre con los
+                               resultados: «Gracias · Yasmín» encima de los
+                               ocho del grupo sería mentira. */
+                            setFiltro({
+                              etiqueta: filtro.etiqueta.split(" · ")[0],
+                              terminos: filtro.terminos,
+                            });
+                            setActiva(0);
+                          }
+                        : undefined
+                    }
                   />
                 ) : (
                   <BuscadorEnChat
@@ -681,7 +722,7 @@ export const DashboardScreen: FC = () => {
                         date={item[0]}
                         message={item[2]}
                         messenger={item[1]}
-                        chatSearch={consultaActiva}
+                        chatSearch={consultaDe(item?.[1])}
                         gallery
                       />
                     ))}
@@ -766,7 +807,7 @@ export const DashboardScreen: FC = () => {
                             date={item[0]}
                             message={item[2]}
                             messenger={item[1]}
-                            chatSearch={consultaActiva}
+                            chatSearch={consultaDe(item?.[1])}
                             coincidenciaActiva={activa}
                             desplazamiento={coincidencias.desplazamientos[i] ?? 0}
                             /* Con el filtro puesto, lo que no coincide se

@@ -38,7 +38,14 @@ export const FiltroDelAnalisis: FC<{
   onActiva: (indice: number) => void;
   /** Quitar el filtro y volver al chat normal. */
   onQuitar: () => void;
-}> = ({ etiqueta, total, activa, onActiva, onQuitar }) => {
+  /**
+   * Ensanchar el filtro a todo el chat, si ahora mira a una sola persona.
+   *
+   * Va aquí y no en el panel porque la pregunta («¿y los demás?») nace
+   * mirando estos resultados, no volviendo a la lista.
+   */
+  onTodos?: () => void;
+}> = ({ etiqueta, total, activa, onActiva, onQuitar, onTodos }) => {
   const { t } = useTranslation();
 
   const saltar = (paso: number) => {
@@ -90,6 +97,12 @@ export const FiltroDelAnalisis: FC<{
               })
             )}
       </span>
+
+      {onTodos && (
+        <button type="button" className="br-filtro-todos" onClick={onTodos}>
+          {t("Ver de todos")}
+        </button>
+      )}
 
       <div style={{ display: "flex", alignItems: "center", gap: 2 }}>
         {flecha(-1, enTexto(t("Resultado anterior")), "M18 15l-6-6-6 6")}

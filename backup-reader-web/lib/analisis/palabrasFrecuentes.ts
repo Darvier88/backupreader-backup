@@ -24,6 +24,17 @@
  * enlaces se sacan del texto antes de contar y se suman en una sola fila,
  * «compartir link», que sí dice algo: cuántas veces os pasáis cosas.
  *
+ * LOS NOMBRES DE LOS DEL GRUPO NO SON TEMAS
+ * -----------------------------------------
+ * «gilliam» y «yousra» salían entre lo que más se habla, y no son cosas de
+ * las que se hable: son quienes hablan. Aparecen mucho porque la gente se
+ * llama por su nombre, así que encabezan la lista y desplazan a lo que sí
+ * dice algo de la conversación.
+ *
+ * El precio es conocido: en un grupo con una Rosa, la flor deja de contar.
+ * Vale la pena, porque un nombre entre los temas no informa nunca y la flor
+ * casi nunca es de lo que más se habla.
+ *
  * CADA PALABRA GUARDA DÓNDE SE DIJO
  * ---------------------------------
  * Para poder tocar una palabra y saltar a un mensaje donde aparece, que es
@@ -123,11 +134,18 @@ export type Palabras = {
 /** Las palabras más usadas del chat. */
 export function palabrasFrecuentes(
   mensajes: Mensaje[],
-  opciones: { idioma?: string; cuantas?: number } = {}
+  opciones: { idioma?: string; cuantas?: number; nombres?: string[] } = {}
 ): Palabras {
   const idioma = opciones.idioma || "es";
   const cuantas = opciones.cuantas ?? 15;
   const cuenta = new Map<string, PalabraContada>();
+
+  /* Cada trozo de cada nombre: «María José» quita también «maría» y «josé»,
+     que es como la llaman de verdad en los mensajes. */
+  const nombres = new Set<string>();
+  for (const n of opciones.nombres ?? []) {
+    for (const trozo of partirEnPalabras(n, idioma)) nombres.add(trozo);
+  }
 
   for (const m of mensajes) {
     if (!CON_TEXTO.has(m.tipo)) continue;
@@ -147,7 +165,7 @@ export function palabrasFrecuentes(
     }
 
     for (const palabra of partirEnPalabras(resto, idioma)) {
-      if (esRuido(palabra)) continue;
+      if (esRuido(palabra) || nombres.has(palabra)) continue;
       let fila = cuenta.get(palabra);
       if (!fila) {
         fila = { palabra, total: 0, porAutor: {}, ejemplo: m.indice };

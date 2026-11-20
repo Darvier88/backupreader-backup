@@ -776,3 +776,101 @@ describe("los enlaces no son palabras", () => {
     expect(resto).toBe("mira   esto");
   });
 });
+
+describe("los avisos firmados por el grupo", () => {
+  const fila = (autor: string, texto: string, dia: number) => [
+    `${String(dia).padStart(2, "0")}/01/25, 10:00`,
+    autor,
+    texto,
+  ];
+
+  it("no cuenta al grupo como una persona más", () => {
+    const filas = [
+      fila("Backup Reader Dev", "Eli te añadió", 1),
+      fila("Backup Reader Dev", "Eli creó el grupo", 1),
+      fila("Ana", "hola a todos", 2),
+      fila("Eli", "buenas", 3),
+      fila("Yasmín", "qué tal", 4),
+    ];
+    const chat = normalizar(filas, { nombreChat: "Backup Reader Dev" });
+    expect(chat.autores).not.toContain("Backup Reader Dev");
+    expect(chat.autores.sort()).toEqual(["Ana", "Eli", "Yasmín"]);
+    expect(contables(chat)).toHaveLength(3);
+  });
+
+  it("y tampoco si el nombre viene con otras mayúsculas", () => {
+    const chat = normalizar(
+      [
+        fila("backup reader dev", "Eli te añadió", 1),
+        fila("Ana", "hola", 2),
+        fila("Eli", "buenas", 3),
+      ],
+      { nombreChat: "Backup Reader Dev" }
+    );
+    expect(chat.autores).not.toContain("backup reader dev");
+  });
+
+  it("NO se lleva por delante a la otra persona en un chat de dos", () => {
+    /* Aquí el nombre del chat ES el contacto. Sin la guarda de los tres
+       autores, Beto desaparecería entero del análisis. */
+    const chat = normalizar(
+      [fila("Beto", "hola", 1), fila("Ana", "qué tal", 2), fila("Beto", "bien", 3)],
+      { nombreChat: "Beto" }
+    );
+    expect(chat.autores.sort()).toEqual(["Ana", "Beto"]);
+    expect(contables(chat)).toHaveLength(3);
+  });
+});
+
+describe("quién habla no es de lo que se habla", () => {
+  const msg = (autor: string, contenido: string, indice: number) => ({
+    indice,
+    autor,
+    contenido,
+    texto: contenido,
+    tipo: "texto" as const,
+    fecha: new Date(2025, 0, 1 + indice),
+    palabras: contenido.split(/\s+/).length,
+    editado: false,
+  });
+
+  it("no saca los nombres del grupo entre las palabras más dichas", () => {
+    const mensajes = [
+      msg("Gilliam", "yousra mira el presupuesto", 0),
+      msg("Yousra", "gilliam dice que el presupuesto va bien", 1),
+      msg("Eli", "gilliam yousra presupuesto presupuesto", 2),
+    ];
+    const r = palabrasFrecuentes(mensajes, {
+      idioma: "es",
+      nombres: ["Gilliam", "Yousra", "Eli"],
+    });
+    const palabras = r.top.map((p) => p.palabra);
+    expect(palabras).not.toContain("gilliam");
+    expect(palabras).not.toContain("yousra");
+    expect(palabras).toContain("presupuesto");
+  });
+
+  it("quita cada trozo de un nombre compuesto", () => {
+    const r = palabrasFrecuentes(
+      [msg("María José", "maría josé trae el informe informe", 0)],
+      { idioma: "es", nombres: ["María José"] }
+    );
+    const palabras = r.top.map((p) => p.palabra);
+    expect(palabras).not.toContain("maria");
+    expect(palabras).not.toContain("jose");
+    expect(palabras).toContain("informe");
+  });
+
+  it("tampoco cuenta palabras corrientes de otros idiomas", () => {
+    /* «alles» es alemán, «anche» italiano, «parce» francés. */
+    const r = palabrasFrecuentes(
+      [msg("Ana", "alles gut anche noi parce que proyecto proyecto", 0)],
+      { idioma: "es" }
+    );
+    const palabras = r.top.map((p) => p.palabra);
+    expect(palabras).not.toContain("alles");
+    expect(palabras).not.toContain("anche");
+    expect(palabras).not.toContain("parce");
+    expect(palabras).toContain("proyecto");
+  });
+});

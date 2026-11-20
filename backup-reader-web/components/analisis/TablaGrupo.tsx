@@ -95,10 +95,17 @@ export const TablaGrupo: FC<{
       titulo={enTexto(t("Quién habla en el grupo"))}
     >
       <Titular>
-        {t("{{n}} personas, {{m}} mensajes", {
-          n: grupo.personas,
-          m: numero(grupo.totalMensajes, idioma),
-        })}
+        {/* En dos trozos y no en una frase: las dos cifras pueden valer 1,
+            y una sola clave obligaría a escribir las cuatro combinaciones. */}
+        {(grupo.personas === 1
+          ? enTexto(t("1 persona"))
+          : enTexto(t("{{n}} personas", { n: grupo.personas }))) +
+          ", " +
+          (grupo.totalMensajes === 1
+            ? enTexto(t("1 mensaje"))
+            : enTexto(
+                t("{{m}} mensajes", { m: numero(grupo.totalMensajes, idioma) })
+              ))}
       </Titular>
 
       {/* La tabla no cabe en un móvil y se desliza. Sin decirlo, la columna

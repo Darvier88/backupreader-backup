@@ -85,7 +85,11 @@ export const PreguntaQuienEres: FC<{
                 <span className="br-an-opcion-fila">
                   <span className="br-an-opcion-titulo">{a.autor}</span>
                   <span className="br-an-opcion-ejemplo">
-                    {t("{{n}} mensajes", { n: numero(a.mensajes, idioma) })}
+                    {/* «1 mensajes» delataba que nadie había mirado la
+                        pantalla con un chat pequeño delante. */}
+                    {a.mensajes === 1
+                      ? t("1 mensaje")
+                      : t("{{n}} mensajes", { n: numero(a.mensajes, idioma) })}
                   </span>
                 </span>
                 {a.ultimo && (
