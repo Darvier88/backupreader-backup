@@ -76,6 +76,13 @@ export type PuntoDelMes = {
  *    de referencia.
  * 5. QUE AGUANTE. Dos de cada tres meses de después tienen que estar del lado
  *    del cambio. Si no, lo que hay es un mes raro tirando de la media.
+ * 6. QUE EL SALTO ESTÉ EN EL CORTE. Un chat que baja poco a poco durante un
+ *    año tiene dos mitades muy distintas, así que las cuatro primeras se
+ *    cumplen solas y saldría «desde junio, un 150 % menos» cuando en junio no
+ *    pasó nada: lleva bajando desde el principio. En un cambio de verdad, el
+ *    mes del corte da un salto mucho mayor que los demás; en una bajada lenta,
+ *    todos los meses saltan lo mismo. Así que el salto del propio corte
+ *    también tiene que ser vez y media el vaivén normal.
  *
  * Y aun cumpliéndose, esto dice CUÁNDO cambió y CUÁNTO, nunca por qué.
  */
@@ -224,6 +231,10 @@ export function quiebre(serie: PuntoDelMes[]): Quiebre | null {
   if (antes <= 0) return null;
   if (salto / antes < CAMBIO_MINIMO) return null;
   if (salto < vaiven * VECES_EL_VAIVEN) return null;
+
+  /* El salto del mes del corte: lo que separa un escalón de una cuesta. */
+  const saltoDelCorte = Math.abs(v[i] - v[i - 1]);
+  if (saltoDelCorte < vaiven * VECES_EL_VAIVEN) return null;
 
   const baja = desde < antes;
   const deAcuerdo = v.slice(i).filter((x) => (baja ? x < antes : x > antes)).length;

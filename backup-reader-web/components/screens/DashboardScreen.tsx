@@ -421,6 +421,10 @@ export const DashboardScreen: FC = () => {
         setChatSearch("");
         setFiltro({ etiqueta, terminos });
         setActiva(0);
+        /* En el móvil el análisis ocupa la pantalla entera: sin esto, tocar
+           una palabra filtraría un chat que no se está viendo y no pasaría
+           nada a ojos de quien lo tocó. */
+        if (!panelLateral) setToShow("message");
       }}
       onIrAlMensaje={(indice) => {
         if (!panelLateral) setToShow("message");

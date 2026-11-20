@@ -72,12 +72,15 @@ export const FiltroDelAnalisis: FC<{
   );
 
   return (
-    <div className="br-filtro" role="status">
+    /* El `role="status"` va en la cifra y no en la barra entera: una región
+       viva con botones dentro hace que el lector de pantalla relea la barra
+       completa —etiqueta, flechas y ✕— cada vez que cambia el número. */
+    <div className="br-filtro">
       <span className="br-filtro-etiqueta" title={etiqueta}>
         {etiqueta}
       </span>
 
-      <span className="br-filtro-cuenta">
+      <span className="br-filtro-cuenta" role="status" aria-live="polite">
         {total === 0
           ? t("Sin resultados")
           : enTexto(

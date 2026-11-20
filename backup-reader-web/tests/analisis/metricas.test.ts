@@ -682,3 +682,35 @@ describe("quiebre de tendencia", () => {
     expect(t.quiebre).toBeNull();
   });
 });
+
+describe("quiebre: una cuesta no es un escalón", () => {
+  const serieDe = (valores: number[]) =>
+    valores.map((v, i) => ({
+      clave: `2025-${String(i + 1).padStart(2, "0")}`,
+      anio: 2025,
+      mes: i + 1,
+      mensajes: v,
+      palabras: v * 10,
+      notasDeVoz: 0,
+    }));
+
+  it("calla cuando el chat baja poco a poco, sin un mes que lo explique", () => {
+    /* Las dos mitades son muy distintas —20 de media contra 50—, así que sin
+       mirar el corte esto parecería un cambio clarísimo. Pero ningún mes se
+       sale: lleva bajando desde el primero. */
+    const t = tendencias(serieDe([60, 50, 40, 30, 20, 10]));
+    expect(t.quiebre).toBeNull();
+  });
+
+  it("calla también si sube poco a poco", () => {
+    const t = tendencias(serieDe([10, 20, 30, 40, 50, 60, 70, 80]));
+    expect(t.quiebre).toBeNull();
+  });
+
+  it("pero habla si la cuesta tiene de verdad un escalón", () => {
+    /* Baja despacio y un mes se desploma y se queda abajo. */
+    const t = tendencias(serieDe([100, 96, 92, 90, 20, 18, 16, 15]));
+    expect(t.quiebre?.clave).toBe("2025-05");
+    expect(t.quiebre?.direccion).toBe("baja");
+  });
+});

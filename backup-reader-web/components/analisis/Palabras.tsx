@@ -71,7 +71,15 @@ export const Palabras: FC<{
   }> = ({ indice, etiqueta, terminos, children }) => {
     const sePuede = typeof indice === "number" && !!onIrAlMensaje;
     const abrir = () => {
-      if (etiqueta && terminos && terminos.length > 0) onFiltrar?.(etiqueta, terminos);
+      /* Filtrar y saltar a un ejemplo son dos destinos distintos, y pedir
+         los dos deja la barra diciendo «1 de 35» mientras la pantalla está
+         en otro mensaje: dos desplazamientos compitiendo y una cifra que no
+         describe lo que se ve. Si hay términos manda el filtro, que ya
+         coloca en la primera coincidencia; si no los hay, el ejemplo. */
+      if (etiqueta && terminos && terminos.length > 0) {
+        onFiltrar?.(etiqueta, terminos);
+        return;
+      }
       if (typeof indice === "number") onIrAlMensaje?.(indice);
     };
     return (
