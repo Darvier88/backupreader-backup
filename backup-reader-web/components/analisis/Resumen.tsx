@@ -295,6 +295,7 @@ export const Resumen: FC<{
           </>
         )}
       </Tarjeta>
+
     </>
   );
 };

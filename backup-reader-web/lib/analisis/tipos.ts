@@ -44,6 +44,15 @@ export type Mensaje = {
   contenido: string;
   /** El mensaje llevaba la marca de editado. */
   editado: boolean;
+  /**
+   * El nombre del archivo adjunto, cuando el export lo trae.
+   *
+   * Hace falta para lo que `tipo` no distingue: un PDF de otro documento, y
+   * una nota de voz («PTT-…») de una canción compartida. Un export sin
+   * archivos no lo trae, y entonces esas dos cosas no se pueden separar sin
+   * inventarlas.
+   */
+  archivo?: string;
 };
 
 /**

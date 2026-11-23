@@ -118,7 +118,7 @@ export function contarPalabras(texto: string, idioma = "es"): number {
 }
 
 /** Qué clase de mensaje es, y qué texto queda una vez quitada la marca. */
-function clasificar(texto: string): { tipo: TipoMensaje; resto: string } {
+function clasificar(texto: string): { tipo: TipoMensaje; resto: string; archivo?: string } {
   const t = (texto || "").trim();
 
   if (!t) return { tipo: "texto", resto: "" };
@@ -126,7 +126,7 @@ function clasificar(texto: string): { tipo: TipoMensaje; resto: string } {
 
   /* Documento: el ayudante ya separa el archivo del pie. */
   const doc = documentoAdjunto(t);
-  if (doc) return { tipo: "documento", resto: doc.resto };
+  if (doc) return { tipo: "documento", resto: doc.resto, archivo: doc.archivo };
 
   /* Foto, audio o vídeo con archivo: el nombre sale del propio mensaje. */
   const archivo = nombreDelAdjunto(t);
@@ -138,7 +138,7 @@ function clasificar(texto: string): { tipo: TipoMensaje; resto: string } {
       .replace(/\((?:[^()]{0,40})\)/g, " ")
       .replace(/<[^<>]{0,60}>/g, " ")
       .trim();
-    return { tipo, resto };
+    return { tipo, resto, archivo };
   }
 
   /* Sin archivo, pero el export avisa de que había algo. */
@@ -235,7 +235,7 @@ export function normalizar(
 
     const editado = PATRON_EDITADO.test(crudo);
     const sinMarca = editado ? crudo.replace(PATRON_EDITADO, "").trim() : crudo;
-    const { tipo, resto } = clasificar(sinMarca);
+    const { tipo, resto, archivo } = clasificar(sinMarca);
 
     if (tipo === "eliminado") eliminados++;
     else autores.add(autor);
@@ -249,6 +249,7 @@ export function normalizar(
       texto: sinMarca,
       contenido: tipo === "eliminado" ? "" : resto,
       editado,
+      archivo,
     });
   });
 

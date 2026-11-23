@@ -32,6 +32,7 @@ import {
 } from "./iniciaMas";
 import { tiempoDeRespuesta, type TiemposDeRespuesta } from "./tiempoDeRespuesta";
 import { actividad, type Actividad } from "./actividad";
+import { media, type Media } from "./media";
 import { tendencias, type Medida, type Tendencias } from "./tendencias";
 import { emojis, type Emojis } from "./emojis";
 import { palabrasFrecuentes, type Palabras } from "./palabrasFrecuentes";
@@ -84,7 +85,7 @@ const medir = (tiene: number, pide: number): Medida3 => ({
  *    10 conversaciones, 30 respuestas por persona, 14 días, 2 meses).
  * 5: «quién escribe detrás de ti» en grupos, con su línea base.
  */
-export const VERSION_ANALISIS = 8;
+export const VERSION_ANALISIS = 9;
 
 export type OpcionesAnalisis = OpcionesNormalizar & {
   /** Quién es «tú»: hace falta para «quién escribe detrás de ti». */
@@ -137,6 +138,8 @@ export type Analisis = {
   tendencias: Tendencias;
   emojis: Emojis;
   palabras: Palabras;
+  /** Qué se compartió: fotos, vídeos, notas de voz, PDF, enlaces. */
+  media: Media;
   expresiones: Expresiones;
   grupo: Grupo;
 };
@@ -201,6 +204,7 @@ export function analizar(filas: string[][], opciones: OpcionesAnalisis = {}): An
     tendencias: serie,
     emojis: emojis(mensajes),
     palabras: palabrasFrecuentes(mensajes, { idioma, nombres: chat.autores }),
+    media: media(mensajes),
     expresiones: disculpasYAgradecimientos(mensajes),
     grupo: grupos(chat, mensajes, umbralHoras, opciones.yo),
   };

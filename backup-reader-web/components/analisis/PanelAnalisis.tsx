@@ -28,6 +28,7 @@ import { Resumen } from "./Resumen";
 import { Dinamica } from "./Dinamica";
 import { Palabras } from "./Palabras";
 import { TablaGrupo } from "./TablaGrupo";
+import { Compartido } from "./Compartido";
 import { Ajustes } from "./Ajustes";
 
 /**
@@ -474,6 +475,9 @@ export const PanelAnalisis: FC<{
             yo={yo}
           />
         ))}
+
+      {/* Debajo de la primera vista, sea la tabla del grupo o el resumen. */}
+      {vistaActual === "resumen" && <Compartido analisis={analisis} yo={yo} />}
 
       {vistaActual === "dinamica" && (
         <Dinamica

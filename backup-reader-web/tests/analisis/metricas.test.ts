@@ -13,6 +13,7 @@ import {
   palabrasFrecuentes,
   separarEnlaces,
 } from "../../lib/analisis/palabrasFrecuentes";
+import { media } from "../../lib/analisis/media";
 import { RAFAGAS, filasDe } from "./ejemplos";
 
 const MINUTO = 60 * 1000;
@@ -872,5 +873,88 @@ describe("quién habla no es de lo que se habla", () => {
     expect(palabras).not.toContain("anche");
     expect(palabras).not.toContain("parce");
     expect(palabras).toContain("proyecto");
+  });
+});
+
+describe("lo que se compartió", () => {
+  const msg = (
+    autor: string,
+    tipo: any,
+    indice: number,
+    extra: { archivo?: string; contenido?: string } = {}
+  ) => ({
+    indice,
+    autor,
+    tipo,
+    contenido: extra.contenido ?? "",
+    texto: extra.contenido ?? "",
+    fecha: new Date(2026, 0, 1 + indice),
+    palabras: 0,
+    editado: false,
+    archivo: extra.archivo,
+  });
+
+  it("separa cada clase y dice quién compartió qué", () => {
+    const r = media([
+      msg("Ana", "imagen", 0, { archivo: "IMG-20260101-WA0001.jpg" }),
+      msg("Ana", "imagen", 1, { archivo: "IMG-20260101-WA0002.jpg" }),
+      msg("Beto", "video", 2, { archivo: "VID-20260101-WA0003.mp4" }),
+      msg("Beto", "audio", 3, { archivo: "PTT-20260101-WA0004.opus" }),
+      msg("Ana", "audio", 4, { archivo: "cancion-favorita.mp3" }),
+      msg("Beto", "documento", 5, { archivo: "Contrato.pdf" }),
+      msg("Ana", "documento", 6, { archivo: "notas.docx" }),
+      msg("Beto", "sticker", 7, { archivo: "STK-1.webp" }),
+    ]);
+    const de = (c: string) => r.filas.find((f) => f.clase === c);
+    expect(de("fotos")?.total).toBe(2);
+    expect(de("fotos")?.porAutor).toEqual({ Ana: 2 });
+    expect(de("vídeos")?.total).toBe(1);
+    /* «PTT-» es la nota de voz; el mp3 es una canción compartida. */
+    expect(de("notas de voz")?.total).toBe(1);
+    expect(de("audios")?.total).toBe(1);
+    expect(de("PDF")?.total).toBe(1);
+    expect(de("documentos")?.total).toBe(1);
+    expect(de("stickers")?.total).toBe(1);
+    expect(r.total).toBe(8);
+    expect(r.porAutor).toEqual({ Ana: 4, Beto: 4 });
+    expect(r.sinArchivos).toBe(false);
+  });
+
+  it("cuenta los enlaces, que no son un archivo pero sí lo más compartido", () => {
+    const r = media([
+      msg("Ana", "texto", 0, { contenido: "mira https://a.com/x y www.b.org/y" }),
+      msg("Beto", "imagen", 1, { archivo: "IMG-1.jpg", contenido: "de aquí github.com/x/y" }),
+    ]);
+    expect(r.filas.find((f) => f.clase === "enlaces")?.total).toBe(3);
+    /* El enlace del pie de la foto cuenta además de la foto. */
+    expect(r.filas.find((f) => f.clase === "fotos")?.total).toBe(1);
+  });
+
+  it("no reparte a ojo lo que el export no dice de qué era", () => {
+    /* Export sin archivos: avisos que no distinguen foto de vídeo. */
+    const r = media([
+      msg("Ana", "multimedia", 0),
+      msg("Ana", "multimedia", 1),
+      msg("Beto", "multimedia", 2),
+      msg("Beto", "imagen", 3),
+    ]);
+    expect(r.filas.find((f) => f.clase === "adjuntos sin identificar")?.total).toBe(3);
+    expect(r.filas.find((f) => f.clase === "fotos")?.total).toBe(1);
+    expect(r.sinArchivos).toBe(true);
+  });
+
+  it("no cuenta avisos del sistema ni mensajes borrados", () => {
+    const r = media([
+      { ...msg("", "sistema", 0), contenido: "Eli creó el grupo" },
+      msg("Ana", "eliminado", 1),
+      msg("Ana", "imagen", 2, { archivo: "IMG-1.jpg" }),
+    ]);
+    expect(r.total).toBe(1);
+  });
+
+  it("un chat sin nada compartido no inventa filas", () => {
+    const r = media([msg("Ana", "texto", 0, { contenido: "hola qué tal" })]);
+    expect(r.total).toBe(0);
+    expect(r.filas).toEqual([]);
   });
 });
