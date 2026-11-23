@@ -13,6 +13,14 @@ export interface ProcessOptions {
   onProgress?: (done: number, total: number) => void;
   /** Se llena con los metadatos de cada pieza cifrada, para armar el manifiesto. */
   pieces?: PieceMeta[];
+  /**
+   * Cifra SOLO lo que cuelgue de esta carpeta del zip.
+   *
+   * Es para Instagram, cuyo export trae todas las conversaciones juntas: se
+   * elige una y el resto ni se descomprime. Va como texto y no como función
+   * porque este mismo dato cruza a un Worker, y las funciones no viajan.
+   */
+  soloPrefijo?: string;
 }
 
 /**
@@ -37,11 +45,17 @@ export async function* processBackupZip(
 ): AsyncGenerator<BackupEntryResult> {
   // El zip se abre UNA vez: antes se abría dos veces, una solo para contar.
   const zip = await openZip(zipFile);
-  const total = zip.entries.length;
+  /* Las entradas de fuera de la conversación elegida no se cifran ni cuentan
+     para el progreso: si contaran, la barra se quedaría a medias y parecería
+     que la subida se colgó. */
+  const entradas = opts.soloPrefijo
+    ? zip.entries.filter((e) => e.name.startsWith(opts.soloPrefijo!))
+    : zip.entries;
+  const total = entradas.length;
   let done = 0;
 
   try {
-    for (const entry of zip.entries) {
+    for (const entry of entradas) {
       const kind = detectKind(entry.name);
       const t0 = performance.now();
 

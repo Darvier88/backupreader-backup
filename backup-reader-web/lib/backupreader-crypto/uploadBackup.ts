@@ -32,6 +32,14 @@ export interface SubidaOpciones {
   onOmitida?: (name: string, motivo: string) => void;
   /** Fuerza la vía sin worker. Solo para pruebas. */
   sinWorker?: boolean;
+  /**
+   * Sube SOLO la conversación que cuelga de esta carpeta del zip.
+   *
+   * El export de Instagram trae todas juntas; aquí llega la que eligió la
+   * persona (ver `hilosInstagram.ts`). Vacío o sin poner, se sube todo, que es
+   * lo que hace WhatsApp.
+   */
+  soloPrefijo?: string;
 }
 
 export interface SubidaResultado {
@@ -169,7 +177,7 @@ function procesarConWorker(
       }
     };
 
-    worker.postMessage({ tipo: "empezar", zipFile, dek, backupId });
+    worker.postMessage({ tipo: "empezar", zipFile, dek, backupId, soloPrefijo: opts.soloPrefijo });
   });
 }
 
@@ -185,6 +193,7 @@ async function procesarEnHilo(
 ): Promise<void> {
   for await (const r of processBackupZip(zipFile, dek, {
     backupId,
+    soloPrefijo: opts.soloPrefijo,
     onProgress: (hechas, total) =>
       opts.onProgreso?.(total ? (hechas / total) * 100 : 0),
     onEncrypted: async ({ id, name, kind, encrypted }) => {

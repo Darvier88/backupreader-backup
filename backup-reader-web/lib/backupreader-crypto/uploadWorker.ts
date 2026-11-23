@@ -18,7 +18,7 @@ import type { PieceMeta } from "./types";
  */
 
 type MensajeEntrada =
-  | { tipo: "empezar"; zipFile: Blob; dek: Uint8Array; backupId: string }
+  | { tipo: "empezar"; zipFile: Blob; dek: Uint8Array; backupId: string; soloPrefijo?: string }
   | { tipo: "ack" }
   | { tipo: "cancelar" };
 
@@ -58,10 +58,11 @@ ctx.addEventListener("message", async (ev: MessageEvent<MensajeEntrada>) => {
   if (msg.tipo !== "empezar") return;
 
   try {
-    const { zipFile, dek, backupId } = msg;
+    const { zipFile, dek, backupId, soloPrefijo } = msg;
 
     for await (const r of processBackupZip(zipFile, dek, {
       backupId,
+      soloPrefijo,
       onProgress: (hechas, total) =>
         ctx.postMessage({ tipo: "progreso", hechas, total } as MensajeSalida),
       onEncrypted: async ({ id, name, kind, encrypted }) => {

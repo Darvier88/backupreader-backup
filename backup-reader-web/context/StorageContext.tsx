@@ -85,7 +85,14 @@ import {
 } from "../lib/backupreader-crypto";
 import type { BackupAbierto, ArchivoV1 } from "../lib/backupreader-crypto";
 import { filasDelChat } from "../lib/filas-del-chat";
+import { INSTAGRAM_ACTIVO } from "../lib/instagram-activo";
+import { hilosDeInstagram } from "../lib/backupreader-crypto/hilosInstagram";
+import { ElegirConversacion } from "../components/modals/ElegirConversacion";
 import { prepararAudio } from "../lib/audio/opusFallback";
+import { ModalContext } from "./ModalContext";
+
+/** Qué conversación del export de Instagram se sube, y con qué nombre. */
+type EleccionDeHilo = { soloPrefijo: string; nombre: string };
 
 
 /**
@@ -109,7 +116,11 @@ export type EstadoMigracion = {
 };
 
 type StorageContextProps = {
-  saveFile: (file: File) => void;
+  /**
+   * Sube un backup. `eleccion` solo la usa Instagram: dice qué conversación
+   * del export se guarda, porque el zip las trae todas.
+   */
+  saveFile: (file: File, eleccion?: EleccionDeHilo) => void;
   deleteFile: (uid: string) => void;
   /** Borra un chat del usuario, cifrado o en texto plano. */
   borrarChatDelUsuario: (handle: string) => Promise<ResultadoChat>;
@@ -178,6 +189,7 @@ export const StorageProvider = ({ children }: any) => {
   /* `updateStorageSizeUser` ya no se usa aquí: el tamaño ocupado sale ahora de
      `cipherBytes` en el documento de cada backup (config/backupRepo.ts), que sí
      está acotado por las reglas. */
+  const { show: mostrarModal } = useContext(ModalContext);
   const { user } = useContext(FirestoreContext);
   const { dek, status: estadoBoveda } = useContext(VaultContext);
   const [state, dispatch] = useReducer(storageReducer, StorageInitialState);
@@ -698,7 +710,7 @@ async function formatingJsonFile(url: string): Promise<void> {
    *
    * Requiere la bóveda desbloqueada: sin la DEK no hay con qué cifrar.
    */
-  const saveFile = async (file: File) => {
+  const saveFile = async (file: File, eleccion?: EleccionDeHilo) => {
     if (!user?.uid) return;
 
     /* Tope del .zip (ver lib/limite-de-subida): aquí, en un solo sitio, para
@@ -714,6 +726,39 @@ async function formatingJsonFile(url: string): Promise<void> {
         payload: estadoBoveda === "none" ? "vault-not-created" : "vault-locked",
       });
       return;
+    }
+
+    /* INSTAGRAM: el zip trae TODAS las conversaciones, así que antes de
+       cifrar nada se mira qué hay dentro y se pregunta con cuál quedarse.
+       Subirlas todas costaría almacenamiento que nadie pidió gastar, y el
+       chat que se abriera sería uno al azar entre ellas.
+
+       Con una sola conversación no se pregunta: no hay nada que elegir. */
+    if (INSTAGRAM_ACTIVO && !eleccion) {
+      try {
+        const hilos = await hilosDeInstagram(file);
+        if (hilos.length === 1) {
+          eleccion = { soloPrefijo: hilos[0].prefijo, nombre: hilos[0].nombre };
+        } else if (hilos.length > 1) {
+          mostrarModal({
+            withButtonClose: true,
+            modalContent: (
+              <ElegirConversacion
+                hilos={hilos}
+                onElegir={(hilo) =>
+                  saveFile(file, { soloPrefijo: hilo.prefijo, nombre: hilo.nombre })
+                }
+              />
+            ),
+          });
+          return;
+        }
+      } catch (error) {
+        /* Un zip que no se puede ni listar no es de Instagram, o está roto.
+           Se sigue por el camino de siempre y que falle donde falla todo lo
+           demás, con su aviso, en vez de aquí sin explicación. */
+        console.warn("No se pudieron listar las conversaciones:", error);
+      }
     }
 
     dispatch({ type: "chatFile", payload: [] });
@@ -732,9 +777,13 @@ async function formatingJsonFile(url: string): Promise<void> {
       const { manifest, omitidas } = await uploadBackup(
         file,
         dek,
-        file.name,
+        /* El nombre del backup es el de la conversación cuando lo hay: en la
+           barra lateral, «Ana García» dice con quién es y
+           «instagram-20261123.zip» no dice nada. */
+        eleccion?.nombre || file.name,
         {
           backupId,
+          soloPrefijo: eleccion?.soloPrefijo,
 
           /* Cada pieza es un blob opaco: nombre aleatorio, sin extensión y con
              content-type genérico. Ese content-type además evita que la Cloud
