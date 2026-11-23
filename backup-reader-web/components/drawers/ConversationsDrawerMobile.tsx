@@ -1,4 +1,5 @@
-import { CSSProperties, FC, useContext, useState } from "react";
+import { CSSProperties, FC, useContext, useEffect, useState } from "react";
+import { bloquearScroll } from "../../lib/bloquear-scroll";
 import { useRouter } from "next/router";
 import { useTranslation } from "react-i18next";
 
@@ -106,6 +107,13 @@ export const ConversationsDrawerMobile: FC<ConversationsDrawerMobileProps> = ({
 }) => {
   const { t, i18n } = useTranslation();
   const router = useRouter();
+
+  /* El fondo no se desplaza mientras el cajón está abierto: sin esto, el dedo
+     que arrastra sobre el cajón mueve la página de detrás. */
+  useEffect(() => {
+    if (!openState) return;
+    return bloquearScroll();
+  }, [openState]);
   const { logOut } = useContext(AuthContext);
   const { fileList, chatName, fullPath: rutaAbierta } = useContext(StorageContext);
   /* Lo que se escribe en «Buscar en todos los chats» del panel. */
@@ -199,6 +207,17 @@ export const ConversationsDrawerMobile: FC<ConversationsDrawerMobileProps> = ({
       anchor={"left"}
       open={openState}
       onClose={() => setOpenState(false)}
+      /* MUI bloquea el desplazamiento del fondo poniendo «overflow: hidden»
+         en el body, y ese candado se queda puesto. Con el body así, él pasa a
+         ser el contenedor de desplazamiento de todo lo de dentro, y como no
+         se desplaza, CUALQUIER «position: sticky» de la aplicación deja de
+         pegarse sin decir nada: es lo que hacía que la barra de resultados
+         del chat se fuera de la vista al bajar, en un sitio sin ninguna
+         relación aparente con este cajón.
+
+         Se le quita el suyo y se pone el nuestro, que lleva cuenta y se
+         suelta cuando lo suelta el último. */
+      ModalProps={{ disableScrollLock: true }}
       /* El velo va en tinta y no en el gris del navegador: el gris de serie
          enfria toda la pantalla y rompe el papel calido del resto. */
       slotProps={{ backdrop: { style: { backgroundColor: "rgba(15,24,38,0.55)" } } }}

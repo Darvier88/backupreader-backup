@@ -488,6 +488,20 @@ export const DashboardScreen: FC = () => {
       if (!marca) return;
       const arriba = marca.getBoundingClientRect().top + window.scrollY;
       setAltoChat(Math.max(320, Math.round(window.innerHeight - arriba)));
+
+      /* Y cuánto ocupa la cabecera, para que la barra del chat se pegue por
+         debajo y no detrás. Pegada en cero, la cabecera le tapaba justo la
+         línea que dice qué estás viendo: se leía «1 de 8» sin saber de qué.
+         Se mide en vez de escribirse a mano porque cambia con el ancho, con
+         el idioma y según qué cabecera esté a la vista. */
+      const cabeceras = [...document.querySelectorAll<HTMLElement>(".br-header")].filter(
+        (e) => e.offsetParent !== null
+      );
+      const altoCabecera = cabeceras.reduce(
+        (n, e) => Math.max(n, Math.round(e.getBoundingClientRect().height)),
+        0
+      );
+      document.documentElement.style.setProperty("--alto-cabecera", `${altoCabecera}px`);
     };
     medir();
     /* Un fotograma después también: la cabecera móvil se esconde o aparece
@@ -543,7 +557,16 @@ export const DashboardScreen: FC = () => {
                 chat vive aquí dentro, cada letra tecleada desmontaba el campo:
                 perdía el foco tras la primera (en móvil ni esa se quedaba).
                 Con el nombre del chat se recrea solo al cambiar de chat. */}
-            <Container style={{ marginTop: 15 }} key={chatName || "chat"}>
+            {/* Pegado, y pegado ESTE bloque y no solo la barra de dentro:
+                lo pegado no puede salir de su contenedor, y este mide 207 px,
+                así que la barra recorría ciento y pico y se iba igual. Con el
+                bloque entero pegado, el título, la barra y las pestañas se
+                quedan a la vista mientras se recorren los resultados. */}
+            <Container
+              className="br-cabecera-chat"
+              style={{ marginTop: 15 }}
+              key={chatName || "chat"}
+            >
 
               {/* Cabecera del chat (1a): inicial en tinta, nombre limpio y el
                   archivo en mono; debajo el buscador a ancho completo y

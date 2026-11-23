@@ -88,6 +88,11 @@ export const BrandHeader: FC<{ minimal?: boolean; app?: boolean; wide?: boolean;
   const { t } = useTranslation();
   const phone = useMediaQuery("(max-width:720px)");
   const [menuAbierto, setMenuAbierto] = useState(false);
+
+  /* Cuánto ocupa la cabecera, publicado para quien se pegue debajo.
+     Lo que se pega con `top: 0` queda tapado por ella, y en la barra del
+     chat eso escondía justo la línea que dice qué estás viendo. Se mide en
+     vez de escribirse a mano porque cambia con el ancho y con el idioma. */
   const { logOut } = useContext(AuthContext);
   const { clean } = useContext(FirestoreContext);
   const go = (href: string) => router.push(href);

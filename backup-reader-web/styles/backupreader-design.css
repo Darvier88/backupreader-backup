@@ -95,7 +95,10 @@
   color: var(--brass-600);
 }
 
-/* Header sticky de papel translúcido */
+/* Header sticky de papel translúcido.
+   Publica su propio alto para que lo que se pegue debajo sepa dónde parar:
+   la barra del chat se pegaba en 0 y la cabecera la tapaba justo en la línea
+   de la etiqueta, así que se leía «1 de 8» sin saber de qué. */
 .br-header {
   position: sticky; top: 0; z-index: 30;
   background: rgba(251,248,241,0.86);
@@ -1182,15 +1185,25 @@ body {
   align-items: center;
   gap: 10px;
   width: 100%;
+  /* Que nada se salga: sin esto, la suma de la etiqueta, el contador, «Ver
+     de todos», las dos flechas y el ✕ desborda un móvil, la página gana
+     desplazamiento horizontal y queda una franja blanca a la derecha con el
+     ✕ fuera de la pantalla. */
+  max-width: 100%;
+  box-sizing: border-box;
+  flex-wrap: wrap;
+  row-gap: 2px;
   min-height: 44px;
-  padding: 0 4px 0 12px;
+  padding: 2px 4px 2px 12px;
   border: 1.5px solid var(--brass-300);
   border-radius: 8px;
   background: var(--brass-100);
 }
 
 .br-filtro-etiqueta {
-  flex: 0 1 auto;
+  /* La etiqueta es lo que contesta «¿qué estoy viendo?», así que se queda
+     con el sitio que sobra y es lo último que se recorta. */
+  flex: 1 1 auto;
   min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -1203,6 +1216,7 @@ body {
 
 .br-filtro-cuenta {
   flex: 1 1 auto;
+  min-width: 0;
   font-family: var(--font-mono);
   font-size: 12px;
   letter-spacing: 0.06em;
@@ -1321,7 +1335,10 @@ body {
    al principio justo cuando hacían falta las flechas. */
 .br-barra-chat {
   position: sticky;
-  top: 0;
+  /* Por debajo de la cabecera, no en el borde de la pantalla. El alto lo
+     mide el propio componente y lo deja en esta variable: escrito a mano
+     aquí, cualquier cambio en la cabecera volvería a taparla en silencio. */
+  top: var(--alto-cabecera, 0px);
   z-index: 4;
   background: var(--paper-50);
   padding-bottom: 6px;
@@ -1363,3 +1380,62 @@ thead .br-an-col-fija {
 }
 
 .br-filtro-volver:hover { background: rgba(0, 0, 0, 0.06); }
+
+/* La barra del filtro en pantalla estrecha: dos líneas en vez de una.
+   Arriba, qué estás viendo y cómo salir. Abajo, cómo recorrerlo. Apretarlo
+   todo en una línea dejaba la etiqueta en cero: se veía «1 de 8» sin saber
+   de qué, que es justo lo contrario de lo que la barra existe para decir.
+
+   Con rejilla y no con `flex-wrap`: las casillas quedan dichas una por una,
+   y «volver» y «Ver de todos» no siempre están, así que con flujo libre el
+   corte de línea cambiaba según cuáles hubiera. */
+@media (max-width: 560px) {
+  .br-filtro {
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    grid-template-areas:
+      "volver etiqueta quitar"
+      "cuenta todos    flechas";
+    align-items: center;
+    column-gap: 8px;
+    row-gap: 2px;
+    padding: 6px 4px 6px 10px;
+  }
+
+  .br-filtro-volver { grid-area: volver; }
+  .br-filtro-quitar { grid-area: quitar; }
+  .br-filtro-cuenta { grid-area: cuenta; }
+  .br-filtro-todos { grid-area: todos; justify-self: start; }
+  .br-filtro > div { grid-area: flechas; justify-self: end; }
+
+  .br-filtro-etiqueta {
+    grid-area: etiqueta;
+    justify-self: start;
+    text-align: left;
+    /* Dos líneas como mucho: «Gracias · Yasmín Kerkiche Hayoun» cabe, y un
+       nombre larguísimo no empuja el resto fuera de la pantalla. */
+    white-space: normal;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+}
+
+/* El bloque de cabecera del chat (título, barra y pestañas), pegado.
+   Lo pegado no puede salir de su contenedor: con `position: sticky` solo en
+   la barra, su contenedor medía 207 px y la barra se iba igual tras recorrer
+   ciento y pico. Pegando el bloque, lo que el usuario necesita para recorrer
+   los resultados —qué está viendo, cuántos van y las flechas— se queda. */
+.br-cabecera-chat {
+  position: sticky;
+  top: var(--alto-cabecera, 0px);
+  z-index: 5;
+  background: var(--paper-50);
+}
+
+/* Dentro ya no hace falta pegar la barra: el bloque la lleva consigo, y dos
+   elementos pegados uno dentro de otro se estorban. */
+.br-cabecera-chat .br-barra-chat {
+  position: static;
+}
