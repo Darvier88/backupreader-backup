@@ -71,12 +71,18 @@ const PATRON_EDITADO = new RegExp(
   "i"
 );
 
-/** Extensión → tipo, para saber qué clase de adjunto era. */
+/**
+ * Extensión → tipo, para saber qué clase de adjunto era.
+ *
+ * El `.webp` va PRIMERO y no al final: tanto WhatsApp como Instagram guardan
+ * los stickers en ese formato y las fotos en jpg, así que estando debajo de
+ * «imagen» no se cumplía nunca y los stickers se contaban como fotos.
+ */
 const PORTIPO: Array<[RegExp, TipoMensaje]> = [
-  [/\.(jpe?g|png|gif|webp|heic|heif|bmp|tiff?)$/i, "imagen"],
+  [/\.webp$/i, "sticker"],
+  [/\.(jpe?g|png|gif|heic|heif|bmp|tiff?)$/i, "imagen"],
   [/\.(mp4|avi|mov|mkv|webm|3gp|wmv|flv|mpe?g)$/i, "video"],
   [/\.(mp3|wav|aac|flac|opus|m4a|ogg|amr)$/i, "audio"],
-  [/\.webp$/i, "sticker"],
 ];
 
 /** El aviso «imagen omitida» dice de qué era, si uno lo mira. */

@@ -157,6 +157,8 @@ type StorageContextProps = {
   errorMessage: string;
   progress: number;
   chatName: string | null;
+  /** De dónde salió el chat abierto (ver StorageReducer). */
+  origenChat: string | null;
   fullPath: string | null;
   assetUrl: string | null;
   file: FileDetail[] | null;
@@ -172,6 +174,7 @@ export const StorageInitialState: StorageState = {
   chat: null,
   fileList: [],
   chatName: null,
+  origenChat: null,
   fullPath: null,
   assetUrl: '',
   progress: 0,
@@ -303,6 +306,9 @@ async function formatingJsonFile(url: string): Promise<void> {
     dispatch({ type: "fileDownloaded", payload: { file: [] } });
     dispatch({ type: "setRecentFileName", payload: null });
     dispatch({ type: "setChatName", payload: null });
+    /* El origen se limpia con el chat: si se quedara pegado, el siguiente
+       chat se analizaría con las reglas del anterior. */
+    dispatch({ type: "setOrigenChat", payload: null });
     dispatch({ type: "setFullPath", payload: null });
   };
 
@@ -618,6 +624,7 @@ async function formatingJsonFile(url: string): Promise<void> {
         type: "chatFile",
         payload: filasDelChat(chat, abierto.manifest.source),
       });
+      dispatch({ type: "setOrigenChat", payload: abierto.manifest.source });
       dispatch({ type: "setChatName", payload: chatName || abierto.manifest.name });
       dispatch({ type: "setFullPath", payload: handle });
     } catch (error) {

@@ -80,13 +80,15 @@ export const PanelAnalisis: FC<{
   handle?: string | null;
   /** Cómo se llama el chat: hace falta para reconocer los avisos del grupo. */
   nombreChat?: string;
+  /** De dónde salió el chat: cambia cómo se cuentan los audios. */
+  origen?: string;
   /** Quién es «tú», si la pantalla lo ha deducido del título. */
   yoPorDefecto?: string;
   /** Saltar a un mensaje del chat. */
   onIrAlMensaje?: (indice: number) => void;
   /** Dejar el chat marcado con unos términos, para ver de dónde sale la cifra. */
   onFiltrar?: (etiqueta: string, terminos: Terminos, autor?: string) => void;
-}> = ({ filas, handle, nombreChat, yoPorDefecto, onIrAlMensaje, onFiltrar }) => {
+}> = ({ filas, handle, nombreChat, origen, yoPorDefecto, onIrAlMensaje, onFiltrar }) => {
   const idioma = i18n.language || "es";
   const { leerAnalisis, escribirAnalisis, bovedaAbierta } = useContext(StorageContext);
 
@@ -108,8 +110,8 @@ export const PanelAnalisis: FC<{
   /* `yo` entra en los ajustes porque cambia el resultado: «quién escribe
      detrás de ti» no se puede calcular sin saber quién eres. */
   const ajustes = useMemo(
-    () => ({ umbralHoras, medida, idioma, yo, nombreChat }),
-    [umbralHoras, medida, idioma, yo, nombreChat]
+    () => ({ umbralHoras, medida, idioma, yo, nombreChat, origen }),
+    [umbralHoras, medida, idioma, yo, nombreChat, origen]
   );
 
   useEffect(() => {
@@ -477,7 +479,7 @@ export const PanelAnalisis: FC<{
         ))}
 
       {/* Debajo de la primera vista, sea la tabla del grupo o el resumen. */}
-      {vistaActual === "resumen" && <Compartido analisis={analisis} yo={yo} />}
+      {vistaActual === "resumen" && <Compartido analisis={analisis} yo={yo} origen={origen} />}
 
       {vistaActual === "dinamica" && (
         <Dinamica

@@ -85,7 +85,7 @@ const medir = (tiene: number, pide: number): Medida3 => ({
  *    10 conversaciones, 30 respuestas por persona, 14 días, 2 meses).
  * 5: «quién escribe detrás de ti» en grupos, con su línea base.
  */
-export const VERSION_ANALISIS = 9;
+export const VERSION_ANALISIS = 10;
 
 export type OpcionesAnalisis = OpcionesNormalizar & {
   /** Quién es «tú»: hace falta para «quién escribe detrás de ti». */
@@ -96,6 +96,14 @@ export type OpcionesAnalisis = OpcionesNormalizar & {
   medida?: Medida;
   /** Cómo se llama el chat, para reconocer los avisos de un grupo. */
   nombreChat?: string;
+  /**
+   * De dónde salió el chat: "whatsapp", "instagram" u "other".
+   *
+   * Cambia lo que se cuenta, no cómo se enseña: en Instagram un audio es
+   * siempre una nota de voz, porque por los mensajes directos no se pueden
+   * mandar archivos de audio.
+   */
+  origen?: string;
 };
 
 export type Analisis = {
@@ -204,7 +212,7 @@ export function analizar(filas: string[][], opciones: OpcionesAnalisis = {}): An
     tendencias: serie,
     emojis: emojis(mensajes),
     palabras: palabrasFrecuentes(mensajes, { idioma, nombres: chat.autores }),
-    media: media(mensajes),
+    media: media(mensajes, opciones.origen),
     expresiones: disculpasYAgradecimientos(mensajes),
     grupo: grupos(chat, mensajes, umbralHoras, opciones.yo),
   };

@@ -56,18 +56,36 @@ export function deducirFormato(
 ): FormatoFecha {
   let dia = 0;
   let mes = 0;
+  /* Fechas con el año delante («2026-03-01»): no hay nada que deducir. */
+  let conAno = 0;
+  /* Fechas con barras donde los dos números caben en un mes, que son las
+     únicas que obligan a preguntar. */
+  let ambiguas = 0;
 
   for (const fila of filas) {
     const { fecha } = partirFechaHora(fila[0]);
+    if (/^\d{4}-\d{2}-\d{2}$/.test(fecha)) {
+      conAno++;
+      continue;
+    }
     const p = fecha.match(/^(\d{1,2})\/(\d{1,2})\/\d{2,4}$/);
     if (!p) continue;
     const a = Number(p[1]);
     const b = Number(p[2]);
     if (a > 12 && b <= 12) dia++;
     else if (b > 12 && a <= 12) mes++;
+    else ambiguas++;
   }
 
   if (dia === 0 && mes === 0) {
+    /* Un chat con el año delante y ninguna fecha ambigua está resuelto, y
+       preguntar sería absurdo: es lo que trae Instagram, y así el análisis no
+       se queda esperando una respuesta que no hace falta. `diaPrimero` no se
+       llega a usar para estas fechas; queda el respaldo por si el chat
+       mezclara formatos. */
+    if (conAno > 0 && ambiguas === 0) {
+      return { diaPrimero: diaPrimeroPorDefecto, seguro: true };
+    }
     return { diaPrimero: diaPrimeroPorDefecto, seguro: false };
   }
 

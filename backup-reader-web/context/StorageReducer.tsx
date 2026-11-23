@@ -6,6 +6,15 @@ export interface StorageState {
   errorMessage: string;
   fileName: string | null;
   chatName: string | null;
+  /**
+   * De dónde salió el chat abierto: "whatsapp", "instagram" u "other".
+   *
+   * No es cosmético. El análisis cuenta distinto según el origen (en
+   * Instagram un audio ES una nota de voz, y en WhatsApp hay que mirar el
+   * nombre del archivo para saberlo), y sin esto habría que adivinarlo
+   * mirando los mensajes.
+   */
+  origenChat: string | null;
   fullPath: string | null;
   assetUrl: string | null;
   file: FileDetail[] | null;
@@ -26,6 +35,7 @@ type StorageAction =
   | { type: "uploadingError"; payload: string }
   | { type: "chatFile"; payload: Chat[] | null }
   | { type: "setChatName"; payload: string | null }
+  | { type: "setOrigenChat"; payload: string | null }
   | { type: "setFullPath"; payload: string | null }
   | { type: "setAssetUrl"; payload: string | null }
   | { type: "downloadingFileError"; payload: string }
@@ -115,6 +125,11 @@ export const storageReducer = (
       return {
         ...state,
         chatName: action.payload,
+      };
+    case "setOrigenChat":
+      return {
+        ...state,
+        origenChat: action.payload,
       };
     case "setFullPath":
       return {

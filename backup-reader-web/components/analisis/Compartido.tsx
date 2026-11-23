@@ -20,7 +20,9 @@ export const Compartido: FC<{
   analisis: Analisis;
   /** Quién es «tú», para nombrarlo en segunda persona. */
   yo?: string;
-}> = ({ analisis, yo }) => {
+  /** De dónde salió el chat: cambia qué advertencia tiene sentido. */
+  origen?: string;
+}> = ({ analisis, yo, origen }) => {
   const idioma = i18n.language || "es";
   const comoSeLlama = (autor: string) => (yo && autor === yo ? enTexto(t("Tú")) : autor);
 
@@ -87,6 +89,15 @@ export const Compartido: FC<{
               "Este chat se exportó sin los archivos, así que la mayoría de los adjuntos no dicen de qué eran."
             )}
           </Aviso>
+        ) : origen === "instagram" ? (
+          /* En Instagram la advertencia de WhatsApp no viene a cuento: por
+             los mensajes directos no se pueden mandar archivos de audio, solo
+             grabar, así que no hay nada que confundir. */
+          <Detalle>
+            {t(
+              "En Instagram todo audio es una grabación: una canción compartida llega como enlace, no como archivo."
+            )}
+          </Detalle>
         ) : (
           <Detalle>
             {t(

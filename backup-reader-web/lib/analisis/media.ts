@@ -13,6 +13,11 @@
  * 1. NOTA DE VOZ O CANCIÓN. WhatsApp nombra las notas de voz «PTT-…», así que
  *    cuando el export trae los archivos se distinguen. Cuando no, un audio es
  *    un audio: va a «audios» y no se reparte a ojo.
+ *
+ *    En Instagram sí se sabe, y por una razón distinta: por los mensajes
+ *    directos no se pueden mandar archivos de audio, solo grabar. Lo que el
+ *    export guarda en `audio_files` es siempre una nota de voz, y una canción
+ *    compartida viaja como enlace, no como archivo.
  * 2. UN EXPORT SIN ARCHIVOS NO DICE DE QUÉ ERAN. Deja avisos como «Archivo no
  *    incluido en la exportación», que no distingue una foto de un vídeo. Esos
  *    van a su propia fila, «adjuntos sin identificar», porque repartirlos
@@ -75,13 +80,15 @@ const esNotaDeVoz = (archivo?: string) => !!archivo && /(^|[/\\])ptt-/i.test(arc
 const esPdf = (archivo?: string) => !!archivo && /\.pdf$/i.test(archivo.trim());
 
 /** Qué clase es este mensaje, o null si no comparte nada. */
-function claseDe(m: Mensaje): ClaseMedia | null {
+function claseDe(m: Mensaje, origen?: string): ClaseMedia | null {
   switch (m.tipo) {
     case "imagen":
       return "fotos";
     case "video":
       return "vídeos";
     case "audio":
+      /* En Instagram todo audio es una grabación: ver la nota de arriba. */
+      if (origen === "instagram") return "notas de voz";
       return esNotaDeVoz(m.archivo) ? "notas de voz" : "audios";
     case "documento":
       return esPdf(m.archivo) ? "PDF" : "documentos";
@@ -94,7 +101,7 @@ function claseDe(m: Mensaje): ClaseMedia | null {
   }
 }
 
-export function media(mensajes: Mensaje[]): Media {
+export function media(mensajes: Mensaje[], origen?: string): Media {
   const cuenta = new Map<ClaseMedia, FilaMedia>();
   const porAutor: Record<string, number> = {};
   let conArchivo = 0;
@@ -114,7 +121,7 @@ export function media(mensajes: Mensaje[]): Media {
   for (const m of mensajes) {
     if (m.tipo === "sistema" || m.tipo === "eliminado") continue;
 
-    const clase = claseDe(m);
+    const clase = claseDe(m, origen);
     if (clase) {
       anotar(clase, m.autor, m.indice);
       if (m.archivo) conArchivo++;

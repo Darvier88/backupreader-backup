@@ -636,6 +636,7 @@ const resources = {
       "adjuntos sin identificar":"attachments of unknown type",
       "Este chat se exportó sin los archivos, así que la mayoría de los adjuntos no dicen de qué eran.":"This chat was exported without the files, so most attachments don't say what they were.",
       "Las notas de voz se distinguen de un audio compartido por el nombre del archivo; sin los archivos, no se pueden separar.":"Voice notes are told apart from shared audio by the file name; without the files, they can't be separated.",
+      "En Instagram todo audio es una grabación: una canción compartida llega como enlace, no como archivo.":"On Instagram every audio is a recording: a shared song arrives as a link, not as a file.",
       "Volver al análisis":"Back to the analysis",
       "Perdones":"Sorries",
       "Gracias":"Thanks",

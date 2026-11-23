@@ -101,7 +101,7 @@ const numeroCorto = (n: number) => numero(n, i18n.language || "es");
 
 export const DashboardScreen: FC = () => {
   const [chatSearch, setChatSearch] = useState<string>("");
-  const { getFile, chat, chatName, uploadStatus, cerrarChat, fullPath: rutaAbierta } = useContext(StorageContext);
+  const { getFile, chat, chatName, origenChat, uploadStatus, cerrarChat, fullPath: rutaAbierta } = useContext(StorageContext);
   const { loading } = useLoading();
   const [toShow, setToShow] = useState<"photos" | "message" | "analisis">("message");
 
@@ -441,6 +441,7 @@ export const DashboardScreen: FC = () => {
         nombreDelContacto(splitChatName(extractUsername(chatName || "")).name) ||
         splitChatName(extractUsername(chatName || "")).name
       }
+      origen={origenChat || undefined}
       yoPorDefecto={myName}
       /* Tocar un emoji o una palabra lleva al mensaje. Con el panel al
          lado no hace falta cambiar de vista; en la pestaña del móvil sí. */

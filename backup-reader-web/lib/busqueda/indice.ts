@@ -30,8 +30,15 @@
 /** Versión del formato. Si cambia, los índices viejos se reconstruyen.
  *  2: el texto del chat se parte en mensajes con lib/parsear-chat.ts, que solo
  *     empieza un mensaje en una línea con fecha. Los números de mensaje de los
- *     índices hechos con el parseo anterior pueden no coincidir. */
-export const VERSION_INDICE = 2;
+ *     índices hechos con el parseo anterior pueden no coincidir.
+ *  3: Instagram se lee con lib/parsear-instagram.ts y, además, se leen TODOS
+ *     los `message_N.json` y no solo el primero. Un chat de Instagram
+ *     indexado antes tiene menos mensajes y en otro orden, así que sus
+ *     números apuntarían a mensajes equivocados. Esto obliga a reconstruir
+ *     también los índices de WhatsApp, que no han cambiado; se asume a
+ *     propósito, porque reconstruir cuesta una espera y acertar el mensaje al
+ *     que se salta no tiene recambio. */
+export const VERSION_INDICE = 3;
 
 /**
  * Id de la pieza donde vive el índice.
