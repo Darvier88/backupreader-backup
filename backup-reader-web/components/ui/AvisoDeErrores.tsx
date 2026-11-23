@@ -3,7 +3,7 @@ import { useTranslation } from "react-i18next";
 
 import { ModalContext } from "../../context";
 import { StorageContext } from "../../context/StorageContext";
-import { MAX_ZIP_BYTES, bytesDeZipGrande } from "../../lib/limite-de-subida";
+import { MAX_ZIP_BYTES, bytesDeZipGrande, esHiloGrande } from "../../lib/limite-de-subida";
 import { tamanoLegible } from "../../lib/tamano-legible";
 import { useVault } from "../../context/VaultContext";
 import { VaultRegisterModal, VaultUnlockModal } from "../vault";
@@ -38,12 +38,22 @@ export const AvisoDeErrores: React.FC = () => {
     /* El .zip pasa del tope (lib/limite-de-subida). El código lleva el peso. */
     const peso = bytesDeZipGrande(errorMessage);
     if (peso !== null) {
+      /* El consejo de «exportar sin archivos» es de WhatsApp; Instagram no
+         tiene esa opción, y en su caso lo que pesa es la conversación
+         elegida, no la descarga entera. Decirle a alguien que haga algo que
+         no existe es peor que no decirle nada. */
+      const esInstagram = esHiloGrande(errorMessage);
       return {
         titulo: t("Este chat pesa demasiado"),
-        texto: t(
-          "Este .zip pesa {{peso}} y el máximo es {{max}}. Si tiene muchos vídeos, puedes exportarlo de nuevo desde WhatsApp eligiendo «Sin archivos».",
-          { peso: tamanoLegible(peso, i18n.language), max: tamanoLegible(MAX_ZIP_BYTES, i18n.language) }
-        ),
+        texto: esInstagram
+          ? t(
+              "Esta conversación ocupa {{peso}} y el máximo es {{max}}. Elige otra, o pide la descarga a Instagram sin los archivos multimedia.",
+              { peso: tamanoLegible(peso, i18n.language), max: tamanoLegible(MAX_ZIP_BYTES, i18n.language) }
+            )
+          : t(
+              "Este .zip pesa {{peso}} y el máximo es {{max}}. Si tiene muchos vídeos, puedes exportarlo de nuevo desde WhatsApp eligiendo «Sin archivos».",
+              { peso: tamanoLegible(peso, i18n.language), max: tamanoLegible(MAX_ZIP_BYTES, i18n.language) }
+            ),
       };
     }
 

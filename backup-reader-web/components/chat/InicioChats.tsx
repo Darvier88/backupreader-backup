@@ -6,6 +6,7 @@ import { useAtajoDeBusqueda } from "../../hooks/useAtajoDeBusqueda";
 import { alPedirBusqueda, tomarBusquedaPendiente } from "../../lib/pedir-busqueda";
 import { usePanelChats } from "../../context/PanelChatsContext";
 import { etiquetaDeGuardado } from "../../lib/fecha-de-guardado";
+import { INSTAGRAM_ACTIVO } from "../../lib/instagram-activo";
 
 /**
  * La pantalla de inicio (2a con chats, 2b sin ninguno).
@@ -26,6 +27,14 @@ import { etiquetaDeGuardado } from "../../lib/fecha-de-guardado";
  * Sin chats se explica además cómo exportar desde WhatsApp. Es el único
  * momento en que esa instrucción hace falta, y es justo cuando el usuario no
  * puede avanzar sin ella.
+ *
+ * INSTAGRAM VA APARTE Y PLEGADO
+ * -----------------------------
+ * Los pasos no se parecen: en WhatsApp exportas un chat y lo tienes en un
+ * minuto; en Instagram pides tu información entera, eliges JSON, y Meta te
+ * avisa por correo horas o días después. Mezclarlos en una sola lista
+ * confundiría a la mayoría, que viene de WhatsApp, y no decirlo deja parado a
+ * quien viene de Instagram sin saber ni que hay que pedirlo con antelación.
  */
 
 const enTexto = (traducido: unknown): string =>
@@ -123,6 +132,8 @@ export const InicioChats: FC<{
   /* Al enfocar o escribir, el buscador toma la cabecera (3b/8c): se va el
      título y aparece «Cancelar» (móvil) o la pista ESC (escritorio). */
   const [enfocado, setEnfocado] = useState(false);
+  /* Los pasos de Instagram empiezan plegados: ver arriba. */
+  const [verInstagram, setVerInstagram] = useState(false);
   const buscando = !bloqueada && (enfocado || consulta.length > 0);
   /* Igual que en el chat abierto (3b): en el móvil el buscador toma la
      cabecera y la barra del logo se esconde mientras se busca. */
@@ -570,6 +581,85 @@ export const InicioChats: FC<{
               </li>
             ))}
           </ol>
+
+          {/* Instagram: plegado, porque la mayoría viene de WhatsApp y los
+              pasos no se parecen en nada. */}
+          {INSTAGRAM_ACTIVO && (
+            <div style={{ margin: "0 0 24px" }}>
+              <button
+                type="button"
+                onClick={() => setVerInstagram((v) => !v)}
+                aria-expanded={verInstagram}
+                style={{
+                  background: "none",
+                  border: "none",
+                  padding: 0,
+                  cursor: "pointer",
+                  fontFamily: "var(--font-sans)",
+                  fontSize: 14,
+                  color: "var(--brass-700)",
+                  textDecoration: "underline",
+                }}
+              >
+                {t("¿Tus mensajes son de Instagram?")}
+              </button>
+
+              {verInstagram && (
+                <ol
+                  style={{
+                    listStyle: "none",
+                    margin: "12px 0 0",
+                    padding: 0,
+                    background: "#fff",
+                    border: "1px solid var(--border)",
+                    borderRadius: 10,
+                    overflow: "hidden",
+                  }}
+                >
+                  {[
+                    t("En Instagram: tu perfil → Tu actividad → Descargar tu información."),
+                    t("Pide solo «Mensajes» y elige el formato JSON, no HTML."),
+                    t("Instagram tarda: te avisa por correo cuando esté lista, a veces días después."),
+                    t("Sube aquí el .zip y elige qué conversación guardar."),
+                  ].map((paso, i) => (
+                    <li
+                      key={i}
+                      style={{
+                        display: "flex",
+                        gap: 12,
+                        padding: "12px 14px",
+                        alignItems: "flex-start",
+                        borderTop: i > 0 ? "1px solid var(--border)" : "none",
+                      }}
+                    >
+                      <span
+                        style={{
+                          flexShrink: 0,
+                          fontFamily: "var(--font-mono)",
+                          fontSize: 11,
+                          letterSpacing: "0.08em",
+                          color: "var(--brass-600)",
+                          paddingTop: 2,
+                        }}
+                      >
+                        {String(i + 1).padStart(2, "0")}
+                      </span>
+                      <span
+                        style={{
+                          fontFamily: "var(--font-sans)",
+                          fontSize: 14,
+                          color: "var(--ink-900)",
+                          lineHeight: 1.45,
+                        }}
+                      >
+                        {enTexto(paso)}
+                      </span>
+                    </li>
+                  ))}
+                </ol>
+              )}
+            </div>
+          )}
 
           <div className="br-movil-abajo">
             <button className="br-btn br-btn-primary br-btn-lg br-btn-block" onClick={onSubir}>

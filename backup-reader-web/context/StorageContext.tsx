@@ -831,7 +831,10 @@ async function formatingJsonFile(url: string): Promise<void> {
        por venir dentro de una descarga de 3 GB. */
     const pesoASubir = eleccion ? eleccion.bytes ?? file.size : file.size;
     if (pesoASubir > MAX_ZIP_BYTES) {
-      dispatch({ type: "uploadingError", payload: codigoZipGrande(pesoASubir) });
+      dispatch({
+        type: "uploadingError",
+        payload: codigoZipGrande(pesoASubir, !!eleccion),
+      });
       return;
     }
 
