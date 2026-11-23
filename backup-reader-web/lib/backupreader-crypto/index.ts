@@ -77,6 +77,7 @@ export {
   normalizeName,
   indexByName,
   findChatPiece,
+  findChatPieces,
   cipherBytes,
 } from "./manifest";
 

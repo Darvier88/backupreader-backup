@@ -87,6 +87,7 @@ import {
 } from "../lib/backupreader-crypto";
 import type { BackupAbierto, ArchivoV1 } from "../lib/backupreader-crypto";
 import { parsearTextoChat } from "../lib/parsear-chat";
+import { filasDelChat } from "../lib/filas-del-chat";
 import { prepararAudio } from "../lib/audio/opusFallback";
 
 
@@ -278,23 +279,6 @@ async function formatingJsonFile(url: string): Promise<void> {
     }
 }
 
-/** Mismo parseo de Instagram, pero partiendo del texto ya en memoria (v2). */
-function parsearJsonInstagram(texto: string): string[][] {
-    const jsonData: IJsonStructure = JSON.parse(texto);
-    return jsonData.messages.map((message: IMessage) => {
-        const mDate = new Date(message.timestamp_ms).toISOString();
-        const mSender = utf8.decode(message.sender_name);
-        let mContent = message.content ? utf8.decode(message.content) : '';
-        if (message.share && message.share.link) {
-            mContent += (mContent ? ' ' : '') + message.share.link;
-        }
-        if (message.photos && message.photos.length > 0) {
-            mContent += (mContent ? ' ' : '') + message.photos.map(p => p.uri).join(' ');
-        }
-        const mShare = message.share ? message.share.link : "";
-        return [`${mDate}`, `${mSender}`, `${mContent}`, `${mShare}`];
-    });
-}
 
 
 
@@ -663,13 +647,9 @@ function parsearJsonInstagram(texto: string): string[][] {
       const chat = await leerTextoDelChat(user.uid, abierto, dek, descargar);
       if (!chat) throw new Error("el backup no tiene pieza de chat");
 
-      const esJson =
-        abierto.manifest.source === "instagram" ||
-        chat.nombre.toLowerCase().endsWith(".json");
-
       dispatch({
         type: "chatFile",
-        payload: esJson ? parsearJsonInstagram(chat.texto) : parsearTextoChat(chat.texto),
+        payload: filasDelChat(chat, abierto.manifest.source),
       });
       dispatch({ type: "setChatName", payload: chatName || abierto.manifest.name });
       dispatch({ type: "setFullPath", payload: handle });
@@ -1158,10 +1138,7 @@ function parsearJsonInstagram(texto: string): string[][] {
        construyera sobre un parseo distinto, los números de mensaje que guarda
        no corresponderían con los que se pintan, y al abrir un resultado se
        saltaría al mensaje equivocado. */
-    const esJson =
-      abierto.manifest.source === "instagram" ||
-      chat.nombre.toLowerCase().endsWith(".json");
-    const filas = esJson ? parsearJsonInstagram(chat.texto) : parsearTextoChat(chat.texto);
+    const filas = filasDelChat(chat, abierto.manifest.source);
 
     const indice = await indexarYSubir({
       uid,
@@ -1325,10 +1302,7 @@ function parsearJsonInstagram(texto: string): string[][] {
       /* Se parsea con el MISMO parser que la pantalla y que el indexador: si
          no, los números del índice apuntarían a otras filas y el fragmento
          enseñado no sería el que coincidió. */
-      const esJson =
-        abierto.manifest.source === "instagram" ||
-        chat.nombre.toLowerCase().endsWith(".json");
-      const filas = esJson ? parsearJsonInstagram(chat.texto) : parsearTextoChat(chat.texto);
+      const filas = filasDelChat(chat, abierto.manifest.source);
 
       return numeros
         .filter((n) => n >= 0 && n < filas.length)

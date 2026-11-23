@@ -1,4 +1,5 @@
-import { openManifest, openPiece, indexByName, findChatPiece, normalizeName } from "./manifest";
+import { openManifest, openPiece, indexByName, findChatPiece,
+  findChatPieces, normalizeName } from "./manifest";
 import { manifestPath, piecePath, pieceAad } from "./paths";
 import { canPlayInline } from "./playback";
 import type { BackupManifest, PieceMeta } from "./types";
@@ -72,18 +73,29 @@ export async function leerTextoDelChat(
   abierto: BackupAbierto,
   dek: Uint8Array,
   descargar: Descargar
-): Promise<{ texto: string; nombre: string } | null> {
-  const pieza = findChatPiece(abierto.manifest);
-  if (!pieza) return null;
-  const blob = await leerPieza(
-    uid,
-    abierto.backupId,
-    pieza,
-    dek,
-    descargar,
-    abierto.manifest.blockSize
-  );
-  return { texto: await blob.text(), nombre: pieza.name };
+): Promise<{ texto: string; nombre: string; textos: string[] } | null> {
+  /* Pueden ser varias: Instagram parte las conversaciones largas en
+     `message_1.json`, `message_2.json`… y con solo la primera el chat se
+     abriría con menos mensajes y sin que nada avisara. */
+  const piezas = findChatPieces(abierto.manifest);
+  if (piezas.length === 0) return null;
+
+  const textos: string[] = [];
+  for (const pieza of piezas) {
+    const blob = await leerPieza(
+      uid,
+      abierto.backupId,
+      pieza,
+      dek,
+      descargar,
+      abierto.manifest.blockSize
+    );
+    textos.push(await blob.text());
+  }
+
+  /* `texto` se mantiene para quien solo espera uno (WhatsApp, que siempre
+     tiene una sola pieza). */
+  return { texto: textos[0], nombre: piezas[0].name, textos };
 }
 
 export interface OpcionesMedia {

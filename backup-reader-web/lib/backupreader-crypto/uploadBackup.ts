@@ -1,5 +1,6 @@
 import { processBackupZip } from "./processBackup";
 import { buildManifest, packPiece, packManifest, cipherBytes } from "./manifest";
+import { origenDeArchivos, origenPorNombre } from "./origenDeExport";
 import type { BackupManifest, BackupSource, PieceMeta } from "./types";
 import type { MensajeSalida } from "./uploadWorker";
 
@@ -39,12 +40,14 @@ export interface SubidaResultado {
   omitidas: Array<{ name: string; motivo: string }>;
 }
 
-/** Deduce el origen a partir del nombre del archivo. */
-export function detectarOrigen(nombreArchivo: string): BackupSource {
-  if (nombreArchivo.includes("WhatsApp")) return "whatsapp";
-  if (nombreArchivo.toLowerCase().includes("instagram")) return "instagram";
-  return "other";
-}
+/**
+ * Deduce el origen a partir del nombre del archivo.
+ *
+ * Se queda como último recurso: lo que decide de verdad es lo que hay dentro
+ * del zip (`origenDeArchivos`), porque los nombres de las descargas de
+ * Instagram cambian y la gente además los renombra.
+ */
+export const detectarOrigen = origenPorNombre;
 
 /**
  * Cifra y sube un backup completo.
@@ -90,7 +93,11 @@ export async function uploadBackup(
   const manifest = buildManifest({
     backupId,
     name: nombre,
-    source: detectarOrigen(nombre),
+    /* El origen sale de lo que trae el zip dentro, no de cómo se llame el
+       archivo: las descargas de Instagram cambian de nombre y la gente las
+       renombra. Los nombres ya están aquí de haber procesado las piezas, así
+       que no hay que volver a abrir el zip. */
+    source: origenDeArchivos(piezas.map((p) => p.name), nombre),
     pieces: piezas,
   });
 

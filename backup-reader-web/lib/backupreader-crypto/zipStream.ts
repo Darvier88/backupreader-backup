@@ -1,5 +1,6 @@
 import { ZipReader, BlobReader, BlobWriter, configure } from "@zip.js/zip.js";
 import { esArchivoBasura } from "./manifest";
+import { esArchivoDeMensajes } from "./origenDeExport";
 import type { FileKind } from "./types";
 
 /**
@@ -77,6 +78,11 @@ export function detectKind(name: string): FileKind {
   if (/^(opus|mp3|m4a|aac|ogg|wav|flac|amr)$/.test(ext)) return "audio";
   if (/^(mp4|mov|avi|mkv|3gp|webm|wmv|flv)$/.test(ext)) return "video";
   if (ext === "txt") return "chat";
+  /* Instagram guarda la conversación en `message_1.json`, `message_2.json`…
+     Sin esto se marcarían como documento y al abrir el backup no habría
+     ninguna pieza de chat que leer. Se mira el nombre completo y no solo la
+     extensión, porque el export trae muchos otros .json que no son mensajes. */
+  if (esArchivoDeMensajes(name)) return "chat";
   return "document";
 }
 

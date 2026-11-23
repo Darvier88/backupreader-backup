@@ -158,14 +158,39 @@ export function esArchivoBasura(nombre: string): boolean {
  * más grande (el texto de un chat casi siempre pesa más que una nota).
  */
 export function findChatPiece(manifest: BackupManifest): PieceMeta | undefined {
-  const textos = manifest.pieces.filter((p) => p.kind === "chat" && !esArchivoBasura(p.name));
+  return findChatPieces(manifest)[0];
+}
+
+/**
+ * TODAS las piezas del chat, en el orden en que hay que leerlas.
+ *
+ * Con WhatsApp siempre es una. Instagram parte las conversaciones largas en
+ * `message_1.json`, `message_2.json`…, y con solo la primera se perdería todo
+ * lo anterior sin que nada avisara: el chat se abriría, con menos mensajes.
+ *
+ * Van ordenadas por su número, de mayor a menor, porque Instagram numera al
+ * revés de como se lee: el 1 es el bloque MÁS RECIENTE. Quien parsea vuelve a
+ * ordenar por la marca de tiempo de cada mensaje, así que esto es solo para
+ * que el texto llegue en un orden razonable.
+ */
+export function findChatPieces(manifest: BackupManifest): PieceMeta[] {
   const base = (p: PieceMeta) => normalizeName(p.name).split("/").pop() || "";
-  return (
+  const limpias = manifest.pieces.filter((p) => !esArchivoBasura(p.name));
+
+  const deInstagram = limpias.filter((p) => /^message_\d+\.json$/i.test(base(p)));
+  if (deInstagram.length > 0) {
+    const numero = (p: PieceMeta) => Number(base(p).match(/\d+/)?.[0] || 0);
+    return [...deInstagram].sort((a, b) => numero(b) - numero(a));
+  }
+
+  const textos = limpias.filter((p) => p.kind === "chat");
+  const elegida =
     textos.find((p) => base(p) === "_chat.txt") ??
     textos.find((p) => /whats\s*app|chat/i.test(base(p))) ??
     [...textos].sort((a, b) => b.size - a.size)[0] ??
-    manifest.pieces.find((p) => normalizeName(p.name).endsWith(".json") && !esArchivoBasura(p.name))
-  );
+    limpias.find((p) => normalizeName(p.name).endsWith(".json"));
+
+  return elegida ? [elegida] : [];
 }
 
 /** Suma de bytes cifrados, para las cuotas de plan. */
