@@ -30,13 +30,40 @@
 import { initializeApp, getApps } from "firebase-admin/app";
 import { getFirestore } from "firebase-admin/firestore";
 
-const PROYECTO = process.env.GOOGLE_CLOUD_PROJECT || "demo-backupreader";
 const HOST = process.env.BR_EMULATOR_HOST || "127.0.0.1";
 
-/* Esto es lo que hace que admin hable con el emulador en vez de con Google.
-   Tiene que estar puesto ANTES de getFirestore(). Sin credenciales: con un
-   proyecto `demo-` el emulador no pide ninguna. */
-process.env.FIRESTORE_EMULATOR_HOST = `${HOST}:8080`;
+/* Siembra el emulador. BR_PROYECTO apunta a otro Firebase, con una cuenta de
+   servicio en GOOGLE_APPLICATION_CREDENTIALS.
+
+   PRODUCCIÓN NO. Esta herramienta escribe documentos a lo bruto, sin mirar lo
+   que ya hay, y en producción eso significa pisar los planes reales con los
+   que se le cobra a la gente. Por eso el nombre está en una lista negra y no
+   se puede saltar con una variable: si alguna vez hiciera falta tocar los
+   planes de verdad, que cueste escribirlo a mano. */
+const PROHIBIDOS = ["backup-reader"];
+const PROYECTO = process.env.BR_PROYECTO || process.env.GOOGLE_CLOUD_PROJECT || "demo-backupreader";
+const EN_EMULADOR = !process.env.BR_PROYECTO;
+
+if (PROHIBIDOS.includes(PROYECTO)) {
+  console.error(
+    `Ese proyecto es producción (${PROYECTO}). Esta herramienta pisa documentos sin preguntar.`
+  );
+  process.exit(1);
+}
+
+if (EN_EMULADOR) {
+  /* Esto es lo que hace que admin hable con el emulador en vez de con Google.
+     Tiene que estar puesto ANTES de getFirestore(). Sin credenciales: con un
+     proyecto `demo-` el emulador no pide ninguna. */
+  process.env.FIRESTORE_EMULATOR_HOST = `${HOST}:8080`;
+} else if (!process.env.GOOGLE_APPLICATION_CREDENTIALS) {
+  console.error(
+    "Falta GOOGLE_APPLICATION_CREDENTIALS con la cuenta de servicio del proyecto."
+  );
+  process.exit(1);
+} else {
+  console.info(`Sembrando el Firebase REAL del proyecto ${PROYECTO}.`);
+}
 
 if (!getApps().length) initializeApp({ projectId: PROYECTO });
 const db = getFirestore();

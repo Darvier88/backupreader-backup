@@ -9,6 +9,7 @@ import Document, {
 import Script from 'next/script';
 import { CssBaseline } from "@nextui-org/react";
 import { OPTWARD_ACTIVO, OPTWARD_BUNDLE, bloqueConfig, bloqueConsentMode } from "../lib/optward";
+import { SE_INDEXA, SE_MIDE } from "../lib/entorno";
 
 class MyDocument extends Document {
   static async getInitialProps(ctx: DocumentContext) {
@@ -27,11 +28,17 @@ class MyDocument extends Document {
     return (
       <Html lang="es">
         <Head>
+          {/* Las previews de rama no se indexan. Sin esto, la URL que Vercel
+              publica en cada push puede acabar en Google compitiendo con el
+              sitio de verdad, y quien entre por ahí se crea la cuenta en una
+              copia que mañana ya no existe (lib/entorno.ts). */}
+          {!SE_INDEXA && <meta name="robots" content="noindex, nofollow" />}
+
           {/* Aviso de cookies de Optward (lib/optward.ts). Va ANTES que Google
               Tag Manager: el Consent Mode denegado por defecto tiene que estar
               puesto cuando GTM arranca, o las etiquetas salen sin saber nada
               del consentimiento. Sin NEXT_PUBLIC_OPTWARD_SITE_ID no se emite. */}
-          {OPTWARD_ACTIVO && (
+          {OPTWARD_ACTIVO && SE_MIDE && (
             <>
               <script dangerouslySetInnerHTML={{ __html: bloqueConsentMode() }} />
               <script dangerouslySetInnerHTML={{ __html: bloqueConfig() }} />
@@ -42,17 +49,25 @@ class MyDocument extends Document {
           {/* Google Tag Manager. Va lo más arriba posible del <head> para que
               cargue antes que el resto y no se pierdan las primeras visitas.
               El script en línea usa dangerouslySetInnerHTML porque JSX no
-              admite código como hijo de <script>. */}
-          <script async src="https://www.googletagmanager.com/gtm.js?id=GTM-PKCTCNJC"></script>
-          <script
-            dangerouslySetInnerHTML={{
-              __html: `
+              admite código como hijo de <script>.
+
+              Solo en producción: si cargara también en las previews, cada rato
+              que pasáramos probando contaría como visita y las cifras del
+              sitio dejarían de servir para nada. */}
+          {SE_MIDE && (
+            <>
+              <script async src="https://www.googletagmanager.com/gtm.js?id=GTM-PKCTCNJC"></script>
+              <script
+                dangerouslySetInnerHTML={{
+                  __html: `
   window.dataLayer = window.dataLayer || [];
   function gtag(){dataLayer.push(arguments);}
   gtag('js', new Date());
 `,
-            }}
-          />
+                }}
+              />
+            </>
+          )}
 
           {CssBaseline.flush()}
 
