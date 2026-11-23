@@ -86,13 +86,25 @@ import {
 import type { BackupAbierto, ArchivoV1 } from "../lib/backupreader-crypto";
 import { filasDelChat } from "../lib/filas-del-chat";
 import { INSTAGRAM_ACTIVO } from "../lib/instagram-activo";
-import { hilosDeInstagram } from "../lib/backupreader-crypto/hilosInstagram";
+import {
+  hilosDeInstagram,
+  esInstagramEnHtml,
+  archivosQueFaltan,
+} from "../lib/backupreader-crypto/hilosInstagram";
 import { ElegirConversacion } from "../components/modals/ElegirConversacion";
+import { AlertModal } from "../components/modals/AlertModal";
+import { t } from "i18next";
 import { prepararAudio } from "../lib/audio/opusFallback";
 import { ModalContext } from "./ModalContext";
 
 /** Qué conversación del export de Instagram se sube, y con qué nombre. */
-type EleccionDeHilo = { soloPrefijo: string; nombre: string };
+type EleccionDeHilo = {
+  soloPrefijo: string;
+  nombre: string;
+  bytes?: number;
+  /** Ya se avisó de los archivos que faltan y la persona dijo que siga. */
+  avisada?: boolean;
+};
 
 
 /**
@@ -192,7 +204,7 @@ export const StorageProvider = ({ children }: any) => {
   /* `updateStorageSizeUser` ya no se usa aquí: el tamaño ocupado sale ahora de
      `cipherBytes` en el documento de cada backup (config/backupRepo.ts), que sí
      está acotado por las reglas. */
-  const { show: mostrarModal } = useContext(ModalContext);
+  const { show: mostrarModal, hide: cerrarModal } = useContext(ModalContext);
   const { user } = useContext(FirestoreContext);
   const { dek, status: estadoBoveda } = useContext(VaultContext);
   const [state, dispatch] = useReducer(storageReducer, StorageInitialState);
@@ -720,13 +732,6 @@ async function formatingJsonFile(url: string): Promise<void> {
   const saveFile = async (file: File, eleccion?: EleccionDeHilo) => {
     if (!user?.uid) return;
 
-    /* Tope del .zip (ver lib/limite-de-subida): aquí, en un solo sitio, para
-       todos los caminos de subida (archivo, Drive, compartir). */
-    if (file.size > MAX_ZIP_BYTES) {
-      dispatch({ type: "uploadingError", payload: codigoZipGrande(file.size) });
-      return;
-    }
-
     if (!dek) {
       dispatch({
         type: "uploadingError",
@@ -741,9 +746,20 @@ async function formatingJsonFile(url: string): Promise<void> {
        chat que se abriera sería uno al azar entre ellas.
 
        Con una sola conversación no se pregunta: no hay nada que elegir. */
+    let esDeInstagram = false;
     if (INSTAGRAM_ACTIVO && !eleccion) {
       try {
         const hilos = await hilosDeInstagram(file);
+        esDeInstagram = hilos.length > 0;
+
+        /* Pedido en HTML en vez de en JSON: no hay mensajes que leer. Se corta
+           AQUÍ, antes de cifrar y subir nada, porque si no se le cobra cuota a
+           alguien por un backup que nunca se va a poder abrir. */
+        if (!esDeInstagram && (await esInstagramEnHtml(file))) {
+          dispatch({ type: "uploadingError", payload: "instagram-html" });
+          return;
+        }
+
         if (hilos.length === 1) {
           eleccion = { soloPrefijo: hilos[0].prefijo, nombre: hilos[0].nombre };
         } else if (hilos.length > 1) {
@@ -753,7 +769,11 @@ async function formatingJsonFile(url: string): Promise<void> {
               <ElegirConversacion
                 hilos={hilos}
                 onElegir={(hilo) =>
-                  saveFile(file, { soloPrefijo: hilo.prefijo, nombre: hilo.nombre })
+                  saveFile(file, {
+                    soloPrefijo: hilo.prefijo,
+                    nombre: hilo.nombre,
+                    bytes: hilo.bytes,
+                  })
                 }
               />
             ),
@@ -766,6 +786,53 @@ async function formatingJsonFile(url: string): Promise<void> {
            demás, con su aviso, en vez de aquí sin explicación. */
         console.warn("No se pudieron listar las conversaciones:", error);
       }
+    }
+
+    /* Una descarga de Instagram puede venir partida en varios zips, con los
+       mensajes en uno y las fotos en otro. Si falta media, se dice ANTES de
+       subir: el chat se abriría entero pero con las imágenes rotas, y eso
+       parece un fallo de la aplicación. */
+    if (INSTAGRAM_ACTIVO && eleccion && !eleccion.avisada) {
+      const elegida = eleccion;
+      try {
+        const { faltan, total } = await archivosQueFaltan(file, elegida.soloPrefijo);
+        if (faltan > 0) {
+          mostrarModal({
+            withButtonClose: true,
+            modalContent: (
+              <AlertModal
+                title={t("Faltan archivos de esta conversación")}
+                text={t(
+                  "De {{total}} archivos que menciona, {{faltan}} no están en este .zip. Instagram parte las descargas grandes en varias partes y las fotos pueden estar en otra. Si sigues, esos adjuntos saldrán como no disponibles.",
+                  { total, faltan }
+                )}
+                onPress={() => {
+                  cerrarModal();
+                  saveFile(file, { ...elegida, avisada: true });
+                }}
+              />
+            ),
+          });
+          return;
+        }
+      } catch (error) {
+        /* Si no se puede comprobar, no se bloquea la subida por eso. */
+        console.warn("No se pudo comprobar si faltan archivos:", error);
+      }
+    }
+
+    /* Tope de tamaño (ver lib/limite-de-subida): aquí, en un solo sitio, para
+       todos los caminos de subida (archivo, Drive, compartir).
+
+       Mide lo que SE VA A SUBIR, no el archivo que hay en el disco. Con
+       WhatsApp son lo mismo. Con Instagram no: la descarga es la cuenta
+       entera, el zip no sale del dispositivo, y de él solo se cifra la
+       conversación elegida. Medir el zip rechazaría una conversación de 20 MB
+       por venir dentro de una descarga de 3 GB. */
+    const pesoASubir = eleccion ? eleccion.bytes ?? file.size : file.size;
+    if (pesoASubir > MAX_ZIP_BYTES) {
+      dispatch({ type: "uploadingError", payload: codigoZipGrande(pesoASubir) });
+      return;
     }
 
     dispatch({ type: "chatFile", payload: [] });

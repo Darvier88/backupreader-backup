@@ -26,6 +26,21 @@ const ARCHIVO_INSTAGRAM = /(^|\/)message_\d+\.json$/i;
 const CHAT_WHATSAPP = /(^|\/)_chat\.txt$/i;
 const TXT_WHATSAPP = /whats\s*app.*\.txt$/i;
 
+/**
+ * Un export de Instagram pedido en HTML en vez de en JSON.
+ *
+ * Meta deja elegir el formato al pedir la descarga, y en HTML no hay ningún
+ * `message_N.json`: solo páginas pensadas para mirarlas en un navegador, sin
+ * las marcas de tiempo ni los autores en un sitio fijo del que leerlos.
+ *
+ * Importa reconocerlo porque, sin esto, el zip se cifra, se sube, gasta cuota,
+ * y al abrirlo la aplicación dice «no se pudo abrir el chat, revisa tu
+ * conexión», que es mentira y deja a la persona sin saber qué hacer.
+ */
+export function pareceInstagramEnHtml(nombres: string[]): boolean {
+  return (nombres || []).some((n) => /(^|\/)message_\d+\.html$/i.test(n || ""));
+}
+
 /** Si esta entrada del zip es uno de los archivos de mensajes de Instagram. */
 export function esArchivoDeMensajes(nombre: string): boolean {
   return ARCHIVO_INSTAGRAM.test(nombre || "");

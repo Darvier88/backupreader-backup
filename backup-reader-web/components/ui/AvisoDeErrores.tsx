@@ -100,6 +100,14 @@ export const AvisoDeErrores: React.FC = () => {
           texto: t("Revisa tu conexión y recarga la página."),
         };
 
+      case "instagram-html":
+        return {
+          titulo: t("Esta descarga de Instagram viene en HTML"),
+          texto: t(
+            "Para poder leer tus mensajes hace falta el formato JSON. Vuelve a pedir la descarga en Instagram y elige JSON donde te pregunta el formato."
+          ),
+        };
+
       case "Error-getting-file":
         return {
           titulo: t("No se pudo abrir el chat"),

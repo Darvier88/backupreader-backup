@@ -23,8 +23,8 @@
  */
 
 import { openZip } from "./zipStream";
-import { esArchivoDeMensajes } from "./origenDeExport";
-import { arreglarTexto } from "../parsear-instagram";
+import { esArchivoDeMensajes, pareceInstagramEnHtml } from "./origenDeExport";
+import { arreglarTexto, nombreDeUri } from "../parsear-instagram";
 
 export type HiloDelZip = {
   /** La carpeta de la conversación dentro del zip, con la barra final. */
@@ -41,7 +41,21 @@ export type HiloDelZip = {
   bandeja: string;
 };
 
-const CARPETA = /(^|\/)messages\/(inbox|archived_threads|message_requests)\/([^/]+)\//i;
+/**
+ * Qué carpeta del zip es una conversación.
+ *
+ * NO se buscan nombres de bandeja. Antes esto exigía que la carpeta colgara de
+ * `messages/inbox`, `messages/archived_threads` o `messages/message_requests`,
+ * y eso es apostar a que Meta no añada ni renombre ninguna: el día que lo
+ * hiciera, esas conversaciones desaparecerían de la lista sin que nada
+ * fallara, que es la peor forma de equivocarse.
+ *
+ * Lo que define una conversación no es dónde está, sino lo que tiene dentro:
+ * un `message_1.json`. Así que se buscan esos archivos y su carpeta es el
+ * hilo. La bandeja se lee de la ruta solo para enseñarla, y si no se reconoce,
+ * no se enseña nada.
+ */
+const BANDEJA = /(^|\/)messages\/([^/]+)\/[^/]+\/$/i;
 
 /** El nombre de la carpeta, que es lo que queda cuando no hay título. */
 function nombreDeCarpeta(carpeta: string): string {
@@ -59,37 +73,40 @@ function nombreDeCarpeta(carpeta: string): string {
 export async function hilosDeInstagram(zipFile: Blob): Promise<HiloDelZip[]> {
   const zip = await openZip(zipFile);
 
+  /* Primera pasada: dónde hay mensajes. La carpeta de cada `message_N.json`
+     ES una conversación, venga de donde venga. */
   const porPrefijo = new Map<string, HiloDelZip>();
-  /* Aparte del hilo para no ensuciar lo que se devuelve. */
   const primeros = new Map<string, typeof zip.entries[number]>();
 
   for (const entrada of zip.entries) {
-    const m = entrada.name.match(CARPETA);
-    if (!m) continue;
+    if (!esArchivoDeMensajes(entrada.name)) continue;
+    const corte = entrada.name.lastIndexOf("/");
+    if (corte < 0) continue;
+    const prefijo = entrada.name.slice(0, corte + 1);
+    const carpeta = prefijo.slice(0, -1).split("/").pop() || "";
 
-    const prefijo = entrada.name.slice(0, entrada.name.indexOf(m[3]) + m[3].length) + "/";
-    let hilo = porPrefijo.get(prefijo);
-    if (!hilo) {
-      hilo = {
+    if (!porPrefijo.has(prefijo)) {
+      porPrefijo.set(prefijo, {
         prefijo,
-        nombre: nombreDeCarpeta(m[3]),
+        nombre: nombreDeCarpeta(carpeta),
         participantes: [],
         archivos: 0,
         bytes: 0,
-        bandeja: m[2].toLowerCase(),
-      };
-      porPrefijo.set(prefijo, hilo);
+        bandeja: (prefijo.match(BANDEJA)?.[2] || "").toLowerCase(),
+      });
     }
+    /* El primero que aparezca sirve para sacar el título. */
+    if (!primeros.has(prefijo)) primeros.set(prefijo, entrada);
+  }
 
+  /* Segunda pasada: lo que pesa cada una, contando su media. */
+  const prefijos = [...porPrefijo.keys()];
+  for (const entrada of zip.entries) {
+    const prefijo = prefijos.find((p) => entrada.name.startsWith(p));
+    if (!prefijo) continue;
+    const hilo = porPrefijo.get(prefijo)!;
     hilo.archivos++;
     hilo.bytes += entrada.size || 0;
-
-    /* Se guarda el `message_1.json` para leer el título después, y solo ese:
-       con abrir uno por conversación basta y no hay que descomprimir el
-       resto. */
-    if (!primeros.has(prefijo) && esArchivoDeMensajes(entrada.name)) {
-      primeros.set(prefijo, entrada);
-    }
   }
 
   const hilos = [...porPrefijo.values()];
@@ -119,8 +136,73 @@ export async function hilosDeInstagram(zipFile: Blob): Promise<HiloDelZip[]> {
   return hilos.sort((a, b) => b.bytes - a.bytes);
 }
 
+/** Si este zip es un export de Instagram pedido en HTML (ver `origenDeExport`). */
+export async function esInstagramEnHtml(zipFile: Blob): Promise<boolean> {
+  const zip = await openZip(zipFile);
+  return pareceInstagramEnHtml(zip.entries.map((e) => e.name));
+}
+
 /** Si esta entrada del zip pertenece a la conversación elegida. */
 export function esDelHilo(nombre: string, prefijo: string): boolean {
   if (!prefijo) return true;
   return (nombre || "").startsWith(prefijo);
+}
+
+/**
+ * Cuántos archivos menciona la conversación que no están en este zip.
+ *
+ * POR QUÉ PASA ESTO
+ * -----------------
+ * Meta parte las descargas grandes en varios zips. Los mensajes pueden venir
+ * en uno y las fotos en otro, y entonces el chat se abre entero pero con las
+ * imágenes rotas, sin nada que explique por qué. Es de esos fallos que la
+ * gente achaca a la aplicación y no vuelve.
+ *
+ * No se mira el nombre del archivo para adivinar si es «la parte 1»: los
+ * nombres de Meta cambian. Se mira lo único que no engaña, que es si los
+ * archivos que los mensajes nombran están o no están aquí dentro.
+ */
+export async function archivosQueFaltan(
+  zipFile: Blob,
+  prefijo: string
+): Promise<{ faltan: number; total: number }> {
+  const zip = await openZip(zipFile);
+
+  const presentes = new Set(
+    zip.entries
+      .filter((e) => e.name.startsWith(prefijo))
+      .map((e) => e.name.slice(e.name.lastIndexOf("/") + 1).toLowerCase())
+  );
+
+  const mencionados = new Set<string>();
+  for (const entrada of zip.entries) {
+    if (!entrada.name.startsWith(prefijo) || !esArchivoDeMensajes(entrada.name)) continue;
+    try {
+      const datos = JSON.parse(await (await entrada.getBlob()).text()) as {
+        messages?: Array<Record<string, any>>;
+      };
+      for (const m of datos?.messages || []) {
+        const uris = [
+          ...(m?.photos || []),
+          ...(m?.videos || []),
+          ...(m?.audio_files || []),
+          ...(m?.gifs || []),
+          ...(m?.sticker ? [m.sticker] : []),
+        ].map((x: any) => x?.uri);
+        for (const uri of uris) {
+          const nombre = nombreDeUri(uri).toLowerCase();
+          if (nombre) mencionados.add(nombre);
+        }
+      }
+    } catch {
+      /* Un archivo de mensajes ilegible no puede decir qué falta; se salta. */
+    }
+  }
+
+  let faltan = 0;
+  mencionados.forEach((n) => {
+    if (!presentes.has(n)) faltan++;
+  });
+
+  return { faltan, total: mencionados.size };
 }

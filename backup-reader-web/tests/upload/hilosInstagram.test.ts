@@ -11,7 +11,11 @@ import {
   piecePath,
   newId,
 } from "../../lib/backupreader-crypto";
-import { hilosDeInstagram } from "../../lib/backupreader-crypto/hilosInstagram";
+import {
+  hilosDeInstagram,
+  esInstagramEnHtml,
+  archivosQueFaltan,
+} from "../../lib/backupreader-crypto/hilosInstagram";
 
 /**
  * Elegir UNA conversación de un export de Instagram, que las trae todas.
@@ -167,5 +171,84 @@ describe("al subir la conversación elegida", () => {
     /* Si el total contara las entradas de las otras conversaciones, la barra
        se quedaría a un cuarto y parecería colgada. */
     expect(avance.at(-1)).toBe(100);
+  });
+});
+
+describe("qué cuenta como una conversación", () => {
+  it("no depende del nombre de la bandeja", async () => {
+    /* Antes esto exigía `inbox`, `archived_threads` o `message_requests`. El
+       día que Meta añadiera o renombrara una carpeta, esas conversaciones
+       habrían desaparecido de la lista sin que nada fallara. Lo que define una
+       conversación es que tenga un message_N.json dentro. */
+    const hilos = await hilosDeInstagram(
+      await zipDePrueba([
+        [`${BASE}/bandeja_que_no_existia/nuevo_7781234/message_1.json`, hilo("Nuevo", ["Nuevo", "Yo"])],
+        ["otra/ruta/entera/distinta/carla_99/message_1.json", hilo("Carla", ["Carla", "Yo"])],
+      ])
+    );
+    expect(hilos.map((h) => h.nombre).sort()).toEqual(["Carla", "Nuevo"]);
+  });
+
+  it("la bandeja se enseña solo cuando se reconoce", async () => {
+    const hilos = await hilosDeInstagram(
+      await zipDePrueba([["otra/ruta/carla_99/message_1.json", hilo("Carla", ["Carla", "Yo"])]])
+    );
+    expect(hilos[0].bandeja).toBe("");
+  });
+});
+
+describe("una descarga pedida en HTML", () => {
+  it("se reconoce, para poder rechazarla antes de subir", async () => {
+    const zip = await zipDePrueba([
+      [`${BASE}/inbox/ana_123/message_1.html`, "<html><body>hola</body></html>"],
+    ]);
+    expect(await esInstagramEnHtml(zip)).toBe(true);
+    /* Y no tiene conversaciones que ofrecer: no hay mensajes que leer. */
+    expect(await hilosDeInstagram(zip)).toEqual([]);
+  });
+
+  it("una en JSON no se confunde con ella", async () => {
+    const zip = await zipDePrueba(ENTRADAS);
+    expect(await esInstagramEnHtml(zip)).toBe(false);
+  });
+});
+
+describe("una descarga partida en varias partes", () => {
+  it("dice cuántos archivos menciona la conversación y no están", async () => {
+    /* Meta parte las descargas grandes: los mensajes pueden venir en un zip y
+       las fotos en otro. Sin avisar, el chat se abre entero y con las
+       imágenes rotas, y parece un fallo de la aplicación. */
+    const conFoto = JSON.stringify({
+      title: "Ana García",
+      participants: [{ name: "Ana García" }, { name: "Yo" }],
+      messages: [
+        {
+          sender_name: "Ana García",
+          timestamp_ms: 1763900000000,
+          photos: [{ uri: `${BASE}/inbox/ana_1182939/photos/falta.jpg` }],
+        },
+        {
+          sender_name: "Yo",
+          timestamp_ms: 1763900100000,
+          photos: [{ uri: `${BASE}/inbox/ana_1182939/photos/esta.jpg` }],
+        },
+      ],
+    });
+
+    const zip = await zipDePrueba([
+      [`${BASE}/inbox/ana_1182939/message_1.json`, conFoto],
+      [`${BASE}/inbox/ana_1182939/photos/esta.jpg`, relleno(100)],
+    ]);
+
+    const { faltan, total } = await archivosQueFaltan(zip, `${BASE}/inbox/ana_1182939/`);
+    expect(total).toBe(2);
+    expect(faltan).toBe(1);
+  });
+
+  it("no avisa cuando están todos", async () => {
+    const zip = await zipDePrueba(ENTRADAS);
+    const hilos = await hilosDeInstagram(zip);
+    const ana = hilos.find((h) => h.nombre === "Ana García")!;
+    expect((await archivosQueFaltan(zip, ana.prefijo)).faltan).toBe(0);
   });
 });
