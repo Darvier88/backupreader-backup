@@ -1,7 +1,5 @@
-import axios, { AxiosResponse } from 'axios';
 import { MAX_ZIP_BYTES, codigoZipGrande } from "../lib/limite-de-subida";
 import { hastaQueSePuedaSeguir } from "../lib/esperar-pestana";
-import utf8 from 'utf8';
 import { createContext, useReducer, useContext, useEffect, useRef, useState } from "react";
 
 import {
@@ -86,7 +84,6 @@ import {
   indexByName,
 } from "../lib/backupreader-crypto";
 import type { BackupAbierto, ArchivoV1 } from "../lib/backupreader-crypto";
-import { parsearTextoChat } from "../lib/parsear-chat";
 import { filasDelChat } from "../lib/filas-del-chat";
 import { prepararAudio } from "../lib/audio/opusFallback";
 
@@ -197,15 +194,21 @@ export const StorageProvider = ({ children }: any) => {
 
 
  
-/* El parseo del texto del chat vive en lib/parsear-chat.ts (Android, iPhone y
-   WhatsApp Web/Windows, en varios idiomas), con sus tests. */
+/* El parseo del texto del chat vive en lib/parsear-chat.ts (WhatsApp) y en
+   lib/parsear-instagram.ts, y cuál se usa lo decide lib/filas-del-chat.ts.
+   También aquí, en el camino v1: si este parseara por su cuenta, un mismo
+   chat abierto por los dos caminos daría filas distintas y los números del
+   índice de búsqueda dejarían de cuadrar. */
 
 /** Camino v1: el texto llega de una URL de descarga. */
 const formatingTxtFile = (url: string) => {
   fetch(url)
     .then((r) => r.text())
     .then((texto) => {
-      dispatch({ type: "chatFile", payload: parsearTextoChat(texto) });
+      dispatch({
+        type: "chatFile",
+        payload: filasDelChat({ texto, nombre: "_chat.txt" }, "whatsapp"),
+      });
     })
     .catch((error) => {
       console.error("No se pudo leer el texto del chat:", error);
@@ -213,70 +216,22 @@ const formatingTxtFile = (url: string) => {
     });
 };
 
-
-
-  
-  
-
-  interface IMessage {
-    timestamp_ms: number;
-    sender_name: string;
-    content: string;
-    share: {
-        link: string;
-    };
-    photos:Array<{
-        uri: string;
-        creation_timestamp: number;
-    }>;
-}
-
-  interface IJsonStructure {
-      messages: IMessage[];
-  }
-
-  
-
-
+/** Camino v1 para Instagram: el JSON llega de una URL de descarga. */
 async function formatingJsonFile(url: string): Promise<void> {
-    try {
-        const response: AxiosResponse<ArrayBuffer> = await axios.get(url, { responseType: 'arraybuffer' });
-        const utf8Decoder = new TextDecoder('utf-8');
-        const decodedString: string = utf8Decoder.decode(response.data);
-
-        const jsonData: IJsonStructure = JSON.parse(decodedString);
-
-        const formattedMessages: string[][] = jsonData.messages.map((message: IMessage) => {
-
-            const mDate = new Date(message.timestamp_ms).toISOString();
-            const mSender = utf8.decode(message.sender_name);
-            //const mContent = message.content ? (utf8.decode(message.content) + (message.share && message.share.link ? ' ' + message.share.link : '')) : (message.share && message.share.link ? message.share.link : "");
-            let mContent = message.content ? utf8.decode(message.content) : '';
-            if (message.share && message.share.link) {
-                mContent += (mContent ? ' ' : '') + message.share.link;
-            }
-            if (message.photos && message.photos.length > 0) {
-                const photoUris = message.photos.map(photo => photo.uri).join(' ');
-                mContent += (mContent ? ' ' : '') + photoUris;
-            }
-
-            const mShare = message.share ? message.share.link : "";
-
-            return [
-                `${mDate}`, `${mSender}`, `${mContent}` , `${mShare}`
-            ];
-        });
-
-        if (formattedMessages.length > 0) {
-            dispatch({
-                type: "chatFile",
-                payload: formattedMessages,
-            });
-        }
-    } catch (error) {
-        console.error("An error occurred in the formatingJsonFile function:", error);
-        throw error;
-    }
+  try {
+    const r = await fetch(url);
+    const texto = await r.text();
+    dispatch({
+      type: "chatFile",
+      payload: filasDelChat(
+        { texto, nombre: "message_1.json", textos: [texto] },
+        "instagram"
+      ),
+    });
+  } catch (error) {
+    console.error("No se pudo leer el chat de Instagram:", error);
+    dispatch({ type: "downloadingFileError", payload: "Error-getting-file" });
+  }
 }
 
 
