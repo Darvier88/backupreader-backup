@@ -9,6 +9,7 @@ import { VaultPasswordSection } from "../vault";
 import { SubscriptionSection } from "../account/SubscriptionSection";
 import { SeccionCuenta } from "../account/SeccionCuenta";
 import { ConversationsDrawer } from "../drawers";
+import { useSesion } from "../../hooks/useSesion";
 import { useEspacioOcupado } from "../../hooks/useEspacioOcupado";
 import { tamanoLegible } from "../../lib/tamano-legible";
 import { pedirSincronizacion } from "../../lib/pedir-sincronizacion";
@@ -61,9 +62,12 @@ export const AccountScreen: FC = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user?.uid]);
 
+  const { puedeVerChats } = useSesion();
+  /* Sin plan, «Inicio» lleva a los planes y no al panel (que le mandaría
+     allí de todas formas). */
   const volverAlInicio = () => {
     cerrarChat();
-    router.push("/dashboard");
+    router.push(puedeVerChats ? "/dashboard" : "/plans");
   };
 
   /* Esc vuelve al inicio, salvo que se esté escribiendo en un campo (ahí Esc
@@ -153,15 +157,20 @@ export const AccountScreen: FC = () => {
 
   return (
     <div style={{ display: "flex", minHeight: "100vh", background: "var(--paper-50)", maxWidth: 1360, margin: "0 auto", width: "100%" }}>
-      <aside style={{ width: 300, flexShrink: 0, alignSelf: "stretch", background: "var(--paper-100)", borderRight: "1px solid var(--border)" }}>
-        <ConversationsDrawer
-          selected=""
-          onPress={(fullPath, nombre) => {
-            getFile(fullPath, nombre);
-            router.push("/dashboard");
-          }}
-        />
-      </aside>
+      {/* Sin plan vigente no hay panel de chats: Mi cuenta se sigue pudiendo
+          ver (para contratar, ver la suscripción o salir), pero no es una
+          puerta trasera a los chats. */}
+      {puedeVerChats && (
+        <aside style={{ width: 300, flexShrink: 0, alignSelf: "stretch", background: "var(--paper-100)", borderRight: "1px solid var(--border)" }}>
+          <ConversationsDrawer
+            selected=""
+            onPress={(fullPath, nombre) => {
+              getFile(fullPath, nombre);
+              router.push("/dashboard");
+            }}
+          />
+        </aside>
+      )}
       <div style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column" }}>
         <nav className="br-migas" aria-label={enTexto(t("Migas"))}>
           <button type="button" className="br-volver-inicio" onClick={volverAlInicio}>

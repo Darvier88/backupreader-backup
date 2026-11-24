@@ -37,3 +37,24 @@ export const tieneAcceso = (user: UsuarioConPlan, daysLeft: number): boolean => 
 /** ¿Hay un plan cancelado que aún no ha expirado? */
 export const planCancelado = (user: UsuarioConPlan): boolean =>
   Boolean(user?.plan && user?.planCancelAt && Date.now() < (user.planCancelAt as number));
+
+/**
+ * Páginas que solo se ven con plan vigente (o prueba activa).
+ *
+ * Se comprueba en CADA cambio de ruta (LoadingComponent), no solo al iniciar
+ * sesión: antes bastaba con ir a Ayuda justo después de crear la cuenta y
+ * volver al panel desde allí (logo, «Mis chats») para usar la app sin pagar.
+ */
+export const RUTAS_CON_PLAN = ["/dashboard", "/initialDashboard", "/backups/[id]"];
+
+/**
+ * Adónde mandar a un usuario con sesión, o null si se queda donde está.
+ *  - Con acceso: de /login, /auth o la home, al panel.
+ *  - Sin acceso: de /login o /auth, y de cualquier página con plan, a /plans.
+ *    Ayuda, legales y Mi cuenta se pueden ver sin plan.
+ */
+export const destinoConSesion = (pathname: string, conAcceso: boolean): string | null => {
+  const vieneDeEntrar = pathname === "/login" || pathname === "/auth";
+  if (conAcceso) return vieneDeEntrar || pathname === "/" ? "/dashboard" : null;
+  return vieneDeEntrar || RUTAS_CON_PLAN.includes(pathname) ? "/plans" : null;
+};

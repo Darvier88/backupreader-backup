@@ -12,7 +12,7 @@ import { AuthContext } from "../../context/AuthContext";
 import { StorageContext } from "../../context/StorageContext";
 import { FirestoreContext } from "../../context/FirestoreContext";
 import { useLoading } from "../../context/LoadingContext";
-import { tieneAcceso } from "../../config/acceso";
+import { tieneAcceso, destinoConSesion, RUTAS_CON_PLAN } from "../../config/acceso";
 
 import { User } from "firebase/auth";
 
@@ -212,24 +212,11 @@ export const LoadingComponent: FC<LoadingComponentProps> = ({ children }) => {
          periodo pagado. La regla entera vive en config/acceso.ts. */
       const hasAccess = tieneAcceso(user, daysLeft);
 
-      // Rutas por las que se llega justo tras crear cuenta o iniciar sesión.
-      const cameFromAuth =
-        router.pathname === "/login" || router.pathname === "/auth";
-
-      if (hasAccess) {
-        // Con plan (o prueba activa): al autenticarse o abrir la home, al dashboard.
-        if (cameFromAuth || router.pathname === "/") {
-          router.replace("/dashboard");
-        }
-        // En el resto de páginas (ayuda, cuenta, etc.) se le deja donde está.
-      } else {
-        // Sin plan ni prueba: mostrar /plans SOLO al crear cuenta / iniciar sesión,
-        // o si intenta entrar al área protegida (/dashboard).
-        // En las demás páginas NO se le fuerza a /plans.
-        if (cameFromAuth || router.pathname === "/dashboard") {
-          router.replace("/plans");
-        }
-      }
+      /* Adónde va (o null si se queda): la regla vive en config/acceso.ts.
+         Sin acceso, cualquier página con plan lleva a /plans, llegue como
+         llegue; Ayuda, legales y Mi cuenta se pueden ver. */
+      const destino = destinoConSesion(router.pathname, hasAccess);
+      if (destino && destino !== router.pathname) router.replace(destino);
 
       setLoading(false);
       return;
@@ -251,7 +238,9 @@ export const LoadingComponent: FC<LoadingComponentProps> = ({ children }) => {
     /* Hay sesión pero el documento de Firestore todavía no ha llegado.
        No se expulsa ni se apaga el spinner: se espera a getUser. */
 
-  }, [user, authChecked, firebaseUser, daysLeft]);
+    /* router.pathname va en las dependencias: sin él, navegar dentro de la
+       app (de /help a /dashboard, por ejemplo) no volvía a comprobar el acceso. */
+  }, [user, authChecked, firebaseUser, daysLeft, router.pathname]);
 
 
   /* Red de seguridad: si algo falla y nadie apaga el spinner, se apaga solo a
@@ -266,12 +255,18 @@ export const LoadingComponent: FC<LoadingComponentProps> = ({ children }) => {
 
   const subiendo = uploadStatus === "saving";
 
+  /* Mientras se redirige a /plans no se pinta la página con plan: si no, el
+     panel con los chats asomaba un instante (y empezaba a cargar) antes de
+     que la redirección hiciera efecto. */
+  const sinAccesoAqui =
+    Boolean(user) && RUTAS_CON_PLAN.includes(router.pathname) && !tieneAcceso(user, daysLeft);
+
   return (
     <>
       {/* Mientras se sube se deja el dashboard debajo: la capa de subida ya
           tapa la pantalla, y cambiar además lo de abajo era parte del efecto
           de "la página se cambia sola". */}
-      {loading && !subiendo ? (
+      {(loading || sinAccesoAqui) && !subiendo ? (
         <Container
           style={{
             ...styles.container,
