@@ -59,6 +59,16 @@ CLAVE="staging-service-account.json"
 REGION="${1:-}"
 FACTURACION="${2:-}"
 
+# La región de Firestore y la del bucket NO son el mismo catálogo. Firestore
+# usa multirregiones propias («nam5», «eur3») que Storage no acepta, así que
+# pasarle «nam5» al bucket falla con un error que no explica por qué. Se
+# traduce a la región de Storage que les corresponde.
+case "${1:-}" in
+  nam5|nam7) REGION_BUCKET="us-central1" ;;
+  eur3)      REGION_BUCKET="europe-west1" ;;
+  *)         REGION_BUCKET="${1:-}" ;;
+esac
+
 rojo() { printf '\033[31m%s\033[0m\n' "$*"; }
 paso() { printf '\n\033[1m==> %s\033[0m\n' "$*"; }
 
@@ -83,7 +93,7 @@ for cmd in gcloud npx; do
 done
 
 echo "Proyecto: $PROYECTO"
-echo "Región:   $REGION"
+echo "Región:   $REGION (bucket: $REGION_BUCKET)"
 echo "Dominio:  $DOMINIO"
 read -r -p "¿Seguimos? [s/N] " ok
 [ "$ok" = "s" ] || [ "$ok" = "S" ] || exit 0
@@ -122,7 +132,7 @@ curl -sS -X POST \
   -H "Authorization: Bearer $TOKEN" \
   -H "Content-Type: application/json" \
   "https://firebasestorage.googleapis.com/v1beta/projects/$PROYECTO/defaultBucket?bucketId=$PROYECTO.firebasestorage.app" \
-  -d '{"storageClass":"STANDARD","location":"'"$REGION"'"}' | head -c 400 || \
+  -d '{"storageClass":"STANDARD","location":"'"$REGION_BUCKET"'"}' | head -c 400 || \
   rojo "No se pudo crear el bucket; créalo en la consola (Storage → Comenzar) y sigue."
 echo
 

@@ -52,6 +52,16 @@ Set-Location (Join-Path $PSScriptRoot "..")
 $Proyecto = "backup-reader-staging"
 $Dominio  = "staging.backupreader.com"
 $Bucket   = "$Proyecto.firebasestorage.app"
+# La región de Firestore y la del bucket NO son el mismo catálogo. Firestore
+# usa multirregiones propias («nam5», «eur3») que Storage no acepta, así que
+# pasarle «nam5» al bucket falla con un error que no explica por qué. Se
+# traduce a la región de Storage que les corresponde.
+$RegionBucket = switch ($Region) {
+  "nam5"  { "us-central1" }
+  "nam7"  { "us-central1" }
+  "eur3"  { "europe-west1" }
+  default { $Region }
+}
 $Salida   = "staging.env"
 $Clave    = "staging-service-account.json"
 
@@ -71,7 +81,7 @@ foreach ($cmd in @("gcloud", "npx")) {
 }
 
 Write-Host "Proyecto: $Proyecto"
-Write-Host "Región:   $Region"
+Write-Host "Región:   $Region (bucket: $RegionBucket)"
 Write-Host "Dominio:  $Dominio"
 $ok = Read-Host "¿Seguimos? [s/N]"
 if ($ok -ne "s" -and $ok -ne "S") { exit 0 }
@@ -111,7 +121,7 @@ Paso "4/10 Storage"
 try {
   Invoke-RestMethod -Method Post -Headers $cabeceras -ContentType "application/json" `
     -Uri "https://firebasestorage.googleapis.com/v1beta/projects/$Proyecto/defaultBucket?bucketId=$Bucket" `
-    -Body (@{ storageClass = "STANDARD"; location = $Region } | ConvertTo-Json) | Out-Null
+    -Body (@{ storageClass = "STANDARD"; location = $RegionBucket } | ConvertTo-Json) | Out-Null
   Write-Host "Bucket: gs://$Bucket"
 } catch {
   Aviso "No se pudo crear el bucket ($($_.Exception.Message)). Créalo en la consola y sigue."
