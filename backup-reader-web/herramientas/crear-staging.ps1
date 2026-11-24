@@ -46,7 +46,14 @@ param(
   [string]$Facturacion
 )
 
-$ErrorActionPreference = "Stop"
+# Los errores de PowerShell SÍ paran el guion; los de los programas externos,
+# NO. Suena al revés de lo deseable, pero es a propósito: en Windows `gcloud`
+# es a su vez un guion de PowerShell, y todo lo que escribe en el canal de
+# errores (incluido un «no existe» de los que aquí se esperan) se convierte en
+# un error de PowerShell que, con «Stop», aborta el guion antes de poder mirar
+# si de verdad falló. Por eso cada llamada a gcloud comprueba su código de
+# salida, que es lo único que distingue «falló» de «escribió algo».
+$ErrorActionPreference = "Continue"
 
 # Se coloca solo en la carpeta de la aplicación, así da igual desde dónde se
 # llame: dentro busca `cors.json`, `firebase.json` y la herramienta de siembra

@@ -37,7 +37,14 @@ param(
   [string]$RegionBucket = "us-central1"
 )
 
-$ErrorActionPreference = "Stop"
+# Los errores de PowerShell SÍ paran el guion; los de los programas externos,
+# NO. Suena al revés de lo deseable, pero es a propósito: en Windows `gcloud`
+# es a su vez un guion de PowerShell, y todo lo que escribe en el canal de
+# errores (incluido un «no existe» de los que aquí se esperan) se convierte en
+# un error de PowerShell que, con «Stop», aborta el guion antes de poder mirar
+# si de verdad falló. Por eso cada llamada a gcloud comprueba su código de
+# salida, que es lo único que distingue «falló» de «escribió algo».
+$ErrorActionPreference = "Continue"
 Set-Location (Join-Path $PSScriptRoot "..")
 
 function Paso($t) { Write-Host "`n==> $t" -ForegroundColor Cyan }
@@ -103,8 +110,14 @@ Paso "4/5 Reglas y CORS"
 # que nadie pidió.
 npx firebase deploy --only firestore:rules,storage:rules `
   --config firebase.staging-interno.json -P $Proyecto
+if ($LASTEXITCODE -ne 0) {
+  Aviso "Las reglas no se desplegaron. SIN ELLAS la base y el bucket de pruebas quedan cerrados y la aplicación no podrá escribir."
+}
 
 gcloud storage buckets update "gs://$Bucket" --cors-file=cors.json --project $Proyecto
+if ($LASTEXITCODE -ne 0) {
+  Aviso "El CORS no se aplicó. Sin él, el navegador no podrá subir archivos a ese bucket."
+}
 
 Paso "5/5 Planes"
 $clave = "staging-service-account.json"
