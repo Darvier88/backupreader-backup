@@ -25,6 +25,32 @@ inventados.
 - `herramientas/sembrar-emulador.mjs` puede sembrar un Firebase real con
   `BR_PROYECTO`, y se niega a hacerlo contra producción.
 
+## Lo más barato que funciona: bucket aparte y cuenta de prueba
+
+Es lo que queda cuando no hay permisos de facturación NI permiso para crear
+bases de datos, que es la situación real hoy: en `backup-reader` se es editor,
+y un editor puede crear buckets pero no bases.
+
+```powershell
+.\herramientas\crear-staging-bucket.ps1
+```
+
+Crea un bucket aparte en `backup-reader`, lo da de alta en Firebase, le
+despliega las mismas reglas y le pone el CORS. Nada más.
+
+Lo que hace que esto separe de verdad no es el bucket, es la **cuenta de
+prueba**: todo en la aplicación cuelga del identificador de usuario
+(`backups/{uid}/...`), así que entrando con otra cuenta los documentos son
+nuevos bajo un identificador nuevo. Ninguna escritura cae sobre datos que ya
+existen.
+
+**Lo que no separa:** los documentos viven en la misma base que producción, así
+que cuentan en su cuota y se ven en su consola; y el registro de usuarios es el
+mismo. No es un entorno aislado, es producción con un rincón limpio.
+
+Al acabar, se borra la cuenta desde Authentication y el bucket se vacía entero
+sin pensarlo, porque dentro solo hay pruebas.
+
 ## Staging dentro del proyecto de producción
 
 Esta es la salida cuando no hay permisos de facturación, y es la que se usa
