@@ -165,6 +165,47 @@ propia Vercel ya marca el despliegue y la aplicación se da cuenta sola.
 
 ---
 
+## Probar desde el móvil SIN nada de lo anterior
+
+Para ver la aplicación en el móvil no hace falta ni proyecto de Firebase ni
+facturación ni dominio: basta con los emuladores del PC y que el móvil esté en
+la misma red.
+
+Por defecto los emuladores solo escuchan en `127.0.0.1`, así que desde el móvil
+no se ven. `firebase.movil.json` es el mismo arranque pero escuchando en toda
+la red local. Va aparte y no cambia el de siempre a propósito: abrir los
+puertos no es el comportamiento que se quiere por defecto, solo cuando se está
+probando con el teléfono.
+
+1. Mira la IP del PC: `ipconfig` en Windows, `ip addr` en Linux, `ipconfig
+   getifaddr en0` en Mac. Es la del adaptador de wifi, tipo `192.168.1.40`.
+
+2. En `.env.local`:
+
+   ```
+   NEXT_PUBLIC_USE_EMULATORS=1
+   NEXT_PUBLIC_EMULATOR_HOST=192.168.1.40
+   NEXT_PUBLIC_INSTAGRAM_ENABLED=1
+   ```
+
+   La IP tiene que ser la del PC, no `127.0.0.1`: el móvil interpreta esa
+   dirección como «yo mismo» y no encontraría nada.
+
+3. Dos terminales:
+
+   ```sh
+   npx firebase emulators:start --config firebase.movil.json --only firestore,storage,auth --project demo-backupreader
+   npm run dev -- -H 0.0.0.0
+   ```
+
+4. En el móvil, `http://192.168.1.40:3000`.
+
+Si no carga, casi siempre es el cortafuegos de Windows: la primera vez pregunta
+si permites Node en redes privadas, y hay que decir que sí.
+
+Los datos viven solo en los emuladores y se borran al apagarlos, así que no hay
+nada que limpiar después.
+
 ## Cómo se usa después
 
 - Día a día, emuladores: `npx firebase emulators:start --only firestore,storage,auth --project demo-backupreader`.
