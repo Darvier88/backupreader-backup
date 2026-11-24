@@ -194,7 +194,18 @@ export function appDeAdmin(): App | null {
 }
 
 export const authAdmin = () => getAuth(appDeAdmin()!);
-export const dbAdmin = () => getFirestore(appDeAdmin()!);
+/**
+ * La base de datos, del lado del servidor.
+ *
+ * Tiene que ser LA MISMA que usa el navegador (`config/firebase.ts`), por eso
+ * lee la misma variable: si el servidor escribiera en la base por defecto y el
+ * navegador leyera de la de pruebas, cada uno vería la mitad de las cosas y
+ * nada fallaría de forma visible.
+ */
+export const dbAdmin = () => {
+  const base = (process.env.NEXT_PUBLIC_FIRESTORE_DB || "").trim();
+  return base ? getFirestore(appDeAdmin()!, base) : getFirestore(appDeAdmin()!);
+};
 export const bucketAdmin = () => getStorage(appDeAdmin()!).bucket();
 
 /* ------------------------------------------------------------------ *

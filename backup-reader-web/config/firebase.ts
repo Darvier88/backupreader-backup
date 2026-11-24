@@ -17,7 +17,20 @@ const firebaseConfig = {
 //Initialize Firebase
 export const FirebaseApp = initializeApp(firebaseConfig);
 export const FirebaseAuth = getAuth(FirebaseApp);
-export const FirebaseDB = getFirestore(FirebaseApp);
+/**
+ * La base de datos.
+ *
+ * Un proyecto de Firebase puede tener VARIAS bases de Firestore, y eso es lo
+ * que permite tener un entorno de pruebas sin crear otro proyecto: producción
+ * sigue en la base por defecto y las pruebas van a una con nombre, dentro del
+ * mismo proyecto. Los datos no se tocan entre sí.
+ *
+ * Sin la variable se usa la de siempre, así que producción no cambia.
+ */
+export const BASE_DE_DATOS = (process.env.NEXT_PUBLIC_FIRESTORE_DB || "").trim();
+export const FirebaseDB = BASE_DE_DATOS
+  ? getFirestore(FirebaseApp, BASE_DE_DATOS)
+  : getFirestore(FirebaseApp);
 
 const app = getApp();
 
