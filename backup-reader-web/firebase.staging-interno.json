@@ -1,4 +1,8 @@
 {
-  "firestore": { "database": "staging", "rules": "firestore.rules" },
-  "storage": { "bucket": "backup-reader-staging-data", "rules": "storage.rules" }
+  "firestore": [
+    { "database": "staging", "rules": "firestore.rules" }
+  ],
+  "storage": [
+    { "bucket": "backup-reader-staging-data", "rules": "storage.rules" }
+  ]
 }

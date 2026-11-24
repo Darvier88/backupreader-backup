@@ -1,3 +1,5 @@
 {
-  "storage": { "bucket": "backup-reader-staging-data", "rules": "storage.rules" }
+  "storage": [
+    { "bucket": "backup-reader-staging-data", "rules": "storage.rules" }
+  ]
 }
