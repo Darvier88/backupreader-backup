@@ -13,6 +13,7 @@ import { StorageContext } from "../../context/StorageContext";
 import { FirestoreContext } from "../../context/FirestoreContext";
 import { useLoading } from "../../context/LoadingContext";
 import { tieneAcceso } from "../../config/acceso";
+import { esRutaPrivada, exigePlan } from "../../config/rutas";
 
 import { User } from "firebase/auth";
 
@@ -223,10 +224,14 @@ export const LoadingComponent: FC<LoadingComponentProps> = ({ children }) => {
         }
         // En el resto de páginas (ayuda, cuenta, etc.) se le deja donde está.
       } else {
-        // Sin plan ni prueba: mostrar /plans SOLO al crear cuenta / iniciar sesión,
-        // o si intenta entrar al área protegida (/dashboard).
-        // En las demás páginas NO se le fuerza a /plans.
-        if (cameFromAuth || router.pathname === "/dashboard") {
+        /* Sin plan ni prueba: a /plans al crear cuenta o iniciar sesión, y en
+           cualquier página que exija plan. Antes aquí solo se miraba
+           "/dashboard", y como `/initialDashboard` y `/backups/[id]` no
+           estaban en esa lista, se llegaba a ellas desde Ayuda y se podía
+           subir y leer chats sin pagar. La lista vive ahora en config/rutas.
+           En el resto (portada, legales, ayuda, cuenta) se le deja: a la
+           cuenta hay que poder llegar sin plan, que es donde se contrata. */
+        if (cameFromAuth || exigePlan(router.pathname)) {
           router.replace("/plans");
         }
       }
@@ -241,7 +246,10 @@ export const LoadingComponent: FC<LoadingComponentProps> = ({ children }) => {
          privada. En cualquier otra ruta (marketing, legales) se le deja donde
          está; un router.replace a la misma ruta provoca "Cancel rendering
          route". */
-      if (router.pathname === "/dashboard") {
+      /* Igual que arriba: se expulsa de TODA página privada, no solo del
+         panel. `/backups/[id]` sin sesión enseñaba su estructura vacía en vez
+         de devolver a la portada. */
+      if (esRutaPrivada(router.pathname)) {
         router.replace("/");
       }
       setLoading(false);
