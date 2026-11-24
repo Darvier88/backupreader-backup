@@ -1,4 +1,4 @@
-# Deja listo el proyecto de pruebas (staging) sin ir clic a clic por la consola.
+﻿# Deja listo el proyecto de pruebas (staging) sin ir clic a clic por la consola.
 #
 # Esta es la versión de PowerShell, para Windows. La de bash, para Mac y Linux,
 # es `crear-staging.sh` y hace exactamente lo mismo. No se usa bash aquí a
@@ -35,6 +35,11 @@
 # no tendría arreglo.
 #
 # NO TOCA PRODUCCIÓN: el id está fijo aquí abajo y se comprueba.
+#
+# El archivo va con marca de UTF-8 (BOM) a propósito: sin ella, PowerShell 5.1
+# lo lee como ANSI y los acentos salen rotos («RegiÃ³n»). No cambia lo que
+# hace, pero un guion que escribe mal lo que te está preguntando da la
+# impresión de estar fallando cuando no falla.
 
 param(
   [Parameter(Mandatory = $true)][string]$Region,
