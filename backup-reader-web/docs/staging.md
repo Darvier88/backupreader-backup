@@ -44,7 +44,37 @@ inventados.
 7. Plan **Blaze**, si vas a probar subidas grandes. El gasto de staging es casi
    cero, pero Storage lo pide.
 
-Después, desde el repositorio:
+### Lo que se copia solo, y lo que no
+
+Firebase no tiene «duplicar proyecto». De la configuración de producción:
+
+- **Las reglas de Firestore y Storage se copian con un comando**, porque salen
+  del mismo archivo del repositorio. Es lo más delicado y lo más barato.
+- **Los planes** los pone la herramienta de siembra.
+- **El CORS del bucket** sale de `cors.json`.
+- **A mano quedan cuatro cosas**, y por un motivo: crear Firestore y Storage
+  (hay que elegir región y eso no se puede cambiar después), activar los
+  proveedores de Authentication (el de Google necesita su propio cliente
+  OAuth), pasar a Blaze, y autorizar el dominio.
+
+### Los índices de Firestore
+
+No están versionados. Si producción tiene índices compuestos, se sacan de allí
+y se llevan a staging:
+
+```sh
+npx firebase firestore:indexes -P default > firestore.indexes.json
+```
+
+y luego se añade a `firebase.json`, dentro de `"firestore"`, la línea
+`"indexes": "firestore.indexes.json"`.
+
+**Cuidado con el orden.** Ese archivo no se crea vacío ni a medias: un
+`deploy --only firestore:indexes` contra producción con un archivo incompleto
+BORRA los índices que no estén en él. Primero se exporta de producción, se
+revisa que estén todos, y solo entonces se despliega a staging.
+
+### Después, desde el repositorio
 
 ```sh
 npx firebase deploy --only firestore:rules,storage:rules -P staging
