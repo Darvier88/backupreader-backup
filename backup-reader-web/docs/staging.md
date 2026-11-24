@@ -92,9 +92,9 @@ node herramientas/sembrar-emulador.mjs planes
 ### 2. El dominio y el despliegue
 
 2. En Vercel, **Settings → Git**, deja `main` como rama de producción. La rama
-   que se prueba es `staging-instagram`, que ya está subida.
+   que se prueba es `staging-ig`, que ya está subida.
 3. **Settings → Domains**, añade `staging.backupreader.com` y asígnalo a la
-   rama `staging-instagram`. Esto es lo que te deja abrirlo **desde el móvil**
+   rama `staging-ig`. Esto es lo que te deja abrirlo **desde el móvil**
    con tu export real.
 4. **Settings → Deployment Protection**, enciende la protección por contraseña
    para las previews. Doble red con el `noindex`.
@@ -137,7 +137,7 @@ propia Vercel ya marca el despliegue y la aplicación se da cuenta sola.
 
 - Día a día, emuladores: `npx firebase emulators:start --only firestore,storage,auth --project demo-backupreader`.
 - Para probar algo que los emuladores no cubren (el móvil, el dominio, pagos,
-  correos, subidas grandes), empuja a `staging-instagram` y pruébalo en el
+  correos, subidas grandes), empuja a `staging-ig` y pruébalo en el
   subdominio.
 - A producción se pasa fusionando a `main`, y las banderas se encienden
   después, por separado.
