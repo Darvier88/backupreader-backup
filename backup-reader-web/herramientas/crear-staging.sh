@@ -99,15 +99,30 @@ read -r -p "¿Seguimos? [s/N] " ok
 [ "$ok" = "s" ] || [ "$ok" = "S" ] || exit 0
 
 paso "1/10 Facturación"
+# Sin facturación no sigue: Storage la exige y la API de Authentication
+# también, así que continuar solo produce un 400 y un 403 que no dicen que la
+# causa es ésta. La cuenta por defecto es la de producción, para no tener que
+# buscar el identificador a mano.
 if [ -z "$FACTURACION" ]; then
-  FACTURACION="$(gcloud billing accounts list --filter=open=true --format='value(name)' | head -1 | sed 's#billingAccounts/##')"
+  FACTURACION="$(gcloud billing projects describe backup-reader \
+    --format='value(billingAccountName)' 2>/dev/null | sed 's#billingAccounts/##')"
+fi
+if [ -z "$FACTURACION" ]; then
+  FACTURACION="$(gcloud billing accounts list --format='value(name)' 2>/dev/null | head -1 | sed 's#billingAccounts/##')"
 fi
 if [ -n "$FACTURACION" ]; then
-  gcloud billing projects link "$PROYECTO" --billing-account="$FACTURACION" || \
-    rojo "No se pudo vincular la facturación; hazlo en la consola y vuelve a correr esto."
-else
-  rojo "No encontré ninguna cuenta de facturación. Pásala como segundo argumento."
+  echo "Cuenta: $FACTURACION"
+  gcloud billing projects link "$PROYECTO" --billing-account="$FACTURACION" >/dev/null || true
 fi
+
+if [ "$(gcloud billing projects describe "$PROYECTO" --format='value(billingEnabled)' 2>/dev/null)" != "True" ]; then
+  rojo "PARADO: el proyecto sigue sin facturación."
+  echo "Mira cuál usa producción:"
+  echo "  gcloud billing projects describe backup-reader --format='value(billingAccountName)'"
+  echo "y repite esto pasándola como segundo argumento, o pásalo a Blaze desde la consola."
+  exit 1
+fi
+echo "Facturación activa."
 
 paso "2/10 APIs"
 gcloud services enable \
@@ -137,6 +152,11 @@ curl -sS -X POST \
 echo
 
 paso "5/10 Correo y contraseña"
+# Authentication hay que inicializarlo antes de configurarlo, o la API
+# responde 403 sin explicar nada. Equivale al botón «Comenzar» de la consola.
+curl -sS -X POST -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" \
+  "https://identitytoolkit.googleapis.com/admin/v2/projects/$PROYECTO/identityPlatform:initializeAuth" \
+  -d '{}' >/dev/null || true
 curl -sS -X PATCH \
   -H "Authorization: Bearer $TOKEN" \
   -H "Content-Type: application/json" \

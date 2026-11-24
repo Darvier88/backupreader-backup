@@ -92,16 +92,44 @@ $ok = Read-Host "¿Seguimos? [s/N]"
 if ($ok -ne "s" -and $ok -ne "S") { exit 0 }
 
 Paso "1/10 Facturación"
+# Sin facturación no sigue adelante: Storage la exige y la API de
+# Authentication también, así que seguir solo produce un 400 y un 403 sueltos
+# que no dicen que la causa es ésta.
 if (-not $Facturacion) {
-  $Facturacion = (gcloud billing accounts list --filter=open=true --format="value(name)" |
+  # La de producción es la que se quiere: así staging va a la misma cuenta y
+  # no hay que buscar el identificador a mano.
+  $Facturacion = (gcloud billing projects describe backup-reader `
+    --format="value(billingAccountName)" 2>$null) -replace "billingAccounts/", ""
+}
+if (-not $Facturacion) {
+  $Facturacion = (gcloud billing accounts list --format="value(name)" 2>$null |
     Select-Object -First 1) -replace "billingAccounts/", ""
 }
 if ($Facturacion) {
-  try { gcloud billing projects link $Proyecto --billing-account=$Facturacion }
-  catch { Aviso "No se pudo vincular la facturación. Hazlo en la consola y vuelve a correr esto." }
-} else {
-  Aviso "No encontré cuenta de facturación. Pásala con -Facturacion XXXXXX-XXXXXX-XXXXXX"
+  Write-Host "Cuenta: $Facturacion"
+  try { gcloud billing projects link $Proyecto --billing-account=$Facturacion | Out-Null }
+  catch { Aviso "No se pudo vincular: $($_.Exception.Message)" }
 }
+
+$activa = gcloud billing projects describe $Proyecto --format="value(billingEnabled)" 2>$null
+if ("$activa" -ne "True") {
+  Write-Host @"
+
+PARADO. El proyecto sigue sin facturación, y sin ella Storage no se puede
+crear y la API de Authentication responde 403.
+
+Mira cuál usa producción:
+  gcloud billing projects describe backup-reader --format="value(billingAccountName)"
+
+Y vuelve a correr esto con ese identificador:
+  .\herramientas\crear-staging.ps1 -Region $Region -Facturacion XXXXXX-XXXXXX-XXXXXX
+
+Si no te deja por permisos, pásalo a Blaze desde la consola de Firebase
+(abajo a la izquierda, Actualizar) y repite. Lo ya creado no se toca.
+"@ -ForegroundColor Red
+  exit 1
+}
+Write-Host "Facturación activa."
 
 Paso "2/10 APIs"
 gcloud services enable firestore.googleapis.com firebasestorage.googleapis.com `
@@ -133,6 +161,17 @@ try {
 }
 
 Paso "5/10 Correo y contraseña"
+# Hay que inicializar Authentication antes de tocar su configuración, o la API
+# responde 403 sin más explicación. Es lo mismo que el botón «Comenzar» de la
+# consola, y si ya estaba hecho, da error y se ignora.
+try {
+  Invoke-RestMethod -Method Post -Headers $cabeceras -ContentType "application/json" `
+    -Uri "https://identitytoolkit.googleapis.com/admin/v2/projects/$Proyecto/identityPlatform:initializeAuth" `
+    -Body "{}" | Out-Null
+  Write-Host "Authentication inicializado."
+} catch {
+  Write-Host "Authentication ya estaba inicializado."
+}
 $cuerpo = @{ signIn = @{ email = @{ enabled = $true; passwordRequired = $true } } } | ConvertTo-Json -Depth 5
 Invoke-RestMethod -Method Patch -Headers $cabeceras -ContentType "application/json" `
   -Uri "https://identitytoolkit.googleapis.com/admin/v2/projects/$Proyecto/config?updateMask=signIn.email" `
