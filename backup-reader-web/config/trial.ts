@@ -6,13 +6,14 @@
 //    NEXT_PUBLIC_FREE_TRIAL_ENABLED=true   -> hay prueba gratuita (15 días)
 //    NEXT_PUBLIC_FREE_TRIAL_ENABLED=false  -> NO hay prueba; sin plan => /plans
 //
-//  Si la variable no está definida, por defecto la prueba queda ACTIVA
-//  (comportamiento histórico del proyecto).
+//  Si la variable no está definida, la prueba queda APAGADA: sin plan no hay
+//  acceso. Antes era al revés (activa salvo que pusiera "false"), así que un
+//  despliegue sin la variable daba 15 días gratis a toda cuenta nueva.
 // ============================================================================
 
 // ¿Está activo el periodo de prueba?
 export const FREE_TRIAL_ENABLED =
-  process.env.NEXT_PUBLIC_FREE_TRIAL_ENABLED !== "false";
+  process.env.NEXT_PUBLIC_FREE_TRIAL_ENABLED === "true";
 
 // Duración de la prueba en días (solo aplica si está activa).
 export const FREE_TRIAL_DAYS = 15;

@@ -16,7 +16,7 @@ import { tieneAcceso } from "../config/acceso";
  * al panel (plan vigente o prueba). Sin ella, «Mis chats» llevaría a /dashboard
  * y de ahí te devolvería a /plans.
  */
-export function useSesion(): { haySesion: boolean; puedeVerChats: boolean } {
+export function useSesion(): { haySesion: boolean; puedeVerChats: boolean; listo: boolean } {
   const { user } = useContext(FirestoreContext);
   const [cuenta, setCuenta] = useState<User | null>(() =>
     typeof window !== "undefined" ? FirebaseAuth.currentUser : null
@@ -30,5 +30,8 @@ export function useSesion(): { haySesion: boolean; puedeVerChats: boolean } {
   return {
     haySesion: Boolean(cuenta),
     puedeVerChats: Boolean(cuenta && user && tieneAcceso(user, dias)),
+    /* Ya se sabe si tiene plan: hay sesión y su documento ya llegó. Mientras
+       no, `puedeVerChats` es false solo porque falta el dato. */
+    listo: Boolean(cuenta && user),
   };
 }
