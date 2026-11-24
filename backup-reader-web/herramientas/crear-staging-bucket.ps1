@@ -100,7 +100,12 @@ Paso "3/4 Reglas del bucket"
 # Con `firebase.staging-bucket.json`, que apunta SOLO a este bucket. Las reglas
 # son el mismo archivo que producción y empiezan por `match /b/{bucket}/o`, así
 # que valen igual aquí. El bucket de producción no se toca.
-npx firebase deploy --only storage:rules --config firebase.staging-bucket.json -P $Proyecto
+# OJO con `--only storage:rules`: cuando la configuración apunta a buckets
+# concretos, lo que va tras los dos puntos se interpreta como el NOMBRE de un
+# destino, no como «las reglas», y falla con «Could not find rules for the
+# following storage targets: rules». Con `--only storage` a secas despliega lo
+# que haya en la configuración, que aquí son justo las reglas de este bucket.
+npx firebase deploy --only storage --config firebase.staging-bucket.json -P $Proyecto
 if ($LASTEXITCODE -ne 0) {
   Aviso "Las reglas no se desplegaron. SIN ELLAS el bucket queda cerrado y la aplicación no podrá subir nada."
   Aviso "Si es por permisos, aquí se acaban los rodeos: emuladores, o pedir acceso."

@@ -108,7 +108,12 @@ Paso "4/5 Reglas y CORS"
 # bucket de pruebas. Usar el de siempre desplegaría también sobre producción:
 # serían las mismas reglas y no cambiaría nada, pero es un cambio en producción
 # que nadie pidió.
-npx firebase deploy --only firestore:rules,storage:rules `
+# OJO con `--only storage:rules`: cuando la configuración apunta a buckets
+# concretos, lo que va tras los dos puntos se interpreta como el NOMBRE de un
+# destino, no como «las reglas», y falla con «Could not find rules for the
+# following storage targets: rules». Con `--only storage` a secas despliega lo
+# que haya en la configuración, que aquí son justo las reglas de este bucket.
+npx firebase deploy --only firestore:rules,storage `
   --config firebase.staging-interno.json -P $Proyecto
 if ($LASTEXITCODE -ne 0) {
   Aviso "Las reglas no se desplegaron. SIN ELLAS la base y el bucket de pruebas quedan cerrados y la aplicación no podrá escribir."
