@@ -1,5 +1,6 @@
 {
   "projects": {
-    "default": "backup-reader"
+    "default": "backup-reader",
+    "staging": "backup-reader-staging"
   }
 }
