@@ -35,7 +35,11 @@ login`:
 # la región TIENE que ser la misma que producción, y no se puede cambiar
 gcloud firestore databases describe --project backup-reader --format='value(locationId)'
 
+# Mac o Linux
 ./herramientas/crear-staging.sh LA-REGION
+
+# Windows, en PowerShell
+.\herramientas\crear-staging.ps1 -Region LA-REGION
 ```
 
 Vincula la facturación, enciende las APIs, crea Firestore y Storage, activa el

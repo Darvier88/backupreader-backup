@@ -71,6 +71,8 @@ case "$PROYECTO" in
     ;;
 esac
 
+# En Windows esto no corre: usa herramientas/crear-staging.ps1, que hace lo
+# mismo sin depender de python3, base64 ni gsutil.
 for cmd in gcloud npx; do
   command -v "$cmd" >/dev/null || { rojo "Falta $cmd."; exit 1; }
 done
@@ -186,7 +188,9 @@ paso "9/10 Reglas, las mismas que producción"
 npx firebase deploy --only firestore:rules,storage:rules -P "$PROYECTO"
 
 paso "10/10 CORS y planes"
-gsutil cors set cors.json "gs://$PROYECTO.firebasestorage.app" || \
+# `gcloud storage` en vez de `gsutil`: gsutil arrastra su propio Python y da
+# más problemas de los que resuelve.
+gcloud storage buckets update "gs://$PROYECTO.firebasestorage.app" --cors-file=cors.json || \
   rojo "CORS: comprueba el nombre del bucket y repítelo a mano."
 BR_PROYECTO="$PROYECTO" GOOGLE_APPLICATION_CREDENTIALS="$PWD/$CLAVE" \
   node herramientas/sembrar-emulador.mjs planes || \
