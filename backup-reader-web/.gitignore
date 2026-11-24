@@ -61,3 +61,8 @@ config/secret-google*.json
 # aporta nada al repositorio.
 tsconfig.tsbuildinfo
 .env.local
+
+# Lo que escribe herramientas/crear-staging.sh: variables del proyecto de
+# pruebas y su clave de servicio en base64. El repositorio es público.
+staging.env
+*.env

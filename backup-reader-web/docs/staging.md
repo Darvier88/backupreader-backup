@@ -25,7 +25,33 @@ inventados.
 - `herramientas/sembrar-emulador.mjs` puede sembrar un Firebase real con
   `BR_PROYECTO`, y se niega a hacerlo contra producción.
 
-## Lo que hay que crear a mano, una vez
+## El atajo: un guion que lo deja casi todo hecho
+
+Casi nada de lo de abajo hace falta clic a clic. Con el proyecto ya creado en
+la consola (eso sí es a mano), y tras `gcloud auth login` y `npx firebase
+login`:
+
+```sh
+# la región TIENE que ser la misma que producción, y no se puede cambiar
+gcloud firestore databases describe --project backup-reader --format='value(locationId)'
+
+./herramientas/crear-staging.sh LA-REGION
+```
+
+Vincula la facturación, enciende las APIs, crea Firestore y Storage, activa el
+inicio de sesión con correo, autoriza el dominio, registra la app web y
+**escribe las siete variables `NEXT_PUBLIC_FIREBASE_*` en `staging.env`** en vez
+de que las copies de la consola, genera la clave de servicio con su base64,
+despliega las reglas, pone el CORS y siembra los planes.
+
+Deja dos archivos, los dos ignorados por git: `staging.env` y
+`staging-service-account.json`. El repositorio es público, así que compruébalo
+igualmente antes de confirmar nada.
+
+Solo queda a mano el proveedor de Google en Authentication, si se usa: necesita
+su propio cliente OAuth y eso no se puede clonar.
+
+## Lo mismo, a mano, paso a paso
 
 ### 1. El proyecto de Firebase
 
