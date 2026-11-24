@@ -107,8 +107,8 @@ if (-not $Facturacion) {
 }
 if ($Facturacion) {
   Write-Host "Cuenta: $Facturacion"
-  try { gcloud billing projects link $Proyecto --billing-account=$Facturacion | Out-Null }
-  catch { Aviso "No se pudo vincular: $($_.Exception.Message)" }
+  gcloud billing projects link $Proyecto --billing-account=$Facturacion | Out-Null
+  if ($LASTEXITCODE -ne 0) { Aviso "No se pudo vincular esa cuenta." }
 }
 
 $activa = gcloud billing projects describe $Proyecto --format="value(billingEnabled)" 2>$null
@@ -136,10 +136,10 @@ gcloud services enable firestore.googleapis.com firebasestorage.googleapis.com `
   identitytoolkit.googleapis.com firebase.googleapis.com --project $Proyecto
 
 Paso "3/10 Firestore"
-$existe = $true
-try { gcloud firestore databases describe --project $Proyecto 2>$null | Out-Null }
-catch { $existe = $false }
-if ($existe) {
+# $LASTEXITCODE y no try/catch: en Windows PowerShell 5.1 un programa externo
+# que falla no lanza excepción, así que el catch nunca se ejecutaría.
+gcloud firestore databases describe --project $Proyecto 2>$null | Out-Null
+if ($LASTEXITCODE -eq 0) {
   Write-Host "Ya existe, no se toca."
 } else {
   gcloud firestore databases create --location=$Region --project $Proyecto

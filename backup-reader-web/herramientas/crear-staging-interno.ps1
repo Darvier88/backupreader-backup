@@ -44,7 +44,7 @@ function Paso($t) { Write-Host "`n==> $t" -ForegroundColor Cyan }
 function Aviso($t) { Write-Host $t -ForegroundColor Yellow }
 
 Write-Host @"
-Esto crea, DENTRO de $Proyecto:
+Esto crea, DENTRO de ${Proyecto}:
 
   - una base de Firestore llamada «$Base» ($Region)
   - un bucket de Storage «$Bucket» ($RegionBucket)
@@ -57,26 +57,28 @@ $ok = Read-Host "¿Seguimos? [s/N]"
 if ($ok -ne "s" -and $ok -ne "S") { exit 0 }
 
 Paso "1/5 Base de datos"
-$existe = $true
-try { gcloud firestore databases describe --database=$Base --project $Proyecto 2>$null | Out-Null }
-catch { $existe = $false }
-if ($existe) {
+# Se mira $LASTEXITCODE y no try/catch: un programa externo que falla NO lanza
+# excepción en Windows PowerShell 5.1, así que el catch no se ejecutaría nunca
+# y el guion daría por existente una base que no existe, para luego fallar más
+# adelante sin relación aparente.
+gcloud firestore databases describe --database=$Base --project $Proyecto 2>$null | Out-Null
+if ($LASTEXITCODE -eq 0) {
   Write-Host "Ya existe, no se toca."
 } else {
   gcloud firestore databases create --database=$Base --location=$Region --project $Proyecto
+  if ($LASTEXITCODE -ne 0) { Write-Host "No se pudo crear la base." -ForegroundColor Red; exit 1 }
 }
 
 Paso "2/5 Bucket"
-$hay = $true
-try { gcloud storage buckets describe "gs://$Bucket" --project $Proyecto 2>$null | Out-Null }
-catch { $hay = $false }
-if ($hay) {
+gcloud storage buckets describe "gs://$Bucket" --project $Proyecto 2>$null | Out-Null
+if ($LASTEXITCODE -eq 0) {
   Write-Host "Ya existe, no se toca."
 } else {
   # Acceso uniforme: las reglas de Firebase son la única autorización, sin
   # permisos por objeto que puedan contradecirlas.
   gcloud storage buckets create "gs://$Bucket" --location=$RegionBucket `
     --project $Proyecto --uniform-bucket-level-access
+  if ($LASTEXITCODE -ne 0) { Write-Host "No se pudo crear el bucket." -ForegroundColor Red; exit 1 }
 }
 
 Paso "3/5 Dar de alta el bucket en Firebase"
