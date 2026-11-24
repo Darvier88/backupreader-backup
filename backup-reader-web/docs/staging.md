@@ -27,6 +27,8 @@ inventados.
 
 ## El atajo: un guion que lo deja casi todo hecho
 
+Da igual desde qué carpeta del repositorio lo llames: el guion se coloca solo.
+
 Casi nada de lo de abajo hace falta clic a clic. Con el proyecto ya creado en
 la consola (eso sí es a mano), y tras `gcloud auth login` y `npx firebase
 login`:

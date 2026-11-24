@@ -46,6 +46,11 @@
 
 set -euo pipefail
 
+# Se coloca solo en la carpeta de la aplicación: dentro busca `cors.json`,
+# `firebase.json` y la herramienta de siembra por ruta relativa, y correrlo
+# desde la raíz del repositorio fallaba con errores que no decían nada.
+cd "$(dirname "$0")/.."
+
 PROYECTO="backup-reader-staging"
 DOMINIO="staging.backupreader.com"
 SALIDA="staging.env"

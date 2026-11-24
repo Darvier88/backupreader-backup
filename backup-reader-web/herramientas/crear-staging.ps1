@@ -43,6 +43,12 @@ param(
 
 $ErrorActionPreference = "Stop"
 
+# Se coloca solo en la carpeta de la aplicación, así da igual desde dónde se
+# llame: dentro busca `cors.json`, `firebase.json` y la herramienta de siembra
+# por ruta relativa, y correrlo desde la raíz del repositorio fallaba con
+# errores que no decían nada de la causa.
+Set-Location (Join-Path $PSScriptRoot "..")
+
 $Proyecto = "backup-reader-staging"
 $Dominio  = "staging.backupreader.com"
 $Bucket   = "$Proyecto.firebasestorage.app"
