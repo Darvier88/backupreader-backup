@@ -66,7 +66,14 @@ if (EN_EMULADOR) {
 }
 
 if (!getApps().length) initializeApp({ projectId: PROYECTO });
-const db = getFirestore();
+
+/* BR_BASE elige una base de Firestore con nombre, que es como se monta el
+   entorno de pruebas dentro del proyecto de producción: sin esto, sembrar
+   «staging» escribiría los planes en la base de producción, que es justo lo
+   que se está evitando. */
+const BASE = (process.env.BR_BASE || "").trim();
+const db = BASE ? getFirestore(BASE) : getFirestore();
+if (BASE) console.info(`Base de datos: ${BASE}`);
 
 /* Los ids son fijos a propósito, para que puedas escribirlos a mano en las
    demás órdenes sin tener que ir a copiarlos de la consola.

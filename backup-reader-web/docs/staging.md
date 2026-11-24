@@ -25,7 +25,37 @@ inventados.
 - `herramientas/sembrar-emulador.mjs` puede sembrar un Firebase real con
   `BR_PROYECTO`, y se niega a hacerlo contra producción.
 
-## El atajo: un guion que lo deja casi todo hecho
+## Staging dentro del proyecto de producción
+
+Esta es la salida cuando no hay permisos de facturación, y es la que se usa
+hoy. Un proyecto nuevo necesita Blaze para Storage, y vincular una cuenta de
+facturación necesita un permiso que no siempre se tiene. Pero un proyecto
+puede tener VARIAS bases de Firestore y VARIOS buckets, y `backup-reader` ya
+está en Blaze.
+
+```powershell
+.\herramientas\crear-staging-interno.ps1
+```
+
+Crea la base `staging` y el bucket `backup-reader-staging-data` dentro de
+`backup-reader`, les despliega las mismas reglas, pone el CORS, siembra los
+planes y te deja en `staging.env` las líneas que hay que cambiar en
+`.env.local`. Se puede repetir sin romper lo ya creado.
+
+**Qué queda separado:** los chats, los backups, los planes y el estado de
+usuario. Nada de lo que escribas probando toca los datos de producción.
+
+**Qué no:** el registro de usuarios. Authentication es del proyecto, así que
+las cuentas de prueba aparecen en la misma lista que las reales. Usa un correo
+que se distinga y bórralo al terminar. Tampoco se separan la factura ni las
+cuotas, aunque el gasto de unas pruebas es despreciable.
+
+Las reglas se despliegan con `firebase.staging-interno.json`, que apunta solo a
+esa base y a ese bucket. Con el `firebase.json` de siempre se desplegaría
+también sobre producción: serían las mismas reglas y no cambiaría nada, pero es
+un cambio en producción que nadie pidió.
+
+## Con su propio proyecto: un guion que lo deja casi todo hecho
 
 Da igual desde qué carpeta del repositorio lo llames: el guion se coloca solo.
 
