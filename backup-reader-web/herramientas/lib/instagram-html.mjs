@@ -410,7 +410,7 @@ export function mensajeDeBloque(bloque, rutaHilo = "") {
     }
     if (/^(mailto:|tel:|#|data:)/i.test(valor)) continue;
 
-    const uri = rutaDesdeLaRaiz(valor, rutaHilo);
+    const uri = resolverRuta(valor, rutaHilo);
     if (MEDIA.gif.test(uri)) gifs.push({ uri });
     else if (MEDIA.foto.test(uri)) fotos.push({ uri });
     else if (MEDIA.video.test(uri)) videos.push({ uri });
@@ -433,15 +433,34 @@ export function mensajeDeBloque(bloque, rutaHilo = "") {
   return mensaje;
 }
 
-/** La ruta de lo adjunto tal como la escribiría el export de JSON. */
-function rutaDesdeLaRaiz(valor, rutaHilo) {
-  const limpio = valor.split("?")[0].replace(/\\/g, "/").replace(/^\.\//, "");
-  if (!rutaHilo) return limpio;
-  /* Las páginas de Meta enlazan desde la raíz del export, así que lo normal es
-     que ya venga entera. Si viene relativa («photos/1.jpg»), se le pone
-     delante la carpeta del hilo. */
-  if (limpio.includes("/messages/")) return limpio;
-  return rutaHilo.replace(/\/+$/, "") + "/" + limpio.replace(/^\/+/, "");
+/**
+ * La ruta de lo adjunto dentro del zip, resuelta de verdad.
+ *
+ * Las páginas no enlazan siempre igual. Unas descargas apuntan desde la raíz
+ * del export («your_instagram_activity/messages/inbox/ana_123/photos/1.jpg») y
+ * otras lo hacen relativo a la página, subiendo carpetas
+ * («../../../media/photos/1.jpg»): en un export en HTML la media puede estar
+ * fuera de la carpeta de la conversación. Así que hay que resolver los «..» en
+ * vez de dar por hecho dónde está, o lo adjunto se busca donde no está y se
+ * queda fuera sin que nadie se entere.
+ */
+export function resolverRuta(valor, rutaHilo = "") {
+  const limpio = decodeURI(valor.split("?")[0].split("#")[0].replace(/\\/g, "/"));
+
+  /* Desde la raíz del zip. */
+  if (limpio.startsWith("/")) return limpio.replace(/^\/+/, "");
+
+  const sube = /^\.{1,2}\//.test(limpio);
+  /* Sin «./» ni «../» delante y con «messages/» dentro, ya viene entera. */
+  if (!sube && limpio.includes("/messages/")) return limpio;
+
+  const partes = (rutaHilo ? rutaHilo.replace(/\/+$/, "").split("/") : []).filter(Boolean);
+  for (const trozo of limpio.split("/")) {
+    if (!trozo || trozo === ".") continue;
+    if (trozo === "..") partes.pop();
+    else partes.push(trozo);
+  }
+  return partes.join("/");
 }
 
 /* Lo que Meta mete dentro del bloque y no es el mensaje. Varios idiomas,
@@ -559,6 +578,10 @@ export function hiloDeHtml(paginas, { rutaHilo = "", carpeta = "" } = {}) {
 
   const porPagina = [];
   const autores = new Set();
+  /* Las rutas de lo adjunto, para que quien copie los archivos sepa cuáles
+     buscar. En un export en HTML la media puede no estar en la carpeta de la
+     conversación, así que no vale con copiar esa carpeta entera. */
+  const adjuntos = new Set();
   let titulo = "";
   let sinFecha = 0;
   let sinAutor = 0;
@@ -581,6 +604,9 @@ export function hiloDeHtml(paginas, { rutaHilo = "", carpeta = "" } = {}) {
       }
       if (!m.sender_name) sinAutor++;
       else autores.add(m.sender_name);
+      for (const grupo of [m.photos, m.videos, m.audio_files, m.gifs]) {
+        for (const x of grupo || []) if (x?.uri) adjuntos.add(x.uri);
+      }
       mensajes.push(m);
     }
     porPagina.push(mensajes);
@@ -603,6 +629,13 @@ export function hiloDeHtml(paginas, { rutaHilo = "", carpeta = "" } = {}) {
       title: titulo || carpeta,
       thread_path: rutaHilo,
     })),
-    informe: { bloques, sinFecha, sinAutor, autores: autores.size, titulo },
+    informe: {
+      bloques,
+      sinFecha,
+      sinAutor,
+      autores: autores.size,
+      titulo,
+      adjuntos: [...adjuntos],
+    },
   };
 }

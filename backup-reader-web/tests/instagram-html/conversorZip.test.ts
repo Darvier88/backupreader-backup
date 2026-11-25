@@ -73,6 +73,14 @@ describe("el conversor sobre un export en HTML", () => {
             `mira esto<br><a href="${HILO}/photos/456.jpg"><img src="${HILO}/photos/456.jpg"/></a>`,
             "Sep 15, 2017 10:00 am"
           ),
+          /* Esta foto vive FUERA de la carpeta de la conversación, y la página
+             sube niveles para llegar a ella. Es lo que hace un export en HTML,
+             y lo que haría que el adjunto se quedara fuera del zip. */
+          bloque(
+            "Luis Pérez",
+            `y esta<br><img src="../../../media/photos/202611/789.jpg"/>`,
+            "Sep 15, 2017 9:45 am"
+          ),
           bloque("Luis Pérez", "¿nos vemos mañana?", "Sep 15, 2017 9:30 am"),
         ])
       )
@@ -92,6 +100,11 @@ describe("el conversor sobre un export en HTML", () => {
     await escritor.add(
       `${HILO}/photos/456.jpg`,
       new Uint8ArrayReader(new Uint8Array([0xff, 0xd8, 0xff, 0xe0, 1, 2, 3, 4]))
+    );
+    /* Y uno en la carpeta de media del export, fuera de la conversación. */
+    await escritor.add(
+      "your_instagram_activity/media/photos/202611/789.jpg",
+      new Uint8ArrayReader(new Uint8Array([0xff, 0xd8, 0xff, 0xe0, 5, 6, 7, 8]))
     );
     /* Otra conversación, para que haya que elegir. */
     await escritor.add(
@@ -119,7 +132,7 @@ describe("el conversor sobre un export en HTML", () => {
   }, 60000);
 
   it("convierte, y lo que sale ya no parece HTML", async () => {
-    expect(convertir("--hilo", "1")).toContain("mensajes: 4");
+    expect(convertir("--hilo", "1")).toContain("mensajes: 5");
 
     const hechos = convertidos();
     expect(hechos).toHaveLength(1);
@@ -137,6 +150,15 @@ describe("el conversor sobre un export en HTML", () => {
     expect(nombres).toContain(`${HILO}/message_1.json`);
     expect(nombres).toContain(`${HILO}/message_2.json`);
     expect(nombres).toContain(`${HILO}/photos/456.jpg`);
+
+    /* La foto que en el export vivía fuera tiene que acabar DENTRO de la
+       carpeta de la conversación. Al subir, la aplicación sube solo lo que
+       cuelga del prefijo de la conversación elegida, así que una foto en otra
+       carpeta del zip no se subiría y en el chat saldría un adjunto que no se
+       puede abrir. */
+    expect(nombres).toContain(`${HILO}/202611/789.jpg`);
+    expect(nombres.every((n) => n.startsWith(HILO + "/"))).toBe(true);
+
     /* La otra conversación no se pidió, así que no está. */
     expect(nombres.some((n) => n.includes("otracuenta"))).toBe(false);
   }, 60000);
@@ -168,17 +190,27 @@ describe("el conversor sobre un export en HTML", () => {
       "hola",
       "buenas noches 🌙",
       "¿nos vemos mañana?",
+      "y esta <adjunto: 789.jpg>",
       "mira esto <adjunto: 456.jpg>",
     ]);
     expect(filas.map((f) => f[1])).toEqual([
       "Luis Pérez",
       "Ana García",
       "Luis Pérez",
+      "Luis Pérez",
       "Ana García",
     ]);
     expect(filas[0][0]).toBe("2017-09-14 08:09");
     expect(filas[1][0]).toBe("2017-09-14 23:00");
-    expect(filas[3][0]).toBe("2017-09-15 10:00");
+    expect(filas[4][0]).toBe("2017-09-15 10:00");
+  }, 60000);
+
+  it("la lista dice cuántos mensajes tiene cada conversación", () => {
+    const salida = convertir();
+    /* Lo que hace que alguien reconozca la suya es eso, no lo que ocupa su
+       HTML: en este export casi todas pesan 0,0 MB. */
+    expect(salida).toMatch(/anagarcia\s+5 mensajes/);
+    expect(salida).toContain("2 adjuntos");
   }, 60000);
 
   it("--todas saca una por conversación", () => {

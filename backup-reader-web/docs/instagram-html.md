@@ -20,8 +20,7 @@ mano, que dice lo que ha entendido y que se puede volver a correr.
 ## El conversor
 
 ```bash
-# 1. Ver qué conversaciones hay dentro. Esto no lee ningún mensaje:
-#    solo mira el índice del zip.
+# 1. Ver qué conversaciones hay dentro, con cuántos mensajes tiene cada una
 node herramientas/convertir-instagram-html.mjs "C:\ruta\instagram.zip"
 
 # 2. Convertir la que se quiera, por su número de la lista
@@ -45,6 +44,41 @@ le da y escribe otro al lado.
 Un backup es una conversación, así que lo que se sube es una. Separarlas en el
 conversor hace que cada zip pese lo que pesa esa conversación y no la descarga
 entera, que son gigas.
+
+### La lista va por mensajes, no por lo que ocupa el HTML
+
+En un export en HTML casi todas las conversaciones pesan 0,0 MB: el HTML de una
+charla de diez mensajes ocupa lo mismo que el de otra de doce, y los dos gigas
+del zip están en la media. Por eso la lista lee las páginas y dice cuántos
+mensajes tiene cada una, que es lo que hace que alguien reconozca la suya.
+
+El **número** de la lista (lo que se le pasa a `--hilo`) no se ordena por eso,
+sino por lo que ocupan las páginas, que es un buen parecido y se sabe sin
+leerlas. Tiene que salir igual al listar y al convertir: un número que
+significara una cosa en una orden y otra en la siguiente sería una trampa.
+
+### La media puede estar fuera de la carpeta de la conversación
+
+Y esto es lo que obliga a hacer dos cosas.
+
+En un export en JSON, las fotos de una conversación cuelgan de su propia
+carpeta. En uno en HTML no tiene por qué: la página puede enlazarlas subiendo
+niveles (`../../../media/other/202401/foto.jpg`), con la media en una carpeta
+aparte del export. Así que:
+
+1. **Hay que resolver los `..`** en vez de dar por hecho dónde está el archivo,
+   o se busca donde no está y el adjunto se queda fuera del zip sin que nadie se
+   entere. Si aun así no aparece por su ruta, se busca por el nombre suelto.
+2. **La copia va DENTRO de la carpeta de la conversación**, aunque en el export
+   estuviera fuera, y las `uri` del JSON se reescriben para que apunten ahí. No
+   es por orden: al subir, la aplicación sube solo lo que cuelga del prefijo de
+   la conversación elegida (`soloPrefijo`, en `StorageContext`), así que una
+   foto guardada en otra carpeta del zip no se subiría y en el chat saldría un
+   adjunto que no se puede abrir.
+
+Si una página nombra un archivo que no viene en la descarga, el informe lo dice
+(«adjuntos que no están en el zip»): el mensaje sigue apareciendo con su
+adjunto, pero no hay archivo que enseñar.
 
 ### Lo que dice el informe
 

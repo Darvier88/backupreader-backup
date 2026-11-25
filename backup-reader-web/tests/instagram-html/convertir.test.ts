@@ -16,6 +16,7 @@ import {
   fechaEnMs,
   hiloDeHtml,
   mensajeDeBloque,
+  resolverRuta,
   textoVisible,
   tituloDeHtml,
 } from "../../herramientas/lib/instagram-html";
@@ -155,6 +156,30 @@ describe("un mensaje", () => {
     expect(m.audio_files).toEqual([{ uri: `${base}/audio/2.m4a` }]);
     expect(m.gifs).toEqual([{ uri: `${base}/gifs/3.gif` }]);
     expect(m.photos).toBeUndefined();
+  });
+
+  it("resuelve los «..» cuando la media está fuera de la conversación", () => {
+    /* En un export en HTML la media puede vivir en otra carpeta del zip, y la
+       página sube niveles para llegar a ella. Si no se resolvieran los «..»,
+       el archivo se buscaría donde no está y el adjunto se quedaría fuera del
+       zip convertido sin que nadie se enterara. */
+    const cuerpo = `<img src="../../../media/photos/202611/456.jpg"/>`;
+    const m = mensajeDeBloque(
+      bloque("Ana", cuerpo, "Sep 14, 2017 8:09 am"),
+      "your_instagram_activity/messages/inbox/ana_123"
+    );
+    expect(m.photos).toEqual([{ uri: "your_instagram_activity/media/photos/202611/456.jpg" }]);
+  });
+
+  it("deja la ruta en paz cuando ya viene desde la raíz", () => {
+    expect(resolverRuta("your_instagram_activity/messages/inbox/a_1/photos/9.jpg", "x/y")).toBe(
+      "your_instagram_activity/messages/inbox/a_1/photos/9.jpg"
+    );
+    expect(resolverRuta("/media/9.jpg", "x/y")).toBe("media/9.jpg");
+  });
+
+  it("deshace el escapado de la URL, que es donde se pierden los acentos", () => {
+    expect(resolverRuta("photos/caf%C3%A9.jpg", "hilo")).toBe("hilo/photos/café.jpg");
   });
 
   it("completa la ruta cuando el HTML enlaza relativo", () => {

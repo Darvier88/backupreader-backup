@@ -29,12 +29,17 @@ export function mensajeDeBloque(
 export function comoLoEscribeMeta(texto: string, utf8: typeof import("utf8")): string;
 export function aFormatoMeta(hilo: HiloInstagram, utf8: typeof import("utf8")): HiloInstagram;
 
+/** La ruta de un adjunto dentro del zip, resolviendo los «..» de la página. */
+export function resolverRuta(valor: string, rutaHilo?: string): string;
+
 export type InformeDeHilo = {
   bloques: number;
   sinFecha: number;
   sinAutor: number;
   autores: number;
   titulo: string;
+  /** Las rutas de lo adjunto, para poder buscarlo esté donde esté. */
+  adjuntos: string[];
 };
 
 export function hiloDeHtml(

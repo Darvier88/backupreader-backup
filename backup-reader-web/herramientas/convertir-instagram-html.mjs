@@ -58,6 +58,12 @@ import {
 
 import { aFormatoMeta, hiloDeHtml } from "./lib/instagram-html.mjs";
 
+/** El avance, solo si hay una terminal delante: con la salida redirigida a un
+    archivo, el «\r» no borra nada y queda un churro de miles de líneas. */
+const avance = (texto) => {
+  if (process.stdout.isTTY) process.stdout.write(texto + "\r");
+};
+
 /* En Node no hay por qué levantar hilos de trabajo: el cuello de botella es el
    disco, y así el programa no deja procesos sueltos al terminar. */
 configure({ useWebWorkers: false });
@@ -137,7 +143,10 @@ if (hilos.size === 0) {
   process.exit(1);
 }
 
-/* Lo que acompaña a cada conversación: las fotos, los vídeos y los audios. */
+/* Lo que acompaña a cada conversación dentro de su propia carpeta. OJO: en un
+   export en HTML la media puede estar FUERA de ahí, en una carpeta aparte del
+   export, y entonces esto no la ve. Por eso lo adjunto de verdad se busca
+   después, por las rutas que enlazan las páginas. */
 const carpetas = [...hilos.keys()];
 for (const entrada of entradas) {
   if (entrada.directory) continue;
@@ -148,6 +157,19 @@ for (const entrada of entradas) {
   if (!ES_PAGINA.test(entrada.filename)) hilo.otros.push(entrada);
 }
 
+/* El índice del zip, para encontrar un archivo esté donde esté. El de por
+   nombre suelto es el respaldo: si una página enlaza con una ruta que no
+   cuadra con cómo está guardado el archivo, el nombre sigue siendo el mismo. */
+const porRuta = new Map();
+const porNombre = new Map();
+for (const entrada of entradas) {
+  if (entrada.directory) continue;
+  porRuta.set(entrada.filename, entrada);
+  const suelto = entrada.filename.split("/").pop();
+  if (!porNombre.has(suelto)) porNombre.set(suelto, entrada);
+}
+const buscarArchivo = (uri) => porRuta.get(uri) || porNombre.get(uri.split("/").pop()) || null;
+
 /* Las páginas, de la 1 en adelante: la 1 es el bloque más reciente, igual que
    en el export de JSON. */
 for (const hilo of hilos.values()) {
@@ -156,32 +178,143 @@ for (const hilo of hilos.values()) {
   );
 }
 
-/* De la más pesada a la más ligera, que es como se busca la de uno. */
-const lista = [...hilos.values()].sort((a, b) => b.bytes - a.bytes);
+/* El orden de la lista, y por tanto lo que significa `--hilo 3`.
+ *
+ * Se ordena por lo que ocupan las PÁGINAS, que es lo más parecido a «cuántos
+ * mensajes tiene» que se puede saber sin leerlas, y se desempata por el nombre
+ * de la carpeta. Tiene que salir igual al listar y al convertir, y por eso no
+ * se ordena por el número de mensajes: eso obligaría a leer las 368 páginas
+ * también al convertir una sola, y un número que significara una cosa en una
+ * orden y otra en la siguiente sería una trampa.
+ */
+for (const hilo of hilos.values()) {
+  hilo.bytesPaginas = hilo.paginas.reduce((n, e) => n + (e.uncompressedSize || 0), 0);
+}
+const lista = [...hilos.values()].sort(
+  (a, b) => b.bytesPaginas - a.bytesPaginas || a.carpeta.localeCompare(b.carpeta)
+);
 
 const comoNombre = (carpeta) =>
   (carpeta.split("/").pop() || carpeta).replace(/_\d{5,}$/, "") || carpeta;
 
 const enMb = (b) => (b / 1e6).toFixed(b < 10e6 ? 1 : 0) + " MB";
 
+/** Lee las páginas de una conversación y las convierte. */
+async function leerHilo(hilo) {
+  const paginasHtml = [];
+  for (const entrada of hilo.paginas) {
+    paginasHtml.push(await entrada.getData(new TextWriter()));
+  }
+  return hiloDeHtml(paginasHtml, {
+    rutaHilo: hilo.carpeta,
+    carpeta: comoNombre(hilo.carpeta),
+  });
+}
+
+/**
+ * Lo adjunto que enlazan las páginas, con dónde está y dónde va a ir.
+ *
+ * Va DENTRO de la carpeta de la conversación aunque en el export estuviera
+ * fuera, y no por gusto: al subir, la aplicación sube solo lo que cuelga del
+ * prefijo de la conversación elegida (`soloPrefijo` en StorageContext), así
+ * que una foto guardada en otra carpeta del zip no se subiría y en el chat
+ * saldría un adjunto que no se puede abrir.
+ */
+function dondeVaCadaAdjunto(informe, rutaHilo) {
+  const destinos = new Map();
+  const usados = new Set();
+  const sinEncontrar = [];
+  let bytes = 0;
+
+  for (const uri of informe.adjuntos || []) {
+    const entrada = buscarArchivo(uri);
+    if (!entrada) {
+      sinEncontrar.push(uri);
+      continue;
+    }
+    const trozos = uri.split("/");
+    const suelto = trozos.pop();
+    /* Se conserva la subcarpeta («photos», «videos», «audio») porque es lo que
+       hace que el zip se entienda al abrirlo. */
+    const sub = trozos.length && trozos[trozos.length - 1] !== rutaHilo.split("/").pop()
+      ? trozos[trozos.length - 1] + "/"
+      : "";
+    let destino = `${rutaHilo}/${sub}${suelto}`;
+    /* Dos archivos distintos con el mismo nombre existirían el uno encima del
+       otro: se le pone un número al segundo. */
+    for (let n = 2; usados.has(destino); n++) {
+      destino = `${rutaHilo}/${sub}${suelto.replace(/(\.[^.]+)?$/, `-${n}$1`)}`;
+    }
+    usados.add(destino);
+    destinos.set(uri, { entrada, destino });
+    bytes += entrada.uncompressedSize || 0;
+  }
+
+  return { destinos, sinEncontrar, bytes };
+}
+
+/** Deja en los mensajes la ruta donde el adjunto va a quedar de verdad. */
+function reescribirAdjuntos(paginas, destinos) {
+  for (const p of paginas) {
+    for (const m of p.messages || []) {
+      for (const clave of ["photos", "videos", "audio_files", "gifs"]) {
+        if (!m[clave]) continue;
+        m[clave] = m[clave].map((x) => ({
+          ...x,
+          uri: destinos.get(x.uri)?.destino || x.uri,
+        }));
+      }
+    }
+  }
+}
+
 /* ------------------------------------------------------------------ *
  * Sin --hilo: solo se enseña lo que hay
  * ------------------------------------------------------------------ */
 
 if (!todas && pedidos.length === 0) {
-  console.log("\nCONVERSACIONES EN ESTE EXPORT:", lista.length, "\n");
-  lista.forEach((h, i) => {
-    const bandeja = (h.carpeta.match(/(^|\/)messages\/([^/]+)\//i) || [])[2] || "";
+  console.log("\nMirando las", lista.length, "conversaciones…");
+
+  const filas = [];
+  for (let i = 0; i < lista.length; i++) {
+    const h = lista[i];
+    avance("  " + (i + 1) + "/" + lista.length);
+    const { informe } = await leerHilo(h);
+    const { destinos, sinEncontrar, bytes } = dondeVaCadaAdjunto(informe, h.carpeta);
+    filas.push({
+      hilo: h,
+      mensajes: informe.bloques,
+      adjuntos: destinos.size,
+      sinEncontrar: sinEncontrar.length,
+      /* Lo que va a pesar el zip convertido: las páginas no van dentro. */
+      bytes: bytes + informe.bloques * 200,
+    });
+  }
+
+  console.log("\nCONVERSACIONES EN ESTE EXPORT:", filas.length, "\n");
+  filas.forEach((f, i) => {
+    const bandeja = (f.hilo.carpeta.match(/(^|\/)messages\/([^/]+)\//i) || [])[2] || "";
+    const cola = [
+      f.adjuntos ? f.adjuntos + (f.adjuntos === 1 ? " adjunto" : " adjuntos") : "",
+      f.sinEncontrar ? f.sinEncontrar + " sin archivo en el zip" : "",
+      bandeja && bandeja !== "inbox" ? bandeja : "",
+    ].filter(Boolean);
     console.log(
-      "  " + String(i + 1).padStart(3) + ".",
-      comoNombre(h.carpeta).padEnd(32).slice(0, 32),
-      enMb(h.bytes).padStart(9),
-      "·",
-      String(h.paginas.length).padStart(3),
-      h.paginas.length === 1 ? "página " : "páginas",
-      bandeja && bandeja !== "inbox" ? "· " + bandeja : ""
+      ("  " + String(i + 1).padStart(3) + ". " +
+        comoNombre(f.hilo.carpeta).padEnd(32).slice(0, 32) + " " +
+        String(f.mensajes).padStart(6) + (f.mensajes === 1 ? " mensaje " : " mensajes") +
+        " · " + enMb(f.bytes).padStart(9) +
+        (cola.length ? " · " + cola.join(" · ") : "")).trimEnd()
     );
   });
+
+  const conMensajes = filas.filter((f) => f.mensajes > 0).length;
+  if (conMensajes < filas.length) {
+    console.log(
+      "\n  (" + (filas.length - conMensajes) + " salieron sin ningún mensaje reconocible)"
+    );
+  }
+
   console.log(
     [
       "",
@@ -189,7 +322,7 @@ if (!todas && pedidos.length === 0) {
       "",
       '  node herramientas/convertir-instagram-html.mjs "' + ruta + '" --hilo 1',
       "",
-      "Nada se ha leído todavía: esto solo ha mirado el índice del zip.",
+      "Nada ha salido de tu máquina: esto solo ha leído el zip.",
     ].join("\n")
   );
   await zip.close();
@@ -221,16 +354,7 @@ for (const hilo of aConvertir) {
   console.log("\n—", nombre, "·", hilo.paginas.length, "página(s) ·", enMb(hilo.bytes));
 
   /* 1. Leer las páginas y convertirlas. */
-  const paginasHtml = [];
-  for (const entrada of hilo.paginas) {
-    process.stdout.write("  leyendo " + basename(entrada.filename) + "\r");
-    paginasHtml.push(await entrada.getData(new TextWriter()));
-  }
-
-  const { paginas, informe } = hiloDeHtml(paginasHtml, {
-    rutaHilo: hilo.carpeta,
-    carpeta: nombre,
-  });
+  const { paginas, informe } = await leerHilo(hilo);
 
   const mensajes = paginas.reduce((n, p) => n + p.messages.length, 0);
   console.log("  mensajes:", mensajes, " ".repeat(20));
@@ -250,7 +374,20 @@ for (const hilo of aConvertir) {
     continue;
   }
 
-  /* 2. Escribir el zip. Se escribe directo al disco, sin montarlo entero en
+  /* 2. Localizar lo adjunto. En un export en HTML puede estar fuera de la
+        carpeta de la conversación, así que se busca por las rutas que enlazan
+        las páginas y se copia dentro. */
+  const { destinos, sinEncontrar } = dondeVaCadaAdjunto(informe, hilo.carpeta);
+  reescribirAdjuntos(paginas, destinos);
+  if (sinEncontrar.length) {
+    console.log(
+      "  adjuntos que no están en el zip:",
+      sinEncontrar.length,
+      "(se nombran en el chat, pero el archivo no viene en la descarga)"
+    );
+  }
+
+  /* 3. Escribir el zip. Se escribe directo al disco, sin montarlo entero en
         memoria: una conversación con vídeos puede pesar cientos de megas. */
   const salida = join(dirname(ruta), "convertido-" + aSalvo(nombre) + ".zip");
   const destino = new ZipWriter(Writable.toWeb(createWriteStream(salida)), {
@@ -267,8 +404,22 @@ for (const hilo of aConvertir) {
      Las páginas .html NO se copian, a propósito: si quedara una, la aplicación
      vería el export como de los de HTML y volvería a rechazarlo. */
   let copiados = 0;
+  const yaPuestos = new Set();
+  for (const { entrada, destino: dentroDelZip } of destinos.values()) {
+    if (yaPuestos.has(dentroDelZip)) continue;
+    yaPuestos.add(dentroDelZip);
+    avance("  copiando adjuntos " + ++copiados + "/" + destinos.size);
+    const datos = await entrada.getData(new BlobWriter());
+    await destino.add(dentroDelZip, new BlobReader(datos), { level: 0 });
+  }
+
+  /* Y lo que estuviera en la carpeta de la conversación sin que ninguna página
+     lo enlazara: si no se reconoció el enlace, mejor que el archivo viaje a que
+     se quede fuera. */
   for (const entrada of hilo.otros) {
-    process.stdout.write("  copiando adjuntos " + ++copiados + "/" + hilo.otros.length + "\r");
+    if (yaPuestos.has(entrada.filename)) continue;
+    yaPuestos.add(entrada.filename);
+    avance("  copiando adjuntos " + ++copiados);
     const datos = await entrada.getData(new BlobWriter());
     await destino.add(entrada.filename, new BlobReader(datos), { level: 0 });
   }
