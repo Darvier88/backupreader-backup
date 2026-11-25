@@ -31,6 +31,16 @@ describe("el texto mal codificado de Meta", () => {
     expect(arreglarTexto("cumpleaños 🎂")).toBe("cumpleaños 🎂");
   });
 
+  it("no se come un emoji solo porque el mensaje no lleve acentos", () => {
+    /* Aquí no basta con esperar a que `utf8.decode` lance, porque no lanza: en
+       «cumpleaños 🎂» se tropieza con la ñ, pero sin ningún acento delante lee
+       el emoji como si fuera un byte, lo recorta y deja un carácter de control
+       en su sitio. El acento no puede ser lo que salve al mensaje. */
+    expect(arreglarTexto("buenas noches 🌙")).toBe("buenas noches 🌙");
+    expect(arreglarTexto("🎉🎉🎉")).toBe("🎉🎉🎉");
+    expect(arreglarTexto("ok 👍")).toBe("ok 👍");
+  });
+
   it("también en el nombre de quien escribe", () => {
     const filas = parsearInstagram({ messages: [mensaje({ sender_name: "MartÃ­n" })] });
     expect(filas[0][1]).toBe("Martín");

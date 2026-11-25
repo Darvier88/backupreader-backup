@@ -59,15 +59,33 @@ export type HiloInstagram = {
 };
 
 /**
+ * Un texto solo PUEDE estar mal codificado si todos sus caracteres caben en un
+ * byte.
+ *
+ * El estropicio de Meta consiste en escribir cada byte del UTF-8 como un
+ * carácter suelto, y un byte nunca pasa de 255. Así que en cuanto aparece un
+ * carácter de verdad (una ñ, un emoji), el texto ya estaba bien y no hay nada
+ * que deshacer.
+ *
+ * Esta comprobación no sobra: `utf8.decode` NO avisa siempre de que el texto
+ * ya era correcto. Con «cumpleaños 🎉» lanza, porque la ñ no encaja como
+ * principio de secuencia; pero con «buenas noches 🌙», donde el emoji es lo
+ * único fuera del alfabeto, no lanza: lee el emoji como si fuera un byte, lo
+ * recorta y devuelve «buenas noches » con un carácter de control en vez de la
+ * luna. Confiar en que lance es confiar en que el mensaje lleve un acento.
+ */
+const CABE_EN_BYTES = (texto: string) => !/[^\u0000-ÿ]/.test(texto);
+
+/**
  * Deshace la codificación rota de Meta.
  *
- * `utf8.decode` lee la cadena como bytes y los interpreta como UTF-8. Lanza si
- * algún carácter se sale de un byte, que es justo lo que pasa cuando el texto
- * YA estaba bien (un emoji de verdad, una ñ de verdad): ahí se devuelve tal
- * cual. Sin ese respaldo, un export correcto saldría destrozado.
+ * `utf8.decode` lee la cadena como bytes y los interpreta como UTF-8. Si el
+ * texto ya estaba bien, se devuelve tal cual: un export correcto no se puede
+ * destrozar aquí.
  */
 export function arreglarTexto(texto: string | undefined | null): string {
   if (!texto) return "";
+  if (!CABE_EN_BYTES(texto)) return texto;
   try {
     return utf8.decode(texto);
   } catch {
