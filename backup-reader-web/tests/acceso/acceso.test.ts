@@ -75,3 +75,48 @@ describe("planCancelado", () => {
     expect(planCancelado(null)).toBe(false);
   });
 });
+
+describe("la bandera de la prueba gratuita", () => {
+  /* Lo que se vigila aquí no es el valor, es el DEFECTO. Antes la condición
+     era `!== "false"`, así que olvidarse de poner la variable regalaba 15 días
+     de producto sin avisar de nada. */
+  async function cargarCon(valor: string | undefined) {
+    vi.resetModules();
+    if (valor === undefined) delete process.env.NEXT_PUBLIC_FREE_TRIAL_ENABLED;
+    else process.env.NEXT_PUBLIC_FREE_TRIAL_ENABLED = valor;
+    return await import("../../config/trial");
+  }
+
+  it("está APAGADA si la variable no existe", async () => {
+    expect((await cargarCon(undefined)).FREE_TRIAL_ENABLED).toBe(false);
+  });
+
+  it("está apagada con cualquier valor que no sea encenderla", async () => {
+    for (const v of ["", "false", "no", "0", "si", "sí", "yes"]) {
+      expect((await cargarCon(v)).FREE_TRIAL_ENABLED, v).toBe(false);
+    }
+  });
+
+  it("se enciende con true o con 1, y no distingue mayúsculas ni espacios", async () => {
+    for (const v of ["true", "1", "TRUE", " true "]) {
+      expect((await cargarCon(v)).FREE_TRIAL_ENABLED, v).toBe(true);
+    }
+  });
+
+  it("apagada, nadie entra por prueba aunque acabe de registrarse", async () => {
+    const { isWithinTrial } = await cargarCon(undefined);
+    expect(isWithinTrial(0)).toBe(false);
+  });
+
+  it("encendida, se entra mientras dure y no después", async () => {
+    const { isWithinTrial } = await cargarCon("true");
+    expect(isWithinTrial(0)).toBe(true);
+    /* El día 15 todavía cuenta: la condición es `< FREE_TRIAL_DAYS + 1`, así
+       que la ventana real son 16 días contando el de alta. Se deja como
+       estaba; aquí solo se fija para que nadie la mueva sin querer. */
+    expect(isWithinTrial(15)).toBe(true);
+    expect(isWithinTrial(16)).toBe(false);
+    /* Una fecha futura no debería dar acceso. */
+    expect(isWithinTrial(-1)).toBe(false);
+  });
+});
