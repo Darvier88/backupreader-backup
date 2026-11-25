@@ -83,6 +83,34 @@ const bandejas = new Set(
 );
 di("BANDEJAS:", [...bandejas].join(", "));
 
+/* Cómo se llaman los archivos que hay bajo messages/, SIN sus carpetas (que
+   llevan el nombre de la otra persona). Esto es lo que dice si el export vino
+   en JSON o en HTML, y con qué nombres exactos. */
+const nombresMensajes = new Map();
+for (const e of entradas) {
+  if (!/(^|\/)messages\//i.test(e.filename)) continue;
+  const base = e.filename.split("/").pop() || "";
+  if (!base) continue;
+  /* Se agrupa por patrón: «message_1.json», «message_2.json»… cuentan como
+     uno, y así no hace falta enseñar nada más. */
+  const patron = base.replace(/\d+/g, "N");
+  nombresMensajes.set(patron, (nombresMensajes.get(patron) || 0) + 1);
+}
+di("\nARCHIVOS BAJO messages/ (por patrón de nombre)");
+[...nombresMensajes.entries()].sort((a, b) => b[1] - a[1]).slice(0, 12)
+  .forEach(([n, c]) => di("  ", c.toString().padStart(6), n));
+
+/* Si vino en HTML, se dice aquí y no al final: es la causa de que todo lo
+   demás salga a cero, y sin esto parece que la herramienta no funciona. */
+const enHtml = [...nombresMensajes.keys()].some((n) => /^message_N\.html$/i.test(n));
+if (enHtml) {
+  di("\n*** ESTE EXPORT VINO EN HTML, NO EN JSON ***");
+  di("    Los mensajes están en páginas para mirar en el navegador, sin las");
+  di("    marcas de tiempo ni los autores en un sitio fijo del que leerlos.");
+  di("    Hay que volver a pedir la descarga en Instagram eligiendo JSON.");
+  di("    Por eso el resto del informe sale a cero: no hay nada que contar.");
+}
+
 /* Las extensiones de lo adjunto, para saber si hay tipos que no mapeamos. */
 const exts = new Map();
 for (const e of entradas) {
