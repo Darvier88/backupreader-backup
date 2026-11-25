@@ -20,30 +20,34 @@ mano, que dice lo que ha entendido y que se puede volver a correr.
 ## El conversor
 
 ```bash
-# 1. Ver qué conversaciones hay dentro, con cuántos mensajes tiene cada una
+# Convertir el export entero, con todas sus conversaciones
 node herramientas/convertir-instagram-html.mjs "C:\ruta\instagram.zip"
 
-# 2. Convertir la que se quiera, por su número de la lista
-node herramientas/convertir-instagram-html.mjs "C:\ruta\instagram.zip" --hilo 3
+# Ver qué hay dentro sin convertir nada
+node herramientas/convertir-instagram-html.mjs "C:\ruta\instagram.zip" --lista
 
-# varias a la vez, o todas
-node herramientas/convertir-instagram-html.mjs "C:\ruta\instagram.zip" --hilo 3,7,12
-node herramientas/convertir-instagram-html.mjs "C:\ruta\instagram.zip" --todas
+# Convertir solo algunas (los números que salen en --lista)
+node herramientas/convertir-instagram-html.mjs "C:\ruta\instagram.zip" --hilo 1,3,7
 ```
 
-Deja un `convertido-<nombre>.zip` por conversación, al lado del original. Ese
-zip es el que se sube a BackupReader: por dentro tiene la misma estructura que
-habría tenido la descarga en JSON, así que lo lee
+Deja **un** `convertido-<nombre del export>.zip` al lado del original, con todas
+las conversaciones dentro. Ese zip es el que se sube a BackupReader: por dentro
+tiene la misma estructura que habría tenido la descarga en JSON, así que lo lee
 `lib/parsear-instagram.ts`, el parser de siempre, sin ningún camino aparte.
 
 El original no se toca, y el conversor no se conecta a nada: lee el zip que se
 le da y escribe otro al lado.
 
-### Un zip por conversación
+### Uno solo, y no uno por conversación
 
-Un backup es una conversación, así que lo que se sube es una. Separarlas en el
-conversor hace que cada zip pese lo que pesa esa conversación y no la descarga
-entera, que son gigas.
+Porque es lo que hace que el zip convertido sea indistinguible de la descarga
+buena. La aplicación ya sabe abrir un export con todas las conversaciones
+dentro: las lista, deja elegir y sube **solo** la elegida (`soloPrefijo`). Sacar
+368 archivos obligaría a elegir antes, aquí, a ciegas y en una terminal.
+
+Una conversación de la que no se reconoce ningún mensaje no entra en el zip: una
+carpeta vacía solo sirve para confundir al elegir. El informe dice cuántas
+fueron.
 
 ### La lista va por mensajes, no por lo que ocupa el HTML
 
@@ -79,6 +83,18 @@ aparte del export. Así que:
 Si una página nombra un archivo que no viene en la descarga, el informe lo dice
 («adjuntos que no están en el zip»): el mensaje sigue apareciendo con su
 adjunto, pero no hay archivo que enseñar.
+
+### Lo que la aplicación hace con un export en HTML
+
+Nada: lo detecta (`esInstagramEnHtml`) y lo rechaza, y así se queda. El
+conversor vive fuera a propósito, y meterlo dentro cambiaría eso.
+
+Lo que sí hace el aviso es decir **qué hacer**, porque esa descarga ya no sirve
+y la siguiente tarda días: nombra dónde está la opción del formato (perfil → Tu
+actividad → Descargar tu información) y que se puede pedir solo los mensajes.
+Si el aviso no lo dijera, la persona volvería a pedir lo mismo y esperaría otra
+vez para nada. `tests/documentos/avisosTraducidos.test.ts` lo vigila, junto con
+que ningún aviso se quede sin traducir al inglés.
 
 ### Lo que dice el informe
 

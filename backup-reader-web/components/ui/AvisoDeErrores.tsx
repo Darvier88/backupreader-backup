@@ -111,10 +111,14 @@ export const AvisoDeErrores: React.FC = () => {
         };
 
       case "instagram-html":
+        /* El aviso tiene que decir qué hacer, no solo qué pasa. Esta descarga
+           ya no sirve y la siguiente tarda días, así que si el mensaje no dice
+           dónde se elige el formato, la persona vuelve a pedir lo mismo y
+           espera otra vez para nada. */
         return {
           titulo: t("Esta descarga de Instagram viene en HTML"),
           texto: t(
-            "Para poder leer tus mensajes hace falta el formato JSON. Vuelve a pedir la descarga en Instagram y elige JSON donde te pregunta el formato."
+            "Instagram te la dio como páginas web, y ahí los mensajes no vienen con su fecha y su autor en un sitio fijo del que leerlos. Hay que pedirla otra vez: en Instagram, tu perfil → Tu actividad → Descargar tu información, y donde pregunta el formato elige JSON en vez de HTML. Pidiendo solo los mensajes tarda menos y pesa mucho menos."
           ),
         };
 

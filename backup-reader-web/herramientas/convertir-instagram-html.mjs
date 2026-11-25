@@ -21,25 +21,25 @@
  *
  * CÓMO SE USA
  * -----------
- *   # 1. Ver qué conversaciones hay dentro
+ *   # Convertir el export entero, con todas sus conversaciones
  *   node herramientas/convertir-instagram-html.mjs "C:\\ruta\\instagram.zip"
  *
- *   # 2. Convertir la que quieras (el número que salió en la lista)
- *   node herramientas/convertir-instagram-html.mjs "C:\\ruta\\instagram.zip" --hilo 3
+ *   # Ver qué conversaciones hay dentro, sin convertir nada
+ *   node herramientas/convertir-instagram-html.mjs "C:\\ruta\\instagram.zip" --lista
  *
- *   # varias a la vez, o todas
- *   ... --hilo 3,7,12
- *   ... --todas
+ *   # Convertir solo algunas (los números que salen en --lista)
+ *   node herramientas/convertir-instagram-html.mjs "C:\\ruta\\instagram.zip" --hilo 1,3,7
  *
- * Deja un zip por conversación al lado del original. Ese zip es el que se
- * sube a BackupReader.
+ * Deja UN zip al lado del original, con todas las conversaciones dentro. Ese
+ * zip es el que se sube a BackupReader: al subirlo, la aplicación enseña la
+ * lista y se elige cuál abrir, igual que con una descarga en JSON de verdad.
  *
- * POR QUÉ UN ZIP POR CONVERSACIÓN Y NO UNO CON TODO
- * -------------------------------------------------
- * Un backup es una conversación, así que lo que se sube es una. Separarlas
- * aquí hace que cada zip pese lo que pesa esa conversación y no la descarga
- * entera, que son gigas: se sube antes, se cifra antes y no hay que elegir
- * dos veces.
+ * POR QUÉ UNO SOLO Y NO UNO POR CONVERSACIÓN
+ * ------------------------------------------
+ * Porque es lo que hace que el zip convertido sea indistinguible de la
+ * descarga buena. La aplicación ya sabe abrir un export con todas las
+ * conversaciones dentro: las lista, deja elegir y sube SOLO la elegida. Sacar
+ * 368 archivos obligaría a elegir antes, aquí, a ciegas y en una terminal.
  */
 
 import { createWriteStream, existsSync, openAsBlob, readFileSync, statSync } from "node:fs";
@@ -61,7 +61,7 @@ import { aFormatoMeta, hiloDeHtml } from "./lib/instagram-html.mjs";
 /** El avance, solo si hay una terminal delante: con la salida redirigida a un
     archivo, el «\r» no borra nada y queda un churro de miles de líneas. */
 const avance = (texto) => {
-  if (process.stdout.isTTY) process.stdout.write(texto + "\r");
+  if (process.stdout.isTTY) process.stdout.write(texto + "          \r");
 };
 
 /* En Node no hay por qué levantar hilos de trabajo: el cuello de botella es el
@@ -73,12 +73,12 @@ configure({ useWebWorkers: false });
  * ------------------------------------------------------------------ */
 
 const args = process.argv.slice(2);
-const ruta = args.find((a) => !a.startsWith("--"));
+const ruta = args.find((a) => !a.startsWith("--") && !/^[\d,\s]+$/.test(a));
 const pide = (nombre) => {
   const i = args.indexOf("--" + nombre);
   return i >= 0 ? args[i + 1] : undefined;
 };
-const todas = args.includes("--todas") || args.includes("--todos");
+const soloLista = args.includes("--lista");
 const pedidos = (pide("hilo") || "")
   .split(/[,\s]+/)
   .map((n) => Number(n))
@@ -89,11 +89,9 @@ if (!ruta || !existsSync(ruta)) {
     [
       "Falta el zip del export, o esa ruta no existe.",
       "",
-      "  node herramientas/convertir-instagram-html.mjs \"C:\\\\ruta\\\\instagram.zip\"",
+      '  node herramientas/convertir-instagram-html.mjs "C:\\\\ruta\\\\instagram.zip"',
       "",
-      "Eso enseña las conversaciones. Luego, para convertir una:",
-      "",
-      "  node herramientas/convertir-instagram-html.mjs \"C:\\\\ruta\\\\instagram.zip\" --hilo 3",
+      "Eso convierte el export entero. Para ver antes qué hay dentro, añade --lista.",
     ].join("\n")
   );
   process.exit(1);
@@ -183,9 +181,8 @@ for (const hilo of hilos.values()) {
  * Se ordena por lo que ocupan las PÁGINAS, que es lo más parecido a «cuántos
  * mensajes tiene» que se puede saber sin leerlas, y se desempata por el nombre
  * de la carpeta. Tiene que salir igual al listar y al convertir, y por eso no
- * se ordena por el número de mensajes: eso obligaría a leer las 368 páginas
- * también al convertir una sola, y un número que significara una cosa en una
- * orden y otra en la siguiente sería una trampa.
+ * se ordena por el número de mensajes: un número que significara una cosa en
+ * una orden y otra en la siguiente sería una trampa.
  */
 for (const hilo of hilos.values()) {
   hilo.bytesPaginas = hilo.paginas.reduce((n, e) => n + (e.uncompressedSize || 0), 0);
@@ -236,9 +233,10 @@ function dondeVaCadaAdjunto(informe, rutaHilo) {
     const suelto = trozos.pop();
     /* Se conserva la subcarpeta («photos», «videos», «audio») porque es lo que
        hace que el zip se entienda al abrirlo. */
-    const sub = trozos.length && trozos[trozos.length - 1] !== rutaHilo.split("/").pop()
-      ? trozos[trozos.length - 1] + "/"
-      : "";
+    const sub =
+      trozos.length && trozos[trozos.length - 1] !== rutaHilo.split("/").pop()
+        ? trozos[trozos.length - 1] + "/"
+        : "";
     let destino = `${rutaHilo}/${sub}${suelto}`;
     /* Dos archivos distintos con el mismo nombre existirían el uno encima del
        otro: se le pone un número al segundo. */
@@ -269,146 +267,95 @@ function reescribirAdjuntos(paginas, destinos) {
 }
 
 /* ------------------------------------------------------------------ *
- * Sin --hilo: solo se enseña lo que hay
+ * Qué conversaciones entran
  * ------------------------------------------------------------------ */
 
-if (!todas && pedidos.length === 0) {
-  console.log("\nMirando las", lista.length, "conversaciones…");
-
-  const filas = [];
-  for (let i = 0; i < lista.length; i++) {
-    const h = lista[i];
-    avance("  " + (i + 1) + "/" + lista.length);
-    const { informe } = await leerHilo(h);
-    const { destinos, sinEncontrar, bytes } = dondeVaCadaAdjunto(informe, h.carpeta);
-    filas.push({
-      hilo: h,
-      mensajes: informe.bloques,
-      adjuntos: destinos.size,
-      sinEncontrar: sinEncontrar.length,
-      /* Lo que va a pesar el zip convertido: las páginas no van dentro. */
-      bytes: bytes + informe.bloques * 200,
-    });
-  }
-
-  console.log("\nCONVERSACIONES EN ESTE EXPORT:", filas.length, "\n");
-  filas.forEach((f, i) => {
-    const bandeja = (f.hilo.carpeta.match(/(^|\/)messages\/([^/]+)\//i) || [])[2] || "";
-    const cola = [
-      f.adjuntos ? f.adjuntos + (f.adjuntos === 1 ? " adjunto" : " adjuntos") : "",
-      f.sinEncontrar ? f.sinEncontrar + " sin archivo en el zip" : "",
-      bandeja && bandeja !== "inbox" ? bandeja : "",
-    ].filter(Boolean);
-    console.log(
-      ("  " + String(i + 1).padStart(3) + ". " +
-        comoNombre(f.hilo.carpeta).padEnd(32).slice(0, 32) + " " +
-        String(f.mensajes).padStart(6) + (f.mensajes === 1 ? " mensaje " : " mensajes") +
-        " · " + enMb(f.bytes).padStart(9) +
-        (cola.length ? " · " + cola.join(" · ") : "")).trimEnd()
-    );
-  });
-
-  const conMensajes = filas.filter((f) => f.mensajes > 0).length;
-  if (conMensajes < filas.length) {
-    console.log(
-      "\n  (" + (filas.length - conMensajes) + " salieron sin ningún mensaje reconocible)"
-    );
-  }
-
-  console.log(
-    [
-      "",
-      "Para convertir una, su número:",
-      "",
-      '  node herramientas/convertir-instagram-html.mjs "' + ruta + '" --hilo 1',
-      "",
-      "Nada ha salido de tu máquina: esto solo ha leído el zip.",
-    ].join("\n")
-  );
-  await zip.close();
-  process.exit(0);
-}
-
-/* ------------------------------------------------------------------ *
- * Convertir
- * ------------------------------------------------------------------ */
-
-const aConvertir = todas
-  ? lista
-  : pedidos
+const aConvertir = pedidos.length
+  ? pedidos
       .map((n) => lista[n - 1])
       .filter((h, i) => {
         if (!h) console.error("No hay ninguna conversación con el número", pedidos[i]);
         return !!h;
-      });
+      })
+  : lista;
 
 if (aConvertir.length === 0) {
   await zip.close();
   process.exit(1);
 }
 
-const resumen = [];
+console.log(
+  soloLista
+    ? `\nMirando las ${aConvertir.length} conversaciones…`
+    : `\nConvirtiendo ${aConvertir.length} conversacion${aConvertir.length === 1 ? "" : "es"}…`
+);
 
-for (const hilo of aConvertir) {
+/* ------------------------------------------------------------------ *
+ * Convertir (o solo mirar)
+ * ------------------------------------------------------------------ */
+
+const salida = join(dirname(ruta), "convertido-" + aSalvo(basename(ruta).replace(/\.zip$/i, "")) + ".zip");
+
+/* Se escribe directo al disco, sin montar el zip entero en memoria: un export
+   con vídeos puede pesar gigas. */
+const destino = soloLista
+  ? null
+  : new ZipWriter(Writable.toWeb(createWriteStream(salida)), { bufferedWrite: false });
+
+const filas = [];
+const yaPuestos = new Set();
+let totalMensajes = 0;
+let totalAdjuntos = 0;
+let totalSinArchivo = 0;
+let totalSinFecha = 0;
+let vacias = 0;
+
+for (let i = 0; i < aConvertir.length; i++) {
+  const hilo = aConvertir[i];
   const nombre = comoNombre(hilo.carpeta);
-  console.log("\n—", nombre, "·", hilo.paginas.length, "página(s) ·", enMb(hilo.bytes));
+  avance(`  ${i + 1}/${aConvertir.length} · ${nombre}`);
 
-  /* 1. Leer las páginas y convertirlas. */
   const { paginas, informe } = await leerHilo(hilo);
-
-  const mensajes = paginas.reduce((n, p) => n + p.messages.length, 0);
-  console.log("  mensajes:", mensajes, " ".repeat(20));
-  if (informe.sinFecha) {
-    console.log(
-      "  sin fecha legible:",
-      informe.sinFecha,
-      "(se quedan junto al mensaje anterior, no al principio)"
-    );
-  }
-  if (informe.sinAutor) {
-    console.log("  sin autor:", informe.sinAutor, "(avisos del sistema, normalmente)");
-  }
-  if (mensajes === 0) {
-    console.log("  *** no se reconoció ningún mensaje: esta conversación se salta ***");
-    resumen.push({ nombre, mensajes: 0, salida: null });
-    continue;
-  }
-
-  /* 2. Localizar lo adjunto. En un export en HTML puede estar fuera de la
-        carpeta de la conversación, así que se busca por las rutas que enlazan
-        las páginas y se copia dentro. */
-  const { destinos, sinEncontrar } = dondeVaCadaAdjunto(informe, hilo.carpeta);
+  const { destinos, sinEncontrar, bytes } = dondeVaCadaAdjunto(informe, hilo.carpeta);
   reescribirAdjuntos(paginas, destinos);
-  if (sinEncontrar.length) {
-    console.log(
-      "  adjuntos que no están en el zip:",
-      sinEncontrar.length,
-      "(se nombran en el chat, pero el archivo no viene en la descarga)"
-    );
-  }
 
-  /* 3. Escribir el zip. Se escribe directo al disco, sin montarlo entero en
-        memoria: una conversación con vídeos puede pesar cientos de megas. */
-  const salida = join(dirname(ruta), "convertido-" + aSalvo(nombre) + ".zip");
-  const destino = new ZipWriter(Writable.toWeb(createWriteStream(salida)), {
-    bufferedWrite: false,
+  const mensajes = paginas.reduce((n, p) => n + (p.messages || []).length, 0);
+
+  filas.push({
+    hilo,
+    nombre,
+    mensajes,
+    adjuntos: destinos.size,
+    sinEncontrar: sinEncontrar.length,
+    /* Lo que va a pesar dentro del zip convertido: las páginas no van. */
+    bytes: bytes + mensajes * 200,
   });
 
-  for (let i = 0; i < paginas.length; i++) {
-    const json = JSON.stringify(aFormatoMeta(paginas[i], utf8));
-    await destino.add(`${hilo.carpeta}/message_${i + 1}.json`, new TextReader(json));
+  totalMensajes += mensajes;
+  totalAdjuntos += destinos.size;
+  totalSinArchivo += sinEncontrar.length;
+  totalSinFecha += informe.sinFecha;
+
+  /* Una conversación de la que no se reconoció ni un mensaje no entra: una
+     carpeta vacía dentro del zip solo sirve para confundir al elegir. */
+  if (mensajes === 0) {
+    vacias++;
+    continue;
+  }
+  if (!destino) continue;
+
+  for (let p = 0; p < paginas.length; p++) {
+    const json = JSON.stringify(aFormatoMeta(paginas[p], utf8));
+    await destino.add(`${hilo.carpeta}/message_${p + 1}.json`, new TextReader(json));
   }
 
   /* Lo adjunto va tal cual. Sin comprimir: una foto o un vídeo ya vienen
      comprimidos y volver a intentarlo solo gasta tiempo.
      Las páginas .html NO se copian, a propósito: si quedara una, la aplicación
      vería el export como de los de HTML y volvería a rechazarlo. */
-  let copiados = 0;
-  const yaPuestos = new Set();
   for (const { entrada, destino: dentroDelZip } of destinos.values()) {
     if (yaPuestos.has(dentroDelZip)) continue;
     yaPuestos.add(dentroDelZip);
-    avance("  copiando adjuntos " + ++copiados + "/" + destinos.size);
     const datos = await entrada.getData(new BlobWriter());
     await destino.add(dentroDelZip, new BlobReader(datos), { level: 0 });
   }
@@ -419,38 +366,88 @@ for (const hilo of aConvertir) {
   for (const entrada of hilo.otros) {
     if (yaPuestos.has(entrada.filename)) continue;
     yaPuestos.add(entrada.filename);
-    avance("  copiando adjuntos " + ++copiados);
     const datos = await entrada.getData(new BlobWriter());
     await destino.add(entrada.filename, new BlobReader(datos), { level: 0 });
   }
-  if (copiados) console.log("  adjuntos copiados:", copiados, " ".repeat(20));
-
-  await destino.close();
-  console.log("  listo →", salida, "·", enMb(statSync(salida).size));
-  resumen.push({ nombre, mensajes, salida });
 }
 
+if (destino) await destino.close();
 await zip.close();
 
 /* ------------------------------------------------------------------ *
- * Qué hacer con esto
+ * El informe
  * ------------------------------------------------------------------ */
 
-const hechos = resumen.filter((r) => r.salida);
-console.log("\n" + "-".repeat(60));
-if (hechos.length === 0) {
-  console.log("No salió ninguna conversación convertida.");
-  process.exit(1);
+console.log("\nCONVERSACIONES:", filas.length, "\n");
+filas.forEach((f, i) => {
+  const bandeja = (f.hilo.carpeta.match(/(^|\/)messages\/([^/]+)\//i) || [])[2] || "";
+  const cola = [
+    f.adjuntos ? f.adjuntos + (f.adjuntos === 1 ? " adjunto" : " adjuntos") : "",
+    f.sinEncontrar ? f.sinEncontrar + " sin archivo en el zip" : "",
+    bandeja && bandeja !== "inbox" ? bandeja : "",
+    f.mensajes === 0 ? "SIN MENSAJES RECONOCIBLES: fuera del zip" : "",
+  ].filter(Boolean);
+  console.log(
+    (
+      "  " +
+      /* El número es el de la lista entera, no el de esta tanda: es el que
+         vale para --hilo. */
+      String(lista.indexOf(f.hilo) + 1).padStart(3) +
+      ". " +
+      f.nombre.padEnd(32).slice(0, 32) +
+      " " +
+      String(f.mensajes).padStart(6) +
+      (f.mensajes === 1 ? " mensaje " : " mensajes") +
+      " · " +
+      enMb(f.bytes).padStart(9) +
+      (cola.length ? " · " + cola.join(" · ") : "")
+    ).trimEnd()
+  );
+});
+
+console.log("\n" + "-".repeat(64));
+console.log("mensajes en total:", totalMensajes);
+if (totalAdjuntos) console.log("adjuntos copiados:", totalAdjuntos);
+if (totalSinArchivo) {
+  console.log(
+    "adjuntos que no están en el zip:",
+    totalSinArchivo,
+    "(se nombran en el chat, pero el archivo no viene en la descarga)"
+  );
 }
-console.log("Convertidas:", hechos.length);
-for (const r of hechos) console.log("  ", r.mensajes, "mensajes ·", basename(r.salida));
-console.log(
-  [
-    "",
-    "Esos zip son los que se suben a BackupReader, uno por conversación.",
-    "El original no se ha tocado.",
-  ].join("\n")
-);
+if (totalSinFecha) {
+  console.log(
+    "mensajes sin fecha legible:",
+    totalSinFecha,
+    "(se quedan junto al mensaje anterior, no al principio)"
+  );
+}
+if (vacias) console.log("conversaciones sin ningún mensaje reconocible:", vacias);
+
+if (soloLista) {
+  console.log(
+    [
+      "",
+      "No se ha convertido nada: esto solo ha leído el zip. Para convertirlo:",
+      "",
+      '  node herramientas/convertir-instagram-html.mjs "' + ruta + '"',
+    ].join("\n")
+  );
+} else if (totalMensajes === 0) {
+  console.log("\nNo se reconoció ningún mensaje, así que el zip de salida no sirve de nada.");
+  process.exit(1);
+} else {
+  console.log(
+    [
+      "",
+      "Listo → " + salida + " · " + enMb(statSync(salida).size),
+      "",
+      "Ese zip es el que se sube a BackupReader. Al subirlo te enseña la lista",
+      "de conversaciones y eliges cuál abrir, igual que con una descarga en",
+      "JSON. El original no se ha tocado.",
+    ].join("\n")
+  );
+}
 
 /** Un nombre de archivo que no se pelee con el sistema. */
 function aSalvo(nombre) {
@@ -460,6 +457,6 @@ function aSalvo(nombre) {
       .replace(/[\u0300-\u036f]/g, "")
       .replace(/[^a-zA-Z0-9._-]+/g, "-")
       .replace(/^-+|-+$/g, "")
-      .slice(0, 48) || "conversacion"
+      .slice(0, 60) || "instagram"
   );
 }

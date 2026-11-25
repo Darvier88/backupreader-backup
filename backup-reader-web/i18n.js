@@ -649,7 +649,7 @@ const resources = {
       "archivada":"archived",
       "solicitud de mensaje":"message request",
       "Esta descarga de Instagram viene en HTML":"This Instagram download is in HTML",
-      "Para poder leer tus mensajes hace falta el formato JSON. Vuelve a pedir la descarga en Instagram y elige JSON donde te pregunta el formato.":"Reading your messages needs the JSON format. Request the download again on Instagram and choose JSON where it asks for the format.",
+      "Instagram te la dio como páginas web, y ahí los mensajes no vienen con su fecha y su autor en un sitio fijo del que leerlos. Hay que pedirla otra vez: en Instagram, tu perfil → Tu actividad → Descargar tu información, y donde pregunta el formato elige JSON en vez de HTML. Pidiendo solo los mensajes tarda menos y pesa mucho menos.":"Instagram gave it to you as web pages, and there the messages don't come with their date and sender in a fixed place to read them from. You need to request it again: on Instagram, your profile → Your activity → Download your information, and where it asks for the format choose JSON instead of HTML. Asking for messages only is quicker and much smaller.",
       "Faltan archivos de esta conversación":"Some files of this conversation are missing",
       "De {{total}} archivos que menciona, {{faltan}} no están en este .zip. Instagram parte las descargas grandes en varias partes y las fotos pueden estar en otra. Si sigues, esos adjuntos saldrán como no disponibles.":"Of the {{total}} files it mentions, {{faltan}} are not in this .zip. Instagram splits large downloads into several parts and the photos may be in another one. If you continue, those attachments will show as unavailable.",
       "Volver al análisis":"Back to the analysis",
