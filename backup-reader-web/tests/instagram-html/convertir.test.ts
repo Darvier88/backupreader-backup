@@ -124,6 +124,74 @@ describe("un mensaje", () => {
     expect(m.content).toBe("hola");
   });
 
+  it("lee la fecha aunque Meta ponga la reacción DESPUÉS de ella", () => {
+    /* Esto costó 201 mensajes de 1.298 en un export de verdad. Dando por
+       hecho que la fecha era el último hijo del bloque, en los mensajes con
+       reacción el último hijo era la reacción: se perdía la fecha Y la fecha
+       se colaba dentro del texto. Dos fallos del mismo despiste, y ninguno se
+       nota hasta que alguien lee su chat. */
+    const con =
+      `<div class="pam _3-95 _2ph- _a6-g uiBoxWhite noborder">` +
+      `<h2>Ana</h2>` +
+      `<div class="_3-95 _a6-p"><div><div>hola</div></div></div>` +
+      `<div class="_3-94 _a6-o">Sep 14, 2017 8:09 am</div>` +
+      `<div class="_a6-q"><div>❤️ Luis</div></div>` +
+      `</div>`;
+    const m = mensajeDeBloque(con);
+    expect(m.timestamp_ms).toBe(new Date(2017, 8, 14, 8, 9).getTime());
+    expect(m.content).toBe("hola");
+  });
+
+  it("una fecha que no se sepa leer no se queda pegada al mensaje", () => {
+    /* Que no se pudo leer ya lo dice el informe del conversor. Lo que no puede
+       pasar es que aparezca dentro de lo que dijo la persona. */
+    const con =
+      `<div class="pam _3-95 _2ph- _a6-g uiBoxWhite noborder">` +
+      `<h2>Ana</h2>` +
+      `<div class="_3-95 _a6-p"><div><div>hola</div></div></div>` +
+      `<div class="_3-94 _a6-o">14.ix.2017 · 8h09</div>` +
+      `</div>`;
+    const m = mensajeDeBloque(con);
+    expect(m.timestamp_ms).toBeNull();
+    expect(m.content).toBe("hola");
+  });
+
+  it("con fecha ilegible Y reacción, tampoco se cuela nada en el texto", () => {
+    /* Quitando solo el último hijo, aquí se quitaba la reacción y la fecha
+       ilegible se quedaba dentro del mensaje. Son dos, así que hay que
+       recortar todos los del final, no uno. */
+    const con =
+      `<div class="pam _3-95 _2ph- _a6-g uiBoxWhite noborder">` +
+      `<h2>Ana</h2>` +
+      `<div class="_3-95 _a6-p"><div><div>hola</div></div></div>` +
+      `<div class="_3-94 _a6-o">14.ix.2017 · 8h09</div>` +
+      `<div class="_a6-q"><div>❤️ Luis</div></div>` +
+      `</div>`;
+    const m = mensajeDeBloque(con);
+    expect(m.timestamp_ms).toBeNull();
+    expect(m.content).toBe("hola");
+  });
+
+  it("apunta qué ponía la fecha que no supo leer, para poder arreglarlo", () => {
+    /* Es lo único que permite añadir un formato de fecha que falte sin pedirle
+       a nadie sus conversaciones. */
+    const apunte: { textoFecha?: string } = {};
+    mensajeDeBloque(bloque("Ana", "hola", "14.ix.2017 · 8h09"), "", apunte);
+    expect(apunte.textoFecha).toBe("14.ix.2017 · 8h09");
+
+    /* Y cuando sí la sabe leer, no apunta nada. */
+    const otro: { textoFecha?: string } = {};
+    mensajeDeBloque(bloque("Ana", "hola", "Sep 14, 2017 8:09 am"), "", otro);
+    expect(otro.textoFecha).toBeUndefined();
+  });
+
+  it("encuentra los bloques aunque las clases vengan con comillas simples", () => {
+    const html = pagina("Ana", [
+      bloque("Ana", "hola", "Sep 14, 2017 8:09 am"),
+    ]).replace(/class="([^"]*)"/g, "class='$1'");
+    expect(bloquesDeMensaje(html)).toHaveLength(1);
+  });
+
   it("no cuenta las reacciones como texto de quien escribió", () => {
     const con =
       `<div class="pam _3-95 _2ph- _a6-g uiBoxWhite noborder">` +

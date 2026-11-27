@@ -96,6 +96,44 @@ Si el aviso no lo dijera, la persona volvería a pedir lo mismo y esperaría otr
 vez para nada. `tests/documentos/avisosTraducidos.test.ts` lo vigila, junto con
 que ningún aviso se quede sin traducir al inglés.
 
+### La fecha no es el último hijo del bloque
+
+Lo parecía, y costó **201 mensajes de 1.298** en un export de verdad.
+
+La plantilla de Meta pone la fecha al final del bloque del mensaje… salvo
+cuando hay una reacción, que va **después**. Dando por hecho que la fecha era
+el último hijo, en esos mensajes se miraba la reacción: se perdía la fecha
+**y** la fecha se colaba dentro del texto («`hola`» pasaba a ser
+«`hola\nSep 14, 2017 8:09 am`»). Dos fallos del mismo despiste, y ninguno de
+los dos falla ni avisa: se ven leyendo el chat.
+
+Ahora la fecha es el **último hijo que se deje leer como fecha**, y lo que
+venga después se descarta, que en esa plantilla nunca es el mensaje. Si no se
+puede leer ninguna, se recortan igual los hijos del final que sean texto corto
+sin adjuntos: una fecha en un formato desconocido no puede acabar pegada a lo
+que dijo una persona.
+
+### Cuando quedan fechas sin leer: `--diagnostico`
+
+```bash
+node herramientas/convertir-instagram-html.mjs "C:\ruta\instagram.zip" --diagnostico
+```
+
+Escribe `diagnostico-fechas.txt` al lado del zip con las fechas que no se
+supieron leer. Lo que lleva dentro es la **forma** de cada una (las letras como
+`a`, los dígitos como `9`), así que un mes sale como `aaa` y no se puede saber
+cuál era:
+
+```
+       4 ×  "99.aa.9999 · 9a99"   ejemplo: "14.ix.2017 · 8h09"
+       1 ×  "❤️ aaaa"   (sin año: no se enseña)
+```
+
+El texto tal cual solo aparece cuando la cadena lleva un **año de cuatro
+cifras** dentro, que es lo que hace de una cadena una fecha y no un mensaje
+corto. Con eso se añade el formato que falte en `fechaEnMs` sin que nadie tenga
+que mandar sus conversaciones a ninguna parte.
+
 ### Lo que dice el informe
 
 Al convertir, el programa cuenta los mensajes que ha reconocido, y también:

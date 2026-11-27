@@ -199,8 +199,11 @@ export function fechaEnMs(texto) {
 
 /** Las clases de una etiqueta, en minúsculas. */
 function clasesDe(atributos) {
-  const m = String(atributos || "").match(/class\s*=\s*"([^"]*)"/i);
-  return (m ? m[1] : "").toLowerCase().split(/\s+/).filter(Boolean);
+  /* Con comillas dobles o simples. Meta usa dobles, pero si algún día cambiara,
+     esto dejaría de reconocer los bloques y las conversaciones saldrían vacías
+     sin que fallara nada. */
+  const m = String(atributos || "").match(/class\s*=\s*("([^"]*)"|'([^']*)')/i);
+  return ((m && (m[2] ?? m[3])) || "").toLowerCase().split(/\s+/).filter(Boolean);
 }
 
 /**
@@ -302,11 +305,8 @@ export function fechaDeBloque(bloque) {
 /**
  * Los hijos directos de un bloque, en orden.
  *
- * Hace falta para separar la fecha del mensaje POR SU SITIO y no por lo que
- * ponga: en la plantilla de Meta la fecha es siempre el último hijo del
- * bloque. Si se buscara solo por texto, una fecha escrita de una forma que
- * todavía no se sepa leer acabaría pegada al final del mensaje, que es
- * exactamente el tipo de error que no se nota hasta que alguien lee su chat.
+ * Hace falta para separar la fecha del mensaje: la fecha es uno de estos
+ * hijos, y lo que venga DESPUÉS de ella no es mensaje.
  */
 function hijosDirectos(html) {
   const texto = String(html || "");
@@ -370,7 +370,7 @@ function destapar(bloque) {
   return hijos;
 }
 
-export function mensajeDeBloque(bloque, rutaHilo = "") {
+export function mensajeDeBloque(bloque, rutaHilo = "", apunte = null) {
   const hijos = destapar(bloque);
 
   /* 1. Autor: el `<h2>`. Un aviso del sistema no lleva ninguno. */
@@ -378,14 +378,62 @@ export function mensajeDeBloque(bloque, rutaHilo = "") {
   const h2 = cabecera && cabecera.html.match(/<h2\b[^>]*>([\s\S]*?)<\/h2>/i);
   const autor = h2 ? textoVisible(h2[1]) : "";
 
-  /* 2. Fecha: el último hijo del bloque, que es donde la pone la plantilla de
-        Meta. Se aparta aunque no se deje leer, para que no acabe dentro del
-        mensaje; que no se pudo leer ya lo dice el informe. */
-  const cuerpos = hijos.filter((h) => h.etiqueta !== "h2");
-  const pie = cuerpos.length > 1 ? cuerpos[cuerpos.length - 1] : null;
-  const contenido = (pie ? cuerpos.slice(0, -1) : cuerpos).map((h) => h.html).join("");
+  /* 2. Fecha: el ÚLTIMO hijo que se deje leer como fecha. No el último hijo a
+        secas.
 
-  const ms = pie ? fechaDeBloque(pie.html) : fechaDeBloque(bloque);
+        Esa diferencia costó 201 mensajes de 1.298 en un export de verdad. En
+        algunos mensajes Meta mete la reacción DESPUÉS de la fecha, así que el
+        último hijo es la reacción: dando por hecho que la fecha iba al final,
+        esos mensajes se quedaban sin fecha Y la fecha se colaba dentro del
+        texto («hola\nSep 14, 2017 8:09 am»). Dos fallos del mismo despiste, y
+        ninguno de los dos se nota hasta que alguien lee su chat. */
+  const cuerpos = hijos.filter((h) => h.etiqueta !== "h2");
+
+  let dondeLaFecha = -1;
+  let ms = null;
+  for (let i = cuerpos.length - 1; i >= 0; i--) {
+    const leida = fechaDeBloque(cuerpos[i].html);
+    if (leida !== null) {
+      dondeLaFecha = i;
+      ms = leida;
+      break;
+    }
+  }
+
+  /* Si no se pudo leer ninguna, se apartan igualmente los hijos del final que
+     tengan pinta de no ser el mensaje (texto corto y sin nada adjunto): ahí
+     están la fecha y, si la hay, la reacción. Una fecha en un formato que
+     todavía no se sepa leer no puede acabar pegada al mensaje. Que no se leyó
+     ya lo dice el informe.
+
+     Se recortan todos los del final y no solo el último, porque un mensaje con
+     fecha ilegible Y reacción tiene dos: quitando uno, la fecha se volvía a
+     colar dentro del texto. El primer hijo no se toca nunca: ese es el
+     mensaje. */
+  let apartado = -1;
+  if (dondeLaFecha === -1) {
+    for (let i = cuerpos.length - 1; i > 0; i--) {
+      const h = cuerpos[i];
+      if (/(src|href)\s*=/i.test(h.html) || textoVisible(h.html).length > 80) break;
+      apartado = i;
+    }
+  }
+
+  /* Para el diagnóstico: qué ponía donde debería haber una fecha. Solo cuando
+     no se pudo leer, y solo si alguien lo pide: es lo único que permite
+     arreglar un formato de fecha que falte sin pedirle a nadie sus mensajes. */
+  if (apunte && dondeLaFecha === -1) {
+    apunte.textoFecha = apartado >= 0 ? textoVisible(cuerpos[apartado].html) : "";
+  }
+
+  /* Del bloque se queda lo que hay ANTES de la fecha. Lo de después, en la
+     plantilla de Meta, son las reacciones y cosas así: nunca es el mensaje. */
+  const corte = dondeLaFecha >= 0 ? dondeLaFecha : apartado >= 0 ? apartado : cuerpos.length;
+  let trozos = cuerpos.slice(0, corte);
+  /* Salvo que la fecha fuera lo primero, que dejaría el mensaje en nada: ahí
+     se coge todo lo demás. */
+  if (!trozos.length) trozos = cuerpos.filter((_, i) => i !== corte);
+  const contenido = trozos.map((h) => h.html).join("");
 
   /* 3. Lo adjunto, por la ruta y no por la etiqueta: una foto llega en `img`,
         en `a`, o en un `a` con un `img` dentro, y el enlace a una publicación
@@ -582,6 +630,9 @@ export function hiloDeHtml(paginas, { rutaHilo = "", carpeta = "" } = {}) {
      buscar. En un export en HTML la media puede no estar en la carpeta de la
      conversación, así que no vale con copiar esa carpeta entera. */
   const adjuntos = new Set();
+  /* Lo que había donde debería haber una fecha, en los mensajes en que no se
+     pudo leer. Sirve para arreglar el formato que falte. */
+  const ilegibles = [];
   let titulo = "";
   let sinFecha = 0;
   let sinAutor = 0;
@@ -595,9 +646,11 @@ export function hiloDeHtml(paginas, { rutaHilo = "", carpeta = "" } = {}) {
     let ultima = null;
     for (const bloque of bloquesDeMensaje(html)) {
       bloques++;
-      const m = mensajeDeBloque(bloque, rutaHilo);
+      const apunte = {};
+      const m = mensajeDeBloque(bloque, rutaHilo, apunte);
       if (m.timestamp_ms === null) {
         sinFecha++;
+        if (apunte.textoFecha) ilegibles.push(apunte.textoFecha);
         m.timestamp_ms = ultima === null ? 0 : ultima;
       } else {
         ultima = m.timestamp_ms;
@@ -636,6 +689,7 @@ export function hiloDeHtml(paginas, { rutaHilo = "", carpeta = "" } = {}) {
       autores: autores.size,
       titulo,
       adjuntos: [...adjuntos],
+      ilegibles,
     },
   };
 }

@@ -22,7 +22,11 @@ export function bloquesDeMensaje(html: string): string[];
 /** Un mensaje con la forma que tendría en el export de JSON. */
 export function mensajeDeBloque(
   bloque: string,
-  rutaHilo?: string
+  rutaHilo?: string,
+  /** Se rellena con lo que ponía donde debería haber una fecha, si no se supo
+      leer. Es lo que permite arreglar un formato que falte sin pedirle a nadie
+      sus conversaciones. */
+  apunte?: { textoFecha?: string } | null
 ): MensajeInstagram & { timestamp_ms: number | null };
 
 /** El estropicio de codificación de Meta, para que el zip sea indistinguible. */
@@ -40,6 +44,8 @@ export type InformeDeHilo = {
   titulo: string;
   /** Las rutas de lo adjunto, para poder buscarlo esté donde esté. */
   adjuntos: string[];
+  /** Lo que había donde debería haber una fecha, en los que no se supo leer. */
+  ilegibles: string[];
 };
 
 export function hiloDeHtml(

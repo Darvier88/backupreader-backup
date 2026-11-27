@@ -42,7 +42,7 @@
  * 368 archivos obligaría a elegir antes, aquí, a ciegas y en una terminal.
  */
 
-import { createWriteStream, existsSync, openAsBlob, readFileSync, statSync } from "node:fs";
+import { createWriteStream, existsSync, openAsBlob, readFileSync, statSync, writeFileSync } from "node:fs";
 import { basename, dirname, join } from "node:path";
 import { Writable } from "node:stream";
 import utf8 from "utf8";
@@ -79,6 +79,7 @@ const pide = (nombre) => {
   return i >= 0 ? args[i + 1] : undefined;
 };
 const soloLista = args.includes("--lista");
+const diagnostico = args.includes("--diagnostico");
 const pedidos = (pide("hilo") || "")
   .split(/[,\s]+/)
   .map((n) => Number(n))
@@ -309,6 +310,7 @@ let totalAdjuntos = 0;
 let totalSinArchivo = 0;
 let totalSinFecha = 0;
 let vacias = 0;
+const fechasIlegibles = [];
 
 for (let i = 0; i < aConvertir.length; i++) {
   const hilo = aConvertir[i];
@@ -335,6 +337,7 @@ for (let i = 0; i < aConvertir.length; i++) {
   totalAdjuntos += destinos.size;
   totalSinArchivo += sinEncontrar.length;
   totalSinFecha += informe.sinFecha;
+  if (diagnostico) fechasIlegibles.push(...(informe.ilegibles || []));
 
   /* Una conversación de la que no se reconoció ni un mensaje no entra: una
      carpeta vacía dentro del zip solo sirve para confundir al elegir. */
@@ -423,6 +426,55 @@ if (totalSinFecha) {
   );
 }
 if (vacias) console.log("conversaciones sin ningún mensaje reconocible:", vacias);
+
+/* El diagnóstico de las fechas que no se supieron leer.
+ *
+ * Lo que se escribe es la FORMA de cada una (las letras como «a», los dígitos
+ * como «9»), nunca el texto. Y el texto tal cual solo cuando la forma lleva un
+ * año de cuatro cifras dentro, que es lo que hace de una cadena una fecha y no
+ * un mensaje corto. Una fecha no dice nada de lo que hablaste; un mensaje sí.
+ *
+ * Con esto se arregla un formato que falte sin que nadie tenga que mandar sus
+ * conversaciones a ninguna parte. */
+if (diagnostico) {
+  const forma = (t) =>
+    t.replace(/\p{L}+/gu, (x) => "a".repeat(x.length)).replace(/\d/g, "9");
+  const porForma = new Map();
+  for (const texto of fechasIlegibles) {
+    const f = forma(texto);
+    if (!porForma.has(f)) porForma.set(f, { veces: 0, ejemplo: null });
+    const fila = porForma.get(f);
+    fila.veces++;
+    /* Solo se guarda el texto si lleva un año dentro. */
+    if (!fila.ejemplo && /\d{4}/.test(texto)) fila.ejemplo = texto;
+  }
+
+  const lineas = [
+    "FECHAS QUE EL CONVERSOR NO SUPO LEER",
+    "export: " + basename(ruta),
+    "en total: " + fechasIlegibles.length + " de " + totalMensajes + " mensajes",
+    "",
+    "La FORMA lleva las letras como «a» y los dígitos como «9», así que un mes",
+    "sale como «aaa» y no se puede saber cuál era. El ejemplo solo aparece",
+    "cuando la cadena lleva un año de cuatro cifras, que es lo que la hace una",
+    "fecha y no un mensaje corto.",
+    "",
+  ];
+  [...porForma.entries()]
+    .sort((a, b) => b[1].veces - a[1].veces)
+    .slice(0, 40)
+    .forEach(([f, { veces, ejemplo }]) =>
+      lineas.push(
+        "  " + String(veces).padStart(6) + " ×  " + JSON.stringify(f) +
+          (ejemplo ? "   ejemplo: " + JSON.stringify(ejemplo) : "   (sin año: no se enseña)")
+      )
+    );
+
+  const donde = join(dirname(ruta), "diagnostico-fechas.txt");
+  writeFileSync(donde, lineas.join("\n") + "\n", "utf8");
+  console.log("\nDiagnóstico escrito en:", donde);
+  console.log("Míralo antes de mandarlo. No lleva mensajes, pero es tuyo y lo decides tú.");
+}
 
 if (soloLista) {
   console.log(
