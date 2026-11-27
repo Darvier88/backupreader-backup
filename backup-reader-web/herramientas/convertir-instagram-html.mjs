@@ -438,14 +438,25 @@ if (vacias) console.log("conversaciones sin ningún mensaje reconocible:", vacia
  * conversaciones a ninguna parte. */
 if (diagnostico) {
   const forma = (t) =>
-    t.replace(/\p{L}+/gu, (x) => "a".repeat(x.length)).replace(/\d/g, "9");
+    String(t).replace(/\p{L}+/gu, (x) => "a".repeat(x.length)).replace(/\d/g, "9");
+
+  const porEstructura = new Map();
   const porForma = new Map();
-  for (const texto of fechasIlegibles) {
+  let conAno = 0;
+
+  for (const fallo of fechasIlegibles) {
+    const e = fallo.estructura || "(desconocida)";
+    porEstructura.set(e, (porEstructura.get(e) || 0) + 1);
+
+    if (fallo.hayAno) conAno++;
+    /* La forma se saca del texto que lleva el año, que por llevarlo ya no
+       puede ser un mensaje corto; si no hay año, del hueco de la fecha. */
+    const texto = fallo.textoConAno || fallo.texto;
+    if (!texto) continue;
     const f = forma(texto);
     if (!porForma.has(f)) porForma.set(f, { veces: 0, ejemplo: null });
     const fila = porForma.get(f);
     fila.veces++;
-    /* Solo se guarda el texto si lleva un año dentro. */
     if (!fila.ejemplo && /\d{4}/.test(texto)) fila.ejemplo = texto;
   }
 
@@ -453,16 +464,28 @@ if (diagnostico) {
     "FECHAS QUE EL CONVERSOR NO SUPO LEER",
     "export: " + basename(ruta),
     "en total: " + fechasIlegibles.length + " de " + totalMensajes + " mensajes",
+    "de esos, con un año de cuatro cifras en alguna parte del bloque: " + conAno,
     "",
-    "La FORMA lleva las letras como «a» y los dígitos como «9», así que un mes",
-    "sale como «aaa» y no se puede saber cuál era. El ejemplo solo aparece",
-    "cuando la cadena lleva un año de cuatro cifras, que es lo que la hace una",
+    "Aquí no hay mensajes. La ESTRUCTURA son las etiquetas y las clases del",
+    "HTML, que las escribe Meta y no tú. La FORMA lleva las letras como «a» y",
+    "los dígitos como «9», así que un mes sale como «aaa». El ejemplo solo",
+    "aparece cuando la cadena lleva un año dentro, que es lo que la hace una",
     "fecha y no un mensaje corto.",
     "",
+    "ESTRUCTURA DE LOS BLOQUES QUE FALLARON (sin contar el autor)",
   ];
+  [...porEstructura.entries()]
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 25)
+    .forEach(([e, n]) => lineas.push("  " + String(n).padStart(6) + " ×  " + e));
+
+  lineas.push("", "FORMA DE LO QUE HABÍA DONDE DEBERÍA IR LA FECHA");
+  if (porForma.size === 0) {
+    lineas.push("  (nada: en esos bloques no hay ningún hueco de fecha)");
+  }
   [...porForma.entries()]
     .sort((a, b) => b[1].veces - a[1].veces)
-    .slice(0, 40)
+    .slice(0, 25)
     .forEach(([f, { veces, ejemplo }]) =>
       lineas.push(
         "  " + String(veces).padStart(6) + " ×  " + JSON.stringify(f) +

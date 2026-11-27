@@ -419,11 +419,29 @@ export function mensajeDeBloque(bloque, rutaHilo = "", apunte = null) {
     }
   }
 
-  /* Para el diagnóstico: qué ponía donde debería haber una fecha. Solo cuando
-     no se pudo leer, y solo si alguien lo pide: es lo único que permite
-     arreglar un formato de fecha que falte sin pedirle a nadie sus mensajes. */
+  /* Para el diagnóstico, cuando no se pudo leer la fecha. Es lo único que
+     permite arreglarlo sin pedirle a nadie sus mensajes, así que lo que se
+     apunta tiene que servir y no delatar:
+       - la ESTRUCTURA: etiquetas y clases, que las escribe Meta y no la
+         persona;
+       - si en el bloque aparece un año de cuatro cifras en alguna parte, que
+         es lo que separa «aquí no hay fecha» de «aquí hay una fecha que no sé
+         leer», dos problemas con arreglos distintos;
+       - el texto que lleva ese año, que por llevarlo ya no puede ser un
+         mensaje corto. */
   if (apunte && dondeLaFecha === -1) {
     apunte.textoFecha = apartado >= 0 ? textoVisible(cuerpos[apartado].html) : "";
+    apunte.estructura = cuerpos
+      .map((h) => {
+        const clases = clasesDe((h.html.match(/^<[a-z0-9]+\b([^>]*)>/i) || [, ""])[1]);
+        return h.etiqueta + (clases.length ? "." + clases.join(".") : "");
+      })
+      .join(" | ") || "(sin hijos)";
+    const conAno = (String(bloque).match(/>([^<]*\d{4}[^<]*)</g) || [])
+      .map((t) => t.slice(1, -1).trim())
+      .filter(Boolean);
+    apunte.hayAno = conAno.length > 0;
+    apunte.textoConAno = conAno[conAno.length - 1] || "";
   }
 
   /* Del bloque se queda lo que hay ANTES de la fecha. Lo de después, en la
@@ -650,7 +668,12 @@ export function hiloDeHtml(paginas, { rutaHilo = "", carpeta = "" } = {}) {
       const m = mensajeDeBloque(bloque, rutaHilo, apunte);
       if (m.timestamp_ms === null) {
         sinFecha++;
-        if (apunte.textoFecha) ilegibles.push(apunte.textoFecha);
+        ilegibles.push({
+          texto: apunte.textoFecha || "",
+          estructura: apunte.estructura || "",
+          hayAno: !!apunte.hayAno,
+          textoConAno: apunte.textoConAno || "",
+        });
         m.timestamp_ms = ultima === null ? 0 : ultima;
       } else {
         ultima = m.timestamp_ms;
