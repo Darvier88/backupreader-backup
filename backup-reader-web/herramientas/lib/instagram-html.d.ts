@@ -31,6 +31,8 @@ export function mensajeDeBloque(
       leer. Es lo que permite arreglar un formato que falte sin pedirle a nadie
       sus conversaciones. */
   apunte?: {
+    /** El TIPO de cada enlace de fuera, nunca el enlace. */
+    enlaces?: ("media" | "otro")[];
     textoFecha?: string;
     estructura?: string;
     hayAno?: boolean;
@@ -55,6 +57,10 @@ export type InformeDeHilo = {
   titulo: string;
   /** Las rutas de lo adjunto, para poder buscarlo esté donde esté. */
   adjuntos: string[];
+  /** Fotos y vídeos que el HTML pide a un servidor de Meta, no al zip. */
+  enlacesMedia: number;
+  /** Enlaces normales compartidos dentro de los mensajes. */
+  enlacesOtros: number;
   /** Qué había en los bloques cuya fecha no se supo leer. Sin mensajes. */
   ilegibles: {
     texto: string;

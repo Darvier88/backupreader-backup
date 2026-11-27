@@ -310,6 +310,8 @@ let totalAdjuntos = 0;
 let totalSinArchivo = 0;
 let totalSinFecha = 0;
 let totalNoMensajes = 0;
+let totalEnlacesMedia = 0;
+let totalEnlacesOtros = 0;
 let vacias = 0;
 const fechasIlegibles = [];
 
@@ -339,6 +341,8 @@ for (let i = 0; i < aConvertir.length; i++) {
   totalSinArchivo += sinEncontrar.length;
   totalSinFecha += informe.sinFecha;
   totalNoMensajes += informe.noMensajes || 0;
+  totalEnlacesMedia += informe.enlacesMedia || 0;
+  totalEnlacesOtros += informe.enlacesOtros || 0;
   if (diagnostico) fechasIlegibles.push(...(informe.ilegibles || []));
 
   /* Una conversación de la que no se reconoció ni un mensaje no entra: una
@@ -420,6 +424,14 @@ if (totalSinArchivo) {
     "(se nombran en el chat, pero el archivo no viene en la descarga)"
   );
 }
+if (totalEnlacesMedia) {
+  console.log(
+    "fotos y vídeos que NO vienen en el zip:",
+    totalEnlacesMedia,
+    "(el HTML los pide a un servidor de Meta; no se pueden guardar)"
+  );
+}
+if (totalEnlacesOtros) console.log("enlaces compartidos en los mensajes:", totalEnlacesOtros);
 if (totalNoMensajes) {
   console.log(
     "cajas que no son mensajes:",

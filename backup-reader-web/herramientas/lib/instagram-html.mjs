@@ -507,6 +507,14 @@ export function mensajeDeBloque(bloque, rutaHilo = "", apunte = null) {
         reacciones vienen en su propio bloque dentro del mensaje y NO son
         texto: sumarlas haría que un «me gusta» contara como palabras de quien
         escribió. */
+  if (apunte && enlaces.length) {
+    /* Solo el TIPO de enlace, nunca el enlace: lo que hace falta saber es si
+       la media está en un servidor de Meta o si son enlaces cualesquiera. */
+    apunte.enlaces = enlaces.map((u) =>
+      /(cdninstagram|fbcdn|lookaside\.|scontent)/i.test(u) ? "media" : "otro"
+    );
+  }
+
   const texto = textoDelBloque(contenido, autor, ms);
 
   const mensaje = { sender_name: autor, timestamp_ms: ms === null ? null : ms };
@@ -671,6 +679,10 @@ export function hiloDeHtml(paginas, { rutaHilo = "", carpeta = "" } = {}) {
   /* Lo que había donde debería haber una fecha, en los mensajes en que no se
      pudo leer. Sirve para arreglar el formato que falte. */
   const ilegibles = [];
+  /* Cuántos mensajes apuntan a media en un servidor de Meta en vez de a un
+     archivo del zip. Si esto es alto, las fotos no vienen en la descarga. */
+  let enlacesMedia = 0;
+  let enlacesOtros = 0;
   let titulo = "";
   let sinFecha = 0;
   let sinAutor = 0;
@@ -691,6 +703,10 @@ export function hiloDeHtml(paginas, { rutaHilo = "", carpeta = "" } = {}) {
       bloques++;
       const apunte = {};
       const m = mensajeDeBloque(bloque, rutaHilo, apunte);
+      for (const tipo of apunte.enlaces || []) {
+        if (tipo === "media") enlacesMedia++;
+        else enlacesOtros++;
+      }
       if (m.timestamp_ms === null) {
         sinFecha++;
         ilegibles.push({
@@ -739,6 +755,8 @@ export function hiloDeHtml(paginas, { rutaHilo = "", carpeta = "" } = {}) {
       autores: autores.size,
       titulo,
       adjuntos: [...adjuntos],
+      enlacesMedia,
+      enlacesOtros,
       ilegibles,
     },
   };
