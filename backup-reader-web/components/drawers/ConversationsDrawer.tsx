@@ -1,4 +1,4 @@
-import { FC, useContext, useEffect, useRef, useState, ReactElement } from "react";
+import { FC, Fragment, useContext, useEffect, useRef, useState, ReactElement } from "react";
 
 import { useTranslation } from "react-i18next";
 import { Box, Typography } from "@mui/material";
@@ -16,6 +16,18 @@ import { BotonBorrarChat } from "../chat/BotonBorrarChat";
 import { usePanelChats } from "../../context/PanelChatsContext";
 import { backupIdDeHandle } from "../../lib/backupreader-crypto";
 import { iniciales, nombreDelContacto } from "../../lib/nombres-de-chat";
+import { agruparPorPlataforma } from "../../lib/agrupar-chats";
+import type { Plataforma } from "../../lib/agrupar-chats";
+
+/* Cómo se llama cada grupo en la barra lateral. «other» son los backups
+   viejos cuyo origen no se llegó a saber, y «desconocido» los que están
+   bloqueados: con la bóveda cerrada no se puede abrir su manifiesto. */
+const NOMBRE_DE_PLATAFORMA: Record<Plataforma, string> = {
+  whatsapp: "WhatsApp",
+  instagram: "Instagram",
+  other: "Otros",
+  desconocido: "Sin abrir",
+};
 
 /** `t()` puede devolver null según sus tipos; esto lo deja en string. */
 const enTexto = (traducido: unknown): string =>
@@ -162,7 +174,6 @@ export const ConversationsDrawer: FC<ConversationsDrawerProps> = ({
   /* Para la línea bajo el nombre: quien está en la prueba gratuita no tiene
      `plan` todavía, y llamarle «Plan personal» le diría que ya paga. */
   const { user: perfil } = useContext(FirestoreContext);
-  const [instagramConversations, setInstagramConversations] = useState<JSX.Element[] | null>(null);
   /* Lo que se busca en TODOS los chats. Es estado de la barra lateral y no del
      dashboard porque el buscador tiene que funcionar sin ningún chat abierto. */
   /* Comando-K lleva aqui el cursor desde cualquier parte de la aplicacion. */
@@ -207,60 +218,17 @@ export const ConversationsDrawer: FC<ConversationsDrawerProps> = ({
 
 
 
-  const getInstagramConversations = async (route: string) => {
-      try {
-        // Fetch results from the original path based on route
-        const originalListRef = ref(storage, `${route}/messages/inbox/`);
-        // Use the type from ListResult for prefixes
-        let originalPrefixes: ListResult['prefixes'] = [];
-        let hasOriginalFiles = false;
-        try {
-          const originalResults: ListResult = await list(originalListRef);
-          originalPrefixes = originalResults.prefixes;
-          hasOriginalFiles = originalPrefixes.length > 0;
-        } catch (error) {
-          console.error("Error fetching from original path:", error);
-        }
+  /* Aquí vivía `getInstagramConversations` / `loadConversations`, de cuando un
+     backup de Instagram se subía entero y sin cifrar y había que listar sus
+     carpetas en Storage para enseñar las conversaciones dentro de un
+     desplegable.
 
-        // Fetch results from the alternative path only if original path is empty
-        let alternativePrefixes: ListResult['prefixes'] = [];
-        if (!hasOriginalFiles) {
-          const alternativeListRef = ref(storage, `${route}/your_instagram_activity/messages/inbox/`);
-          try {
-            const alternativeResults: ListResult = await list(alternativeListRef);
-            alternativePrefixes = alternativeResults.prefixes;
-          } catch (error) {
-            console.error("Error fetching from alternative path:", error);
-          }
-        }
+     Ya no: ahora la conversación se elige ANTES de subir (ElegirConversacion)
+     y lo que se guarda es una sola, igual que un chat de WhatsApp. El código
+     estaba muerto, pero se despertaba con cualquier chat cuyo nombre
+     contuviera «instagram-», y entonces esa fila se pintaba como un
+     desplegable raro en vez de como un chat. */
 
-        // Determine which prefixes to use based on availability
-        const combinedResults = hasOriginalFiles ? originalPrefixes : alternativePrefixes;
-
-        // Create elements from the chosen results
-        const elements = combinedResults.map((item, index) => (
-          <div key={index} onClick={() => onPress(item.fullPath, item.name)}>
-            <Text>{extractUsername(item.name)}</Text>
-          </div>
-        ));
-
-        return elements;  // Return the array of JSX elements
-      } catch (error) {
-        console.error("Error in getInstagramConversations:", error);
-        return [];  // Return empty array on error
-      }
-  };
-
-
-  const loadConversations = async (path: string) => {
-    try {
-      // Replace 'getInstagramConversations' with your actual data fetching logic
-      const newConversations = await getInstagramConversations(path);
-      setInstagramConversations(newConversations);
-    } catch (error) {
-      console.error("Failed to load conversations:", error);
-    }
-  };
   
 
   useEffect(() => {
@@ -292,6 +260,149 @@ export const ConversationsDrawer: FC<ConversationsDrawerProps> = ({
   
   /* Panel a toda la altura (8b): logo y «Agregar chat» arriba, la lista en
      medio con su propio scroll y la cuenta fija abajo. */
+  /* Los chats, agrupados por plataforma. Un grupo vacío no sale, y con una
+     sola plataforma no sale ninguna cabecera: ver `lib/agrupar-chats.ts`. */
+  const { grupos, conCabecera } = agruparPorPlataforma(state);
+
+  /**
+   * Una fila de la lista.
+   *
+   * Antes esto era el cuerpo de un `map`. Se saca a una función porque ahora
+   * la lista se pinta por grupos, y así el pintado de un chat es el mismo
+   * esté en el grupo que esté.
+   */
+  const pintarChat = (item: FileList, i: string | number) => {
+    /* También se marca el chat al que se están limitando los resultados. */
+    /* Por ruta y no por nombre: dos versiones del mismo chat se llaman
+       igual y se marcarían las dos. */
+    const isSelected =
+      (abierto ? abierto === item.fullPath : selected === item.name) ||
+      (buscando && !!chatFiltro && chatFiltro === (backupIdDeHandle(item.fullPath) ?? ""));
+    const parts = splitNameDate(item.name);
+    const coincidencias = porChat[backupIdDeHandle(item.fullPath) ?? ""];
+    /* Boveda bloqueada: el chat existe pero su nombre vive dentro del
+       manifiesto cifrado, asi que todavia no se puede leer. Se pinta con
+       candado y no se deja abrir, en vez de esconderlo: esconderlo haria
+       creer que no hay chats. (Pantalla 4d.) */
+    if (item.bloqueado) {
+      return (
+        <div
+          key={i}
+          style={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            gap: 12,
+            padding: 8,
+            borderRadius: 8,
+            cursor: "default",
+          }}
+        >
+          <div style={{ display: "flex", alignItems: "center", gap: 12, minWidth: 0 }}>
+            <span aria-hidden style={{ width: 34, height: 34, flexShrink: 0, borderRadius: 8, background: "#fff", border: "1px solid var(--border)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--slate-500)" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
+              <rect x="3" y="11" width="18" height="11" rx="2" />
+              <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+            </svg>
+            </span>
+            <span style={{ fontFamily: "var(--font-sans)", fontSize: 14, fontWeight: 600, color: "var(--slate-500)" }}>
+              {t("Chat cifrado")}
+            </span>
+          </div>
+          <span style={{ fontFamily: "var(--font-mono)", fontSize: 10, letterSpacing: "0.12em", textTransform: "uppercase", color: "var(--slate-500)", flexShrink: 0 }}>
+            {t("Bloqueado")}
+          </span>
+        </div>
+      );
+    }
+    return (
+      <div
+        key={i}
+        data-fila-chat
+        onClick={() => {
+          /* Durante una búsqueda, pulsar un chat con coincidencias
+             limita los resultados a ese chat (8c); pulsarlo otra vez
+             vuelve a todos. Sin búsqueda, abre el chat como siempre. */
+          const id = backupIdDeHandle(item.fullPath) ?? "";
+          /* Con un chat abierto (11b) no hay resultados a la vista que
+             filtrar: pulsar otro chat lo abre. */
+          if (buscando && coincidencias && !selected) {
+            setChatFiltro(chatFiltro === id ? null : id);
+            return;
+          }
+          onPress(item.fullPath, item.name);
+        }}
+        style={{
+          cursor: "pointer",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          gap: 12,
+          padding: 8,
+          borderRadius: 8,
+          background: isSelected ? "var(--brass-100)" : "transparent",
+        }}
+      >
+        {/* Iniciales y nombre del contacto, no el nombre del archivo
+            (8b). "Chat de WhatsApp con Yuli.zip" empieza igual en todos
+            los chats, así que hay que leer hasta el final de cada fila
+            para distinguirlas; el panel móvil ya lo hacía así. */}
+        <span
+          aria-hidden
+          style={{
+            flexShrink: 0,
+            width: 34,
+            height: 34,
+            borderRadius: 8,
+            display: "inline-flex",
+            alignItems: "center",
+            justifyContent: "center",
+            /* El primero (o el abierto) en tinta, el resto en blanco (8b). */
+            background: isSelected || (!selected && i === 0) ? "var(--ink-900)" : "#fff",
+            border: isSelected || (!selected && i === 0) ? "none" : "1px solid var(--border)",
+            color: isSelected || (!selected && i === 0) ? "var(--paper-50)" : "var(--ink-900)",
+            fontFamily: "var(--font-serif)",
+            fontSize: 13,
+          }}
+        >
+          {iniciales(item.name)}
+        </span>
+        <div style={{ display: "flex", flexDirection: "column", gap: 3, minWidth: 0, flex: 1 }}>
+          <span style={{ fontFamily: "var(--font-sans)", fontSize: 14, fontWeight: 600, color: "var(--ink-900)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+            {nombreDelContacto(item.name) || parts.name}
+          </span>
+          {/* Con una búsqueda en curso, el número manda sobre la fecha:
+              lo que se quiere saber en ese momento es dónde está lo
+              buscado, no cuándo se guardó el chat. */}
+          {coincidencias !== undefined ? (
+            <span style={{ fontFamily: "var(--font-mono)", fontSize: 10.5, textTransform: "uppercase", color: "var(--slate-500)" }}>
+              {coincidencias === 1
+                ? enTexto(t("1 coincidencia"))
+                : enTexto(t("{{total}} coincidencias", { total: coincidencias }))}
+            </span>
+          ) : (
+            /* Fecha y hora de subida en mono debajo del nombre, no el
+               .zip: las versiones del mismo chat se llaman igual. Los
+               chats antiguos sin fecha siguen enseñando el archivo. */
+            <span style={{ fontFamily: "var(--font-mono)", fontSize: 10.5, color: "var(--slate-500)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", textTransform: item.creadoEn ? "uppercase" : undefined }}>
+              {item.creadoEn
+                ? enTexto(t("Subido {{fecha}}", { fecha: fechaDeSubida(item.creadoEn, i18n.language || "es") }))
+                : item.name}
+            </span>
+          )}
+        </div>
+        <div style={{ display: "flex", alignItems: "center", gap: 2, flexShrink: 0 }}>
+          {/* Un backup todavía en texto plano ofrece cifrarse en vez de
+              la flecha. Cuando no queden v1, esto vuelve a ser solo el svg. */}
+          {!item.cifrado && (
+            <BotonCifrar fullPath={item.fullPath} name={item.name} />
+          )}
+          <BotonBorrarChat fullPath={item.fullPath} name={item.name} />
+        </div>
+      </div>
+    );
+  };
+
   return (
     <div style={{ position: "sticky", top: 0, height: "100vh", width: "100%", display: "flex", flexDirection: "column", padding: "20px 12px 16px", gap: 20, background: "var(--paper-100)" }}>
       <div style={{ display: "flex", flexDirection: "column", width: "100%" }}>
@@ -369,161 +480,26 @@ export const ConversationsDrawer: FC<ConversationsDrawerProps> = ({
         <p style={{ fontFamily: "var(--font-mono)", fontSize: 11, letterSpacing: "0.14em", textTransform: "uppercase", color: "var(--slate-500)", margin: 0, padding: "0 8px 6px" }}>
           {enTexto(t("Tus chats · {{n}}", { n: state?.length ?? 0 }))}
         </p>
-        {state?.map((item, i) => {
-
-          // Check if the item is an Instagram conversation based on the name
-          const isInstagram = item.name.includes("instagram-");
-
-          // Render the Instagram conversations within a collapse component
-          if (isInstagram) {
-            return (
-              <Collapse.Group 
-                key={i} 
-                style={{ fontSize: 12 }}
-                onClick={() => { 
-                  loadConversations(item.fullPath);  // This function is called, not rendered
-                }}
-              >
-                <Collapse style={{ color: '#999999' }} title={item.name}>
-                  {instagramConversations && instagramConversations.map((conversation, index) => (
-                    <div style={{ fontSize: 8, marginBottom: 10, cursor: 'pointer' }} key={index}>{conversation}</div>
-                  ))}
-                </Collapse>
-              </Collapse.Group>
-            );
-          }
-
-          // For non-Instagram items (e.g., WhatsApp), keep the original rendering logic
-          /* También se marca el chat al que se están limitando los resultados. */
-          /* Por ruta y no por nombre: dos versiones del mismo chat se llaman
-             igual y se marcarían las dos. */
-          const isSelected =
-            (abierto ? abierto === item.fullPath : selected === item.name) ||
-            (buscando && !!chatFiltro && chatFiltro === (backupIdDeHandle(item.fullPath) ?? ""));
-          const parts = splitNameDate(item.name);
-          const coincidencias = porChat[backupIdDeHandle(item.fullPath) ?? ""];
-          /* Boveda bloqueada: el chat existe pero su nombre vive dentro del
-             manifiesto cifrado, asi que todavia no se puede leer. Se pinta con
-             candado y no se deja abrir, en vez de esconderlo: esconderlo haria
-             creer que no hay chats. (Pantalla 4d.) */
-          if (item.bloqueado) {
-            return (
-              <div
-                key={i}
+        {grupos.map(({ plataforma, chats }) => (
+          <Fragment key={plataforma}>
+            {conCabecera && (
+              <p
                 style={{
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "space-between",
-                  gap: 12,
-                  padding: 8,
-                  borderRadius: 8,
-                  cursor: "default",
+                  fontFamily: "var(--font-mono)",
+                  fontSize: 10.5,
+                  letterSpacing: "0.14em",
+                  textTransform: "uppercase",
+                  color: "var(--slate-400)",
+                  margin: "10px 0 2px",
+                  padding: "0 8px",
                 }}
               >
-                <div style={{ display: "flex", alignItems: "center", gap: 12, minWidth: 0 }}>
-                  <span aria-hidden style={{ width: 34, height: 34, flexShrink: 0, borderRadius: 8, background: "#fff", border: "1px solid var(--border)", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--slate-500)" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
-                    <rect x="3" y="11" width="18" height="11" rx="2" />
-                    <path d="M7 11V7a5 5 0 0 1 10 0v4" />
-                  </svg>
-                  </span>
-                  <span style={{ fontFamily: "var(--font-sans)", fontSize: 14, fontWeight: 600, color: "var(--slate-500)" }}>
-                    {t("Chat cifrado")}
-                  </span>
-                </div>
-                <span style={{ fontFamily: "var(--font-mono)", fontSize: 10, letterSpacing: "0.12em", textTransform: "uppercase", color: "var(--slate-500)", flexShrink: 0 }}>
-                  {t("Bloqueado")}
-                </span>
-              </div>
-            );
-          }
-          return (
-            <div
-              key={i}
-              data-fila-chat
-              onClick={() => {
-                /* Durante una búsqueda, pulsar un chat con coincidencias
-                   limita los resultados a ese chat (8c); pulsarlo otra vez
-                   vuelve a todos. Sin búsqueda, abre el chat como siempre. */
-                const id = backupIdDeHandle(item.fullPath) ?? "";
-                /* Con un chat abierto (11b) no hay resultados a la vista que
-                   filtrar: pulsar otro chat lo abre. */
-                if (buscando && coincidencias && !selected) {
-                  setChatFiltro(chatFiltro === id ? null : id);
-                  return;
-                }
-                onPress(item.fullPath, item.name);
-              }}
-              style={{
-                cursor: "pointer",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "space-between",
-                gap: 12,
-                padding: 8,
-                borderRadius: 8,
-                background: isSelected ? "var(--brass-100)" : "transparent",
-              }}
-            >
-              {/* Iniciales y nombre del contacto, no el nombre del archivo
-                  (8b). "Chat de WhatsApp con Yuli.zip" empieza igual en todos
-                  los chats, así que hay que leer hasta el final de cada fila
-                  para distinguirlas; el panel móvil ya lo hacía así. */}
-              <span
-                aria-hidden
-                style={{
-                  flexShrink: 0,
-                  width: 34,
-                  height: 34,
-                  borderRadius: 8,
-                  display: "inline-flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  /* El primero (o el abierto) en tinta, el resto en blanco (8b). */
-                  background: isSelected || (!selected && i === 0) ? "var(--ink-900)" : "#fff",
-                  border: isSelected || (!selected && i === 0) ? "none" : "1px solid var(--border)",
-                  color: isSelected || (!selected && i === 0) ? "var(--paper-50)" : "var(--ink-900)",
-                  fontFamily: "var(--font-serif)",
-                  fontSize: 13,
-                }}
-              >
-                {iniciales(item.name)}
-              </span>
-              <div style={{ display: "flex", flexDirection: "column", gap: 3, minWidth: 0, flex: 1 }}>
-                <span style={{ fontFamily: "var(--font-sans)", fontSize: 14, fontWeight: 600, color: "var(--ink-900)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                  {nombreDelContacto(item.name) || parts.name}
-                </span>
-                {/* Con una búsqueda en curso, el número manda sobre la fecha:
-                    lo que se quiere saber en ese momento es dónde está lo
-                    buscado, no cuándo se guardó el chat. */}
-                {coincidencias !== undefined ? (
-                  <span style={{ fontFamily: "var(--font-mono)", fontSize: 10.5, textTransform: "uppercase", color: "var(--slate-500)" }}>
-                    {coincidencias === 1
-                      ? enTexto(t("1 coincidencia"))
-                      : enTexto(t("{{total}} coincidencias", { total: coincidencias }))}
-                  </span>
-                ) : (
-                  /* Fecha y hora de subida en mono debajo del nombre, no el
-                     .zip: las versiones del mismo chat se llaman igual. Los
-                     chats antiguos sin fecha siguen enseñando el archivo. */
-                  <span style={{ fontFamily: "var(--font-mono)", fontSize: 10.5, color: "var(--slate-500)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", textTransform: item.creadoEn ? "uppercase" : undefined }}>
-                    {item.creadoEn
-                      ? enTexto(t("Subido {{fecha}}", { fecha: fechaDeSubida(item.creadoEn, i18n.language || "es") }))
-                      : item.name}
-                  </span>
-                )}
-              </div>
-              <div style={{ display: "flex", alignItems: "center", gap: 2, flexShrink: 0 }}>
-                {/* Un backup todavía en texto plano ofrece cifrarse en vez de
-                    la flecha. Cuando no queden v1, esto vuelve a ser solo el svg. */}
-                {!item.cifrado && (
-                  <BotonCifrar fullPath={item.fullPath} name={item.name} />
-                )}
-                <BotonBorrarChat fullPath={item.fullPath} name={item.name} />
-              </div>
-            </div>
-          );
-        })}
+                {enTexto(t(NOMBRE_DE_PLATAFORMA[plataforma]))}
+              </p>
+            )}
+            {chats.map((item, i) => pintarChat(item, plataforma + i))}
+          </Fragment>
+        ))}
       </div>
 
       {/* Cuenta, abajo del panel (8b). Sustituye a la cabecera que había

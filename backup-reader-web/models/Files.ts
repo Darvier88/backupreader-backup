@@ -2,6 +2,17 @@ export interface FileList {
   name: string;
   fullPath: string;
   /**
+   * De qué plataforma salió este chat, para agruparlos en la barra lateral.
+   *
+   * No cuesta nada traerlo: en los cifrados ya se descifra el manifiesto para
+   * leer el nombre, y ahí está; en los de texto plano lo dice la carpeta.
+   *
+   * Puede faltar en una entrada bloqueada: con la bóveda cerrada no se puede
+   * abrir el manifiesto, así que de esos chats no se sabe ni el nombre ni de
+   * dónde vienen. Esos van aparte, sin grupo.
+   */
+  origen?: "whatsapp" | "instagram" | "other";
+  /**
    * `true` cuando el backup existe pero la boveda esta bloqueada, asi que su
    * nombre todavia no se puede leer. La barra lateral lo pinta con candado en
    * vez de esconderlo: esconderlo haria creer que no hay chats.

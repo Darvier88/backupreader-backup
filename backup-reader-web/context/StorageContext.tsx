@@ -442,6 +442,10 @@ async function formatingJsonFile(url: string): Promise<void> {
             name: abierto.manifest.name,
             fullPath: handleDeBackup(d.backupId),
             cifrado: true,
+            /* De qué plataforma es, para agrupar la lista. Ya está en el
+               manifiesto que se acaba de descifrar: no cuesta una lectura
+               más. */
+            origen: abierto.manifest.source,
             /* La fecha de guardado para Recientes (8b): ya está en el
                documento de Firestore, que es lo que lleva la cuota. */
             creadoEn: d.createdAt,
@@ -1469,7 +1473,13 @@ async function formatingJsonFile(url: string): Promise<void> {
     do {
       const pagina = await list(listRef, { maxResults: 1000, pageToken });
       for (const item of pagina.prefixes) {
-        fileList.push({ name: item.name, fullPath: item.fullPath, cifrado: false });
+        fileList.push({
+          name: item.name,
+          fullPath: item.fullPath,
+          cifrado: false,
+          /* En los de texto plano lo dice la carpeta donde cuelgan. */
+          origen: origenDeRuta(item.fullPath),
+        });
       }
       pageToken = pagina.nextPageToken ?? undefined;
     } while (pageToken);
