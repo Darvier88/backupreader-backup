@@ -309,6 +309,7 @@ let totalMensajes = 0;
 let totalAdjuntos = 0;
 let totalSinArchivo = 0;
 let totalSinFecha = 0;
+let totalNoMensajes = 0;
 let vacias = 0;
 const fechasIlegibles = [];
 
@@ -337,6 +338,7 @@ for (let i = 0; i < aConvertir.length; i++) {
   totalAdjuntos += destinos.size;
   totalSinArchivo += sinEncontrar.length;
   totalSinFecha += informe.sinFecha;
+  totalNoMensajes += informe.noMensajes || 0;
   if (diagnostico) fechasIlegibles.push(...(informe.ilegibles || []));
 
   /* Una conversación de la que no se reconoció ni un mensaje no entra: una
@@ -416,6 +418,13 @@ if (totalSinArchivo) {
     "adjuntos que no están en el zip:",
     totalSinArchivo,
     "(se nombran en el chat, pero el archivo no viene en la descarga)"
+  );
+}
+if (totalNoMensajes) {
+  console.log(
+    "cajas que no son mensajes:",
+    totalNoMensajes,
+    "(listas de participantes de los grupos; no entran en el chat)"
   );
 }
 if (totalSinFecha) {

@@ -113,6 +113,23 @@ puede leer ninguna, se recortan igual los hijos del final que sean texto corto
 sin adjuntos: una fecha en un formato desconocido no puede acabar pegada a lo
 que dijo una persona.
 
+### La lista de participantes no es un mensaje
+
+En un chat de grupo, el export mete una caja con la lista de participantes
+(«Participants: Ana, Luis y 11 personas más») usando **exactamente las mismas
+clases que un mensaje**. Contándola, cada grupo ganaba una entrada vacía: sin
+autor, sin fecha y sin texto. En un export de verdad eran **201 de 1.298**, y
+salían en el informe como «mensajes sin fecha legible», que llevó a buscar el
+fallo donde no estaba.
+
+Lo que las separa es la **forma**, no las palabras: el texto de un mensaje vive
+siempre dentro de otra etiqueta, mientras que esa caja lleva su texto suelto y
+no tiene ni un hijo. Mirarlo así vale en cualquier idioma, y el día que Meta
+añada otra caja informativa tampoco se colará.
+
+El informe las cuenta aparte («cajas que no son mensajes») para que no
+desaparezcan en silencio.
+
 ### Cuando quedan fechas sin leer: `--diagnostico`
 
 ```bash
@@ -125,9 +142,18 @@ supieron leer. Lo que lleva dentro es la **forma** de cada una (las letras como
 cuál era:
 
 ```
+ESTRUCTURA DE LOS BLOQUES QUE FALLARON (sin contar el autor)
+       2 ×  div._3-95._a6-p                       <- hay hueco de fecha, pero vacío
+       1 ×  (sin hijos)                           <- no es un mensaje
+
+FORMA DE LO QUE HABÍA DONDE DEBERÍA IR LA FECHA
        4 ×  "99.aa.9999 · 9a99"   ejemplo: "14.ix.2017 · 8h09"
-       1 ×  "❤️ aaaa"   (sin año: no se enseña)
 ```
+
+La **estructura** son las etiquetas y las clases, que las escribe Meta y no la
+persona, y es lo que separa dos problemas con arreglos distintos: «aquí no hay
+fecha donde debería» y «aquí hay una fecha que no sé leer». Fue lo que resolvió
+lo de los 201: salían todos como `(sin hijos)`.
 
 El texto tal cual solo aparece cuando la cadena lleva un **año de cuatro
 cifras** dentro, que es lo que hace de una cadena una fecha y no un mensaje

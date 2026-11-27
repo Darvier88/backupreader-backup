@@ -81,6 +81,33 @@ describe("bloques", () => {
     expect(bloquesDeMensaje(html)).toHaveLength(2);
   });
 
+  it("la lista de participantes de un grupo no es un mensaje", () => {
+    /* En un chat de grupo, Meta mete una caja con los participantes usando
+       EXACTAMENTE las mismas clases que un mensaje. Contándola, cada grupo
+       ganaba una entrada vacía: sin autor, sin fecha y sin texto. En un export
+       de verdad eran 201 de 1.298.
+
+       Lo que la separa es la forma y no las palabras: su texto va suelto, sin
+       ninguna etiqueta dentro. Así vale en cualquier idioma. */
+    const caja =
+      `<div class="pam _3-95 _2ph- _a6-g uiBoxWhite noborder">` +
+      `Participants: Ana García, Luis Pérez, barber_rules2021 and 11 others` +
+      `</div>`;
+    const html = pagina("Grupo", [
+      bloque("Ana", "hola", "Sep 14, 2017 8:10 am"),
+      bloque("Luis", "qué tal", "Sep 14, 2017 8:09 am"),
+      caja,
+    ]);
+
+    expect(bloquesDeMensaje(html)).toHaveLength(2);
+
+    const { paginas, informe } = hiloDeHtml([html]);
+    expect(informe.bloques).toBe(2);
+    expect(informe.noMensajes).toBe(1);
+    expect(informe.sinFecha).toBe(0);
+    expect(paginas[0].messages?.map((m) => m.content)).toEqual(["hola", "qué tal"]);
+  });
+
   it("no cuenta la cabecera como un mensaje", () => {
     /* La cabecera lleva un `<h1>` y una fecha; si el corte por `<main>` fallara,
        saldría un mensaje de más con la fecha de la descarga. */

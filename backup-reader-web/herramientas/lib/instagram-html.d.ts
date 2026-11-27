@@ -17,7 +17,11 @@ export function fechaEnMs(texto: string): number | null;
 export function fechaDeBloque(bloque: string): number | null;
 
 export function tituloDeHtml(html: string): string;
-export function bloquesDeMensaje(html: string): string[];
+export function bloquesDeMensaje(
+  html: string,
+  /** Se rellena con cuántas cajas tenían clases de mensaje sin serlo. */
+  apunte?: { descartados?: number } | null
+): string[];
 
 /** Un mensaje con la forma que tendría en el export de JSON. */
 export function mensajeDeBloque(
@@ -43,6 +47,8 @@ export function resolverRuta(valor: string, rutaHilo?: string): string;
 
 export type InformeDeHilo = {
   bloques: number;
+  /** Cajas con clases de mensaje que no lo eran (listas de participantes). */
+  noMensajes: number;
   sinFecha: number;
   sinAutor: number;
   autores: number;

@@ -246,13 +246,31 @@ export function tituloDeHtml(html) {
 const ES_BLOQUE = (clases) => clases.includes("pam") && clases.includes("uiboxwhite");
 
 /**
+ * ¿Esta caja es un mensaje, o es otra cosa de Meta con las mismas clases?
+ *
+ * En un chat de grupo, el export mete una caja con la lista de participantes
+ * («Participants: Ana, Luis y 11 personas más») usando EXACTAMENTE las mismas
+ * clases que un mensaje. Contándola como mensaje, cada conversación de grupo
+ * ganaba una entrada vacía, sin autor, sin fecha y sin texto. En un export de
+ * verdad eran 201 de 1.298.
+ *
+ * Lo que las separa es la forma, no las palabras: el texto de un mensaje vive
+ * siempre dentro de otra etiqueta, mientras que esa caja lleva su texto suelto
+ * y no tiene ni un hijo. Mirarlo así vale en cualquier idioma, y el día que
+ * Meta añada otra caja informativa tampoco se colará.
+ */
+function pareceMensaje(dentro) {
+  return destapar(dentro).some((h) => h.etiqueta !== "h2");
+}
+
+/**
  * Los bloques de mensaje de una página, del más nuevo al más viejo, que es el
  * orden en que Instagram los escribe.
  *
  * Se recorre buscando divs y, al encontrar uno que sea un bloque, se salta
  * entero: dentro de un mensaje hay más divs, y ninguno es otro mensaje.
  */
-export function bloquesDeMensaje(html) {
+export function bloquesDeMensaje(html, apunte = null) {
   const cuerpo = cuerpoDelChat(html);
   const bloques = [];
   const re = /<div\b([^>]*)>/gi;
@@ -262,8 +280,10 @@ export function bloquesDeMensaje(html) {
        hay decenas de miles de divs y casi ninguno es un mensaje. */
     if (!ES_BLOQUE(clasesDe(m[1]))) continue;
     const fin = finDeEtiqueta(cuerpo, re.lastIndex, "div");
-    bloques.push(cuerpo.slice(re.lastIndex, fin));
+    const dentro = cuerpo.slice(re.lastIndex, fin);
     re.lastIndex = fin;
+    if (pareceMensaje(dentro)) bloques.push(dentro);
+    else if (apunte) apunte.descartados = (apunte.descartados || 0) + 1;
   }
   if (bloques.length) return bloques;
 
@@ -655,6 +675,10 @@ export function hiloDeHtml(paginas, { rutaHilo = "", carpeta = "" } = {}) {
   let sinFecha = 0;
   let sinAutor = 0;
   let bloques = 0;
+  /* Cajas con las clases de un mensaje que no son un mensaje: la lista de
+     participantes de un grupo, sobre todo. Se cuentan para que no desaparezcan
+     en silencio. */
+  let noMensajes = 0;
 
   for (const pagina of lista) {
     const html = String(pagina || "");
@@ -662,7 +686,8 @@ export function hiloDeHtml(paginas, { rutaHilo = "", carpeta = "" } = {}) {
 
     const mensajes = [];
     let ultima = null;
-    for (const bloque of bloquesDeMensaje(html)) {
+    const cajas = {};
+    for (const bloque of bloquesDeMensaje(html, cajas)) {
       bloques++;
       const apunte = {};
       const m = mensajeDeBloque(bloque, rutaHilo, apunte);
@@ -685,6 +710,7 @@ export function hiloDeHtml(paginas, { rutaHilo = "", carpeta = "" } = {}) {
       }
       mensajes.push(m);
     }
+    noMensajes += cajas.descartados || 0;
     porPagina.push(mensajes);
   }
 
@@ -707,6 +733,7 @@ export function hiloDeHtml(paginas, { rutaHilo = "", carpeta = "" } = {}) {
     })),
     informe: {
       bloques,
+      noMensajes,
       sinFecha,
       sinAutor,
       autores: autores.size,
